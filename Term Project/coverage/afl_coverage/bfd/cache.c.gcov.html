@@ -1,0 +1,741 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/cache.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - cache.c<span style="font-size: 80%;"> (source / <a href="cache.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">67</td>
+            <td class="headerCovTableEntry">199</td>
+            <td class="headerCovTableEntryLo">33.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntryLo">52.6 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* BFD library -- caching of file descriptors.</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    Hacked by Steve Chamberlain of Cygnus Support (steve@cygnus.com).
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">      10 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">      11 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      12 </span>            :    (at your option) any later version.
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      15 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      16 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      17 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      20 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      21 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      22 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : /*
+<span class="lineNum">      25 </span>            : SECTION
+<span class="lineNum">      26 </span>            :         File caching
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            :         The file caching mechanism is embedded within BFD and allows
+<span class="lineNum">      29 </span>            :         the application to open as many BFDs as it wants without
+<span class="lineNum">      30 </span>            :         regard to the underlying operating system's file descriptor
+<span class="lineNum">      31 </span>            :         limit (often as low as 20 open files).  The module in
+<span class="lineNum">      32 </span>            :         &lt;&lt;cache.c&gt;&gt; maintains a least recently used list of
+<span class="lineNum">      33 </span>            :         &lt;&lt;bfd_cache_max_open&gt;&gt; files, and exports the name
+<span class="lineNum">      34 </span>            :         &lt;&lt;bfd_cache_lookup&gt;&gt;, which runs around and makes sure that
+<span class="lineNum">      35 </span>            :         the required BFD is open. If not, then it chooses a file to
+<span class="lineNum">      36 </span>            :         close, closes it and opens the one wanted, returning its file
+<span class="lineNum">      37 </span>            :         handle.
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : SUBSECTION
+<span class="lineNum">      40 </span>            :         Caching functions
+<span class="lineNum">      41 </span>            : */
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      44 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      45 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      46 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      47 </span>            : #include &quot;bfd_stdint.h&quot;
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : #ifdef HAVE_MMAP
+<span class="lineNum">      50 </span>            : #include &lt;sys/mman.h&gt;
+<span class="lineNum">      51 </span>            : #endif
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : /* In some cases we can optimize cache operation when reopening files.
+<span class="lineNum">      54 </span>            :    For instance, a flush is entirely unnecessary if the file is already
+<span class="lineNum">      55 </span>            :    closed, so a flush would use CACHE_NO_OPEN.  Similarly, a seek using
+<span class="lineNum">      56 </span>            :    SEEK_SET or SEEK_END need not first seek to the current position.
+<span class="lineNum">      57 </span>            :    For stat we ignore seek errors, just in case the file has changed
+<span class="lineNum">      58 </span>            :    while we weren't looking.  If it has, then it's possible that the
+<span class="lineNum">      59 </span>            :    file is shorter and we don't want a seek error to prevent us doing
+<span class="lineNum">      60 </span>            :    the stat.  */
+<span class="lineNum">      61 </span>            : enum cache_flag {
+<span class="lineNum">      62 </span>            :   CACHE_NORMAL = 0,
+<span class="lineNum">      63 </span>            :   CACHE_NO_OPEN = 1,
+<span class="lineNum">      64 </span>            :   CACHE_NO_SEEK = 2,
+<span class="lineNum">      65 </span>            :   CACHE_NO_SEEK_ERROR = 4
+<span class="lineNum">      66 </span>            : };
+<span class="lineNum">      67 </span>            : 
+<span class="lineNum">      68 </span>            : /* The maximum number of files which the cache will keep open at
+<span class="lineNum">      69 </span>            :    one time.  When needed call bfd_cache_max_open to initialize.  */
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : static int max_open_files = 0;
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span>            : /* Set max_open_files, if not already set, to 12.5% of the allowed open
+<a name="74"><span class="lineNum">      74 </span>            :    file descriptors, but at least 10, and return the value.  */</a>
+<span class="lineNum">      75 </span>            : static int
+<span class="lineNum">      76 </span><span class="lineCov">         66 : bfd_cache_max_open (void)</span>
+<span class="lineNum">      77 </span>            : {
+<span class="lineNum">      78 </span><span class="lineCov">         66 :   if (max_open_files == 0)</span>
+<span class="lineNum">      79 </span>            :     {
+<span class="lineNum">      80 </span>            :       int max;
+<span class="lineNum">      81 </span>            : #if defined(__sun) &amp;&amp; !defined(__sparcv9) &amp;&amp; !defined(__x86_64__)
+<span class="lineNum">      82 </span>            :       /* PR ld/19260: 32-bit Solaris has very inelegant handling of the 255
+<span class="lineNum">      83 </span>            :          file descriptor limit.  The problem is that setrlimit(2) can raise
+<span class="lineNum">      84 </span>            :          RLIMIT_NOFILE to a value that is not supported by libc, resulting
+<span class="lineNum">      85 </span>            :          in &quot;Too many open files&quot; errors.  This can happen here even though
+<span class="lineNum">      86 </span>            :          max_open_files is set to rlim.rlim_cur / 8.  For example, if
+<span class="lineNum">      87 </span>            :          a parent process has set rlim.rlim_cur to 65536, then max_open_files
+<span class="lineNum">      88 </span>            :          will be computed as 8192.
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :          This check essentially reverts to the behavior from binutils 2.23.1
+<span class="lineNum">      91 </span>            :          for 32-bit Solaris only.  (It is hoped that the 32-bit libc
+<span class="lineNum">      92 </span>            :          limitation will be removed soon).  64-bit Solaris libc does not have
+<span class="lineNum">      93 </span>            :          this limitation.  */
+<span class="lineNum">      94 </span>            :       max = 16;
+<span class="lineNum">      95 </span>            : #else
+<span class="lineNum">      96 </span>            : #ifdef HAVE_GETRLIMIT
+<span class="lineNum">      97 </span>            :       struct rlimit rlim;
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">         66 :       if (getrlimit (RLIMIT_NOFILE, &amp;rlim) == 0</span>
+<span class="lineNum">     100 </span><span class="lineCov">         66 :           &amp;&amp; rlim.rlim_cur != (rlim_t) RLIM_INFINITY)</span>
+<span class="lineNum">     101 </span><span class="lineCov">         66 :         max = rlim.rlim_cur / 8;</span>
+<span class="lineNum">     102 </span>            :       else
+<span class="lineNum">     103 </span>            : #endif
+<span class="lineNum">     104 </span>            : #ifdef _SC_OPEN_MAX
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 :         max = sysconf (_SC_OPEN_MAX) / 8;</span>
+<span class="lineNum">     106 </span>            : #else
+<span class="lineNum">     107 </span>            :         max = 10;
+<span class="lineNum">     108 </span>            : #endif
+<span class="lineNum">     109 </span>            : #endif /* not 32-bit Solaris */
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineCov">         66 :       max_open_files = max &lt; 10 ? 10 : max;</span>
+<span class="lineNum">     112 </span>            :     }
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span><span class="lineCov">         66 :   return max_open_files;</span>
+<span class="lineNum">     115 </span>            : }
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            : /* The number of BFD files we have open.  */
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            : static int open_files;
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            : /* Zero, or a pointer to the topmost BFD on the chain.  This is
+<span class="lineNum">     122 </span>            :    used by the &lt;&lt;bfd_cache_lookup&gt;&gt; macro in @file{libbfd.h} to
+<span class="lineNum">     123 </span>            :    determine when it can avoid a function call.  */
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span>            : static bfd *bfd_last_cache = NULL;
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span>            : /* Insert a BFD into the cache.  */
+<a name="128"><span class="lineNum">     128 </span>            : </a>
+<span class="lineNum">     129 </span>            : static void
+<span class="lineNum">     130 </span><span class="lineCov">         66 : insert (bfd *abfd)</span>
+<span class="lineNum">     131 </span>            : {
+<span class="lineNum">     132 </span><span class="lineCov">         66 :   if (bfd_last_cache == NULL)</span>
+<span class="lineNum">     133 </span>            :     {
+<span class="lineNum">     134 </span><span class="lineCov">         66 :       abfd-&gt;lru_next = abfd;</span>
+<span class="lineNum">     135 </span><span class="lineCov">         66 :       abfd-&gt;lru_prev = abfd;</span>
+<span class="lineNum">     136 </span>            :     }
+<span class="lineNum">     137 </span>            :   else
+<span class="lineNum">     138 </span>            :     {
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :       abfd-&gt;lru_next = bfd_last_cache;</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :       abfd-&gt;lru_prev = bfd_last_cache-&gt;lru_prev;</span>
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :       abfd-&gt;lru_prev-&gt;lru_next = abfd;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :       abfd-&gt;lru_next-&gt;lru_prev = abfd;</span>
+<span class="lineNum">     143 </span>            :     }
+<span class="lineNum">     144 </span><span class="lineCov">         66 :   bfd_last_cache = abfd;</span>
+<span class="lineNum">     145 </span><span class="lineCov">         66 : }</span>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            : /* Remove a BFD from the cache.  */
+<a name="148"><span class="lineNum">     148 </span>            : </a>
+<span class="lineNum">     149 </span>            : static void
+<span class="lineNum">     150 </span><span class="lineCov">         10 : snip (bfd *abfd)</span>
+<span class="lineNum">     151 </span>            : {
+<span class="lineNum">     152 </span><span class="lineCov">         10 :   abfd-&gt;lru_prev-&gt;lru_next = abfd-&gt;lru_next;</span>
+<span class="lineNum">     153 </span><span class="lineCov">         10 :   abfd-&gt;lru_next-&gt;lru_prev = abfd-&gt;lru_prev;</span>
+<span class="lineNum">     154 </span><span class="lineCov">         10 :   if (abfd == bfd_last_cache)</span>
+<span class="lineNum">     155 </span>            :     {
+<span class="lineNum">     156 </span><span class="lineCov">         10 :       bfd_last_cache = abfd-&gt;lru_next;</span>
+<span class="lineNum">     157 </span><span class="lineCov">         10 :       if (abfd == bfd_last_cache)</span>
+<span class="lineNum">     158 </span><span class="lineCov">         10 :         bfd_last_cache = NULL;</span>
+<span class="lineNum">     159 </span>            :     }
+<span class="lineNum">     160 </span><span class="lineCov">         10 : }</span>
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : /* Close a BFD and remove it from the cache.  */
+<a name="163"><span class="lineNum">     163 </span>            : </a>
+<span class="lineNum">     164 </span>            : static bfd_boolean
+<span class="lineNum">     165 </span><span class="lineCov">         10 : bfd_cache_delete (bfd *abfd)</span>
+<span class="lineNum">     166 </span>            : {
+<span class="lineNum">     167 </span>            :   bfd_boolean ret;
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span><span class="lineCov">         10 :   if (fclose ((FILE *) abfd-&gt;iostream) == 0)</span>
+<span class="lineNum">     170 </span><span class="lineCov">         10 :     ret = TRUE;</span>
+<span class="lineNum">     171 </span>            :   else
+<span class="lineNum">     172 </span>            :     {
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :       ret = FALSE;</span>
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     175 </span>            :     }
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span><span class="lineCov">         10 :   snip (abfd);</span>
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span><span class="lineCov">         10 :   abfd-&gt;iostream = NULL;</span>
+<span class="lineNum">     180 </span><span class="lineCov">         10 :   --open_files;</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">         10 :   return ret;</span>
+<span class="lineNum">     183 </span>            : }
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            : /* We need to open a new file, and the cache is full.  Find the least
+<span class="lineNum">     186 </span>            :    recently used cacheable BFD and close it.  */
+<a name="187"><span class="lineNum">     187 </span>            : </a>
+<span class="lineNum">     188 </span>            : static bfd_boolean
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 : close_one (void)</span>
+<span class="lineNum">     190 </span>            : {
+<span class="lineNum">     191 </span>            :   register bfd *to_kill;
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :   if (bfd_last_cache == NULL)</span>
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :     to_kill = NULL;</span>
+<span class="lineNum">     195 </span>            :   else
+<span class="lineNum">     196 </span>            :     {
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :       for (to_kill = bfd_last_cache-&gt;lru_prev;</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :            ! to_kill-&gt;cacheable;</span>
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :            to_kill = to_kill-&gt;lru_prev)</span>
+<span class="lineNum">     200 </span>            :         {
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :           if (to_kill == bfd_last_cache)</span>
+<span class="lineNum">     202 </span>            :             {
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :               to_kill = NULL;</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     205 </span>            :             }
+<span class="lineNum">     206 </span>            :         }
+<span class="lineNum">     207 </span>            :     }
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 :   if (to_kill == NULL)</span>
+<span class="lineNum">     210 </span>            :     {
+<span class="lineNum">     211 </span>            :       /* There are no open cacheable BFD's.  */
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     213 </span>            :     }
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 :   to_kill-&gt;where = real_ftell ((FILE *) to_kill-&gt;iostream);</span>
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span><span class="lineNoCov">          0 :   return bfd_cache_delete (to_kill);</span>
+<span class="lineNum">     218 </span>            : }
+<span class="lineNum">     219 </span>            : 
+<span class="lineNum">     220 </span>            : /* Check to see if the required BFD is the same as the last one
+<span class="lineNum">     221 </span>            :    looked up. If so, then it can use the stream in the BFD with
+<span class="lineNum">     222 </span>            :    impunity, since it can't have changed since the last lookup;
+<span class="lineNum">     223 </span>            :    otherwise, it has to perform the complicated lookup function.  */
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            : #define bfd_cache_lookup(x, flag) \
+<span class="lineNum">     226 </span>            :   ((x) == bfd_last_cache                        \
+<span class="lineNum">     227 </span>            :    ? (FILE *) (bfd_last_cache-&gt;iostream)     \
+<span class="lineNum">     228 </span>            :    : bfd_cache_lookup_worker (x, flag))
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            : /* Called when the macro &lt;&lt;bfd_cache_lookup&gt;&gt; fails to find a
+<span class="lineNum">     231 </span>            :    quick answer.  Find a file descriptor for @var{abfd}.  If
+<span class="lineNum">     232 </span>            :    necessary, it open it.  If there are already more than
+<span class="lineNum">     233 </span>            :    &lt;&lt;bfd_cache_max_open&gt;&gt; files open, it tries to close one first, to
+<span class="lineNum">     234 </span>            :    avoid running out of file descriptors.  It will return NULL
+<span class="lineNum">     235 </span>            :    if it is unable to (re)open the @var{abfd}.  */
+<a name="236"><span class="lineNum">     236 </span>            : </a>
+<span class="lineNum">     237 </span>            : static FILE *
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 : bfd_cache_lookup_worker (bfd *abfd, enum cache_flag flag)</span>
+<span class="lineNum">     239 </span>            : {
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :   bfd *orig_bfd = abfd;</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :   if ((abfd-&gt;flags &amp; BFD_IN_MEMORY) != 0)</span>
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineNoCov">          0 :   while (abfd-&gt;my_archive != NULL</span>
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :          &amp;&amp; !bfd_is_thin_archive (abfd-&gt;my_archive))</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :     abfd = abfd-&gt;my_archive;</span>
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :   if (abfd-&gt;iostream != NULL)</span>
+<span class="lineNum">     249 </span>            :     {
+<span class="lineNum">     250 </span>            :       /* Move the file to the start of the cache.  */
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :       if (abfd != bfd_last_cache)</span>
+<span class="lineNum">     252 </span>            :         {
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :           snip (abfd);</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :           insert (abfd);</span>
+<span class="lineNum">     255 </span>            :         }
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :       return (FILE *) abfd-&gt;iostream;</span>
+<span class="lineNum">     257 </span>            :     }
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :   if (flag &amp; CACHE_NO_OPEN)</span>
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 :   if (bfd_open_file (abfd) == NULL)</span>
+<span class="lineNum">     263 </span>            :     ;
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :   else if (!(flag &amp; CACHE_NO_SEEK)</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :            &amp;&amp; real_fseek ((FILE *) abfd-&gt;iostream, abfd-&gt;where, SEEK_SET) != 0</span>
+<span class="lineNum">     266 </span><span class="lineNoCov">          0 :            &amp;&amp; !(flag &amp; CACHE_NO_SEEK_ERROR))</span>
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :     bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     268 </span>            :   else
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :     return (FILE *) abfd-&gt;iostream;</span>
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span>            :   /* xgettext:c-format */
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :   _bfd_error_handler (_(&quot;reopening %B: %s\n&quot;),</span>
+<span class="lineNum">     273 </span>            :                       orig_bfd, bfd_errmsg (bfd_get_error ()));
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">     275 </span>            : }
+<a name="276"><span class="lineNum">     276 </span>            : </a>
+<span class="lineNum">     277 </span>            : static file_ptr
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 : cache_btell (struct bfd *abfd)</span>
+<span class="lineNum">     279 </span>            : {
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_OPEN);</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :   if (f == NULL)</span>
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :     return abfd-&gt;where;</span>
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :   return real_ftell (f);</span>
+<span class="lineNum">     284 </span>            : }
+<a name="285"><span class="lineNum">     285 </span>            : </a>
+<span class="lineNum">     286 </span>            : static int
+<span class="lineNum">     287 </span><span class="lineCov">       1612 : cache_bseek (struct bfd *abfd, file_ptr offset, int whence)</span>
+<span class="lineNum">     288 </span>            : {
+<span class="lineNum">     289 </span><span class="lineCov">       1612 :   FILE *f = bfd_cache_lookup (abfd, whence != SEEK_CUR ? CACHE_NO_SEEK : CACHE_NORMAL);</span>
+<span class="lineNum">     290 </span><span class="lineCov">       1612 :   if (f == NULL)</span>
+<span class="lineNum">     291 </span><span class="lineNoCov">          0 :     return -1;</span>
+<span class="lineNum">     292 </span><span class="lineCov">       1612 :   return real_fseek (f, offset, whence);</span>
+<span class="lineNum">     293 </span>            : }
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            : /* Note that archive entries don't have streams; they share their parent's.
+<span class="lineNum">     296 </span>            :    This allows someone to play with the iostream behind BFD's back.
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span>            :    Also, note that the origin pointer points to the beginning of a file's
+<span class="lineNum">     299 </span>            :    contents (0 for non-archive elements).  For archive entries this is the
+<span class="lineNum">     300 </span>            :    first octet in the file, NOT the beginning of the archive header.  */
+<a name="301"><span class="lineNum">     301 </span>            : </a>
+<span class="lineNum">     302 </span>            : static file_ptr
+<span class="lineNum">     303 </span><span class="lineCov">       2777 : cache_bread_1 (struct bfd *abfd, void *buf, file_ptr nbytes)</span>
+<span class="lineNum">     304 </span>            : {
+<span class="lineNum">     305 </span>            :   FILE *f;
+<span class="lineNum">     306 </span>            :   file_ptr nread;
+<span class="lineNum">     307 </span>            :   /* FIXME - this looks like an optimization, but it's really to cover
+<span class="lineNum">     308 </span>            :      up for a feature of some OSs (not solaris - sigh) that
+<span class="lineNum">     309 </span>            :      ld/pe-dll.c takes advantage of (apparently) when it creates BFDs
+<span class="lineNum">     310 </span>            :      internally and tries to link against them.  BFD seems to be smart
+<span class="lineNum">     311 </span>            :      enough to realize there are no symbol records in the &quot;file&quot; that
+<span class="lineNum">     312 </span>            :      doesn't exist but attempts to read them anyway.  On Solaris,
+<span class="lineNum">     313 </span>            :      attempting to read zero bytes from a NULL file results in a core
+<span class="lineNum">     314 </span>            :      dump, but on other platforms it just returns zero bytes read.
+<span class="lineNum">     315 </span>            :      This makes it to something reasonable. - DJ */
+<span class="lineNum">     316 </span><span class="lineCov">       2777 :   if (nbytes == 0)</span>
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineCov">       2777 :   f = bfd_cache_lookup (abfd, CACHE_NORMAL);</span>
+<span class="lineNum">     320 </span><span class="lineCov">       2777 :   if (f == NULL)</span>
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span>            : #if defined (__VAX) &amp;&amp; defined (VMS)
+<span class="lineNum">     324 </span>            :   /* Apparently fread on Vax VMS does not keep the record length
+<span class="lineNum">     325 </span>            :      information.  */
+<span class="lineNum">     326 </span>            :   nread = read (fileno (f), buf, nbytes);
+<span class="lineNum">     327 </span>            :   /* Set bfd_error if we did not read as much data as we expected.  If
+<span class="lineNum">     328 </span>            :      the read failed due to an error set the bfd_error_system_call,
+<span class="lineNum">     329 </span>            :      else set bfd_error_file_truncated.  */
+<span class="lineNum">     330 </span>            :   if (nread == (file_ptr)-1)
+<span class="lineNum">     331 </span>            :     {
+<span class="lineNum">     332 </span>            :       bfd_set_error (bfd_error_system_call);
+<span class="lineNum">     333 </span>            :       return nread;
+<span class="lineNum">     334 </span>            :     }
+<span class="lineNum">     335 </span>            : #else
+<span class="lineNum">     336 </span><span class="lineCov">       2777 :   nread = fread (buf, 1, nbytes, f);</span>
+<span class="lineNum">     337 </span>            :   /* Set bfd_error if we did not read as much data as we expected.  If
+<span class="lineNum">     338 </span>            :      the read failed due to an error set the bfd_error_system_call,
+<span class="lineNum">     339 </span>            :      else set bfd_error_file_truncated.  */
+<span class="lineNum">     340 </span><span class="lineCov">       2777 :   if (nread &lt; nbytes &amp;&amp; ferror (f))</span>
+<span class="lineNum">     341 </span>            :     {
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     343 </span><span class="lineNoCov">          0 :       return nread;</span>
+<span class="lineNum">     344 </span>            :     }
+<span class="lineNum">     345 </span>            : #endif
+<span class="lineNum">     346 </span><span class="lineCov">       2777 :   if (nread &lt; nbytes)</span>
+<span class="lineNum">     347 </span>            :     /* This may or may not be an error, but in case the calling code
+<span class="lineNum">     348 </span>            :        bails out because of it, set the right error code.  */
+<span class="lineNum">     349 </span><span class="lineCov">          3 :     bfd_set_error (bfd_error_file_truncated);</span>
+<span class="lineNum">     350 </span><span class="lineCov">       2777 :   return nread;</span>
+<span class="lineNum">     351 </span>            : }
+<a name="352"><span class="lineNum">     352 </span>            : </a>
+<span class="lineNum">     353 </span>            : static file_ptr
+<span class="lineNum">     354 </span><span class="lineCov">       2777 : cache_bread (struct bfd *abfd, void *buf, file_ptr nbytes)</span>
+<span class="lineNum">     355 </span>            : {
+<span class="lineNum">     356 </span><span class="lineCov">       2777 :   file_ptr nread = 0;</span>
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span>            :   /* Some filesystems are unable to handle reads that are too large
+<span class="lineNum">     359 </span>            :      (for instance, NetApp shares with oplocks turned off).  To avoid
+<span class="lineNum">     360 </span>            :      hitting this limitation, we read the buffer in chunks of 8MB max.  */
+<span class="lineNum">     361 </span><span class="lineCov">       8328 :   while (nread &lt; nbytes)</span>
+<span class="lineNum">     362 </span>            :     {
+<span class="lineNum">     363 </span><span class="lineCov">       2777 :       const file_ptr max_chunk_size = 0x800000;</span>
+<span class="lineNum">     364 </span><span class="lineCov">       2777 :       file_ptr chunk_size = nbytes - nread;</span>
+<span class="lineNum">     365 </span>            :       file_ptr chunk_nread;
+<span class="lineNum">     366 </span>            : 
+<span class="lineNum">     367 </span><span class="lineCov">       2777 :       if (chunk_size &gt; max_chunk_size)</span>
+<span class="lineNum">     368 </span><span class="lineCov">          1 :         chunk_size = max_chunk_size;</span>
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span><span class="lineCov">       2777 :       chunk_nread = cache_bread_1 (abfd, (char *) buf + nread, chunk_size);</span>
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span>            :       /* Update the nread count.
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span>            :          We just have to be careful of the case when cache_bread_1 returns
+<span class="lineNum">     375 </span>            :          a negative count:  If this is our first read, then set nread to
+<span class="lineNum">     376 </span>            :          that negative count in order to return that negative value to the
+<span class="lineNum">     377 </span>            :          caller.  Otherwise, don't add it to our total count, or we would
+<span class="lineNum">     378 </span>            :          end up returning a smaller number of bytes read than we actually
+<span class="lineNum">     379 </span>            :          did.  */
+<span class="lineNum">     380 </span><span class="lineCov">       2777 :       if (nread == 0 || chunk_nread &gt; 0)</span>
+<span class="lineNum">     381 </span><span class="lineCov">       2777 :         nread += chunk_nread;</span>
+<span class="lineNum">     382 </span>            : 
+<span class="lineNum">     383 </span><span class="lineCov">       2777 :       if (chunk_nread &lt; chunk_size)</span>
+<span class="lineNum">     384 </span><span class="lineCov">          3 :         break;</span>
+<span class="lineNum">     385 </span>            :     }
+<span class="lineNum">     386 </span>            : 
+<span class="lineNum">     387 </span><span class="lineCov">       2777 :   return nread;</span>
+<span class="lineNum">     388 </span>            : }
+<a name="389"><span class="lineNum">     389 </span>            : </a>
+<span class="lineNum">     390 </span>            : static file_ptr
+<span class="lineNum">     391 </span><span class="lineNoCov">          0 : cache_bwrite (struct bfd *abfd, const void *where, file_ptr nbytes)</span>
+<span class="lineNum">     392 </span>            : {
+<span class="lineNum">     393 </span>            :   file_ptr nwrite;
+<span class="lineNum">     394 </span><span class="lineNoCov">          0 :   FILE *f = bfd_cache_lookup (abfd, CACHE_NORMAL);</span>
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span><span class="lineNoCov">          0 :   if (f == NULL)</span>
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 :   nwrite = fwrite (where, 1, nbytes, f);</span>
+<span class="lineNum">     399 </span><span class="lineNoCov">          0 :   if (nwrite &lt; nbytes &amp;&amp; ferror (f))</span>
+<span class="lineNum">     400 </span>            :     {
+<span class="lineNum">     401 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :       return -1;</span>
+<span class="lineNum">     403 </span>            :     }
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :   return nwrite;</span>
+<span class="lineNum">     405 </span>            : }
+<a name="406"><span class="lineNum">     406 </span>            : </a>
+<span class="lineNum">     407 </span>            : static int
+<span class="lineNum">     408 </span><span class="lineCov">         10 : cache_bclose (struct bfd *abfd)</span>
+<span class="lineNum">     409 </span>            : {
+<span class="lineNum">     410 </span><span class="lineCov">         10 :   return bfd_cache_close (abfd) - 1;</span>
+<span class="lineNum">     411 </span>            : }
+<a name="412"><span class="lineNum">     412 </span>            : </a>
+<span class="lineNum">     413 </span>            : static int
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 : cache_bflush (struct bfd *abfd)</span>
+<span class="lineNum">     415 </span>            : {
+<span class="lineNum">     416 </span>            :   int sts;
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_OPEN);</span>
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span><span class="lineNoCov">          0 :   if (f == NULL)</span>
+<span class="lineNum">     420 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     421 </span><span class="lineNoCov">          0 :   sts = fflush (f);</span>
+<span class="lineNum">     422 </span><span class="lineNoCov">          0 :   if (sts &lt; 0)</span>
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 :     bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :   return sts;</span>
+<span class="lineNum">     425 </span>            : }
+<a name="426"><span class="lineNum">     426 </span>            : </a>
+<span class="lineNum">     427 </span>            : static int
+<span class="lineNum">     428 </span><span class="lineNoCov">          0 : cache_bstat (struct bfd *abfd, struct stat *sb)</span>
+<span class="lineNum">     429 </span>            : {
+<span class="lineNum">     430 </span>            :   int sts;
+<span class="lineNum">     431 </span><span class="lineNoCov">          0 :   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_SEEK_ERROR);</span>
+<span class="lineNum">     432 </span>            : 
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :   if (f == NULL)</span>
+<span class="lineNum">     434 </span><span class="lineNoCov">          0 :     return -1;</span>
+<span class="lineNum">     435 </span><span class="lineNoCov">          0 :   sts = fstat (fileno (f), sb);</span>
+<span class="lineNum">     436 </span><span class="lineNoCov">          0 :   if (sts &lt; 0)</span>
+<span class="lineNum">     437 </span><span class="lineNoCov">          0 :     bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     438 </span><span class="lineNoCov">          0 :   return sts;</span>
+<span class="lineNum">     439 </span>            : }
+<a name="440"><span class="lineNum">     440 </span>            : </a>
+<span class="lineNum">     441 </span>            : static void *
+<span class="lineNum">     442 </span><span class="lineNoCov">          0 : cache_bmmap (struct bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     443 </span>            :              void *addr ATTRIBUTE_UNUSED,
+<span class="lineNum">     444 </span>            :              bfd_size_type len ATTRIBUTE_UNUSED,
+<span class="lineNum">     445 </span>            :              int prot ATTRIBUTE_UNUSED,
+<span class="lineNum">     446 </span>            :              int flags ATTRIBUTE_UNUSED,
+<span class="lineNum">     447 </span>            :              file_ptr offset ATTRIBUTE_UNUSED,
+<span class="lineNum">     448 </span>            :              void **map_addr ATTRIBUTE_UNUSED,
+<span class="lineNum">     449 </span>            :              bfd_size_type *map_len ATTRIBUTE_UNUSED)
+<span class="lineNum">     450 </span>            : {
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 :   void *ret = (void *) -1;</span>
+<span class="lineNum">     452 </span>            : 
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :   if ((abfd-&gt;flags &amp; BFD_IN_MEMORY) != 0)</span>
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     455 </span>            : #ifdef HAVE_MMAP
+<span class="lineNum">     456 </span>            :   else
+<span class="lineNum">     457 </span>            :     {
+<span class="lineNum">     458 </span>            :       static uintptr_t pagesize_m1;
+<span class="lineNum">     459 </span>            :       FILE *f;
+<span class="lineNum">     460 </span>            :       file_ptr pg_offset;
+<span class="lineNum">     461 </span>            :       bfd_size_type pg_len;
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span><span class="lineNoCov">          0 :       f = bfd_cache_lookup (abfd, CACHE_NO_SEEK_ERROR);</span>
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :       if (f == NULL)</span>
+<span class="lineNum">     465 </span><span class="lineNoCov">          0 :         return ret;</span>
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :       if (pagesize_m1 == 0)</span>
+<span class="lineNum">     468 </span><span class="lineNoCov">          0 :         pagesize_m1 = getpagesize () - 1;</span>
+<span class="lineNum">     469 </span>            : 
+<span class="lineNum">     470 </span>            :       /* Handle archive members.  */
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :       if (abfd-&gt;my_archive != NULL</span>
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 :           &amp;&amp; !bfd_is_thin_archive (abfd-&gt;my_archive))</span>
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 :         offset += abfd-&gt;origin;</span>
+<span class="lineNum">     474 </span>            : 
+<span class="lineNum">     475 </span>            :       /* Align.  */
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :       pg_offset = offset &amp; ~pagesize_m1;</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :       pg_len = (len + (offset - pg_offset) + pagesize_m1) &amp; ~pagesize_m1;</span>
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span><span class="lineNoCov">          0 :       ret = mmap (addr, pg_len, prot, flags, fileno (f), pg_offset);</span>
+<span class="lineNum">     480 </span><span class="lineNoCov">          0 :       if (ret == (void *) -1)</span>
+<span class="lineNum">     481 </span><span class="lineNoCov">          0 :         bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     482 </span>            :       else
+<span class="lineNum">     483 </span>            :         {
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :           *map_addr = ret;</span>
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :           *map_len = pg_len;</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :           ret = (char *) ret + (offset &amp; pagesize_m1);</span>
+<span class="lineNum">     487 </span>            :         }
+<span class="lineNum">     488 </span>            :     }
+<span class="lineNum">     489 </span>            : #endif
+<span class="lineNum">     490 </span>            : 
+<span class="lineNum">     491 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     492 </span>            : }
+<span class="lineNum">     493 </span>            : 
+<span class="lineNum">     494 </span>            : static const struct bfd_iovec cache_iovec =
+<span class="lineNum">     495 </span>            : {
+<span class="lineNum">     496 </span>            :   &amp;cache_bread, &amp;cache_bwrite, &amp;cache_btell, &amp;cache_bseek,
+<span class="lineNum">     497 </span>            :   &amp;cache_bclose, &amp;cache_bflush, &amp;cache_bstat, &amp;cache_bmmap
+<span class="lineNum">     498 </span>            : };
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            : /*
+<span class="lineNum">     501 </span>            : INTERNAL_FUNCTION
+<span class="lineNum">     502 </span>            :         bfd_cache_init
+<span class="lineNum">     503 </span>            : 
+<span class="lineNum">     504 </span>            : SYNOPSIS
+<span class="lineNum">     505 </span>            :         bfd_boolean bfd_cache_init (bfd *abfd);
+<span class="lineNum">     506 </span>            : 
+<span class="lineNum">     507 </span>            : DESCRIPTION
+<span class="lineNum">     508 </span>            :         Add a newly opened BFD to the cache.
+<span class="lineNum">     509 </span>            : */
+<a name="510"><span class="lineNum">     510 </span>            : </a>
+<span class="lineNum">     511 </span>            : bfd_boolean
+<span class="lineNum">     512 </span><span class="lineCov">         66 : bfd_cache_init (bfd *abfd)</span>
+<span class="lineNum">     513 </span>            : {
+<span class="lineNum">     514 </span><span class="lineCov">         66 :   BFD_ASSERT (abfd-&gt;iostream != NULL);</span>
+<span class="lineNum">     515 </span><span class="lineCov">         66 :   if (open_files &gt;= bfd_cache_max_open ())</span>
+<span class="lineNum">     516 </span>            :     {
+<span class="lineNum">     517 </span><span class="lineNoCov">          0 :       if (! close_one ())</span>
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     519 </span>            :     }
+<span class="lineNum">     520 </span><span class="lineCov">         66 :   abfd-&gt;iovec = &amp;cache_iovec;</span>
+<span class="lineNum">     521 </span><span class="lineCov">         66 :   insert (abfd);</span>
+<span class="lineNum">     522 </span><span class="lineCov">         66 :   ++open_files;</span>
+<span class="lineNum">     523 </span><span class="lineCov">         66 :   return TRUE;</span>
+<span class="lineNum">     524 </span>            : }
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span>            : /*
+<span class="lineNum">     527 </span>            : INTERNAL_FUNCTION
+<span class="lineNum">     528 </span>            :         bfd_cache_close
+<span class="lineNum">     529 </span>            : 
+<span class="lineNum">     530 </span>            : SYNOPSIS
+<span class="lineNum">     531 </span>            :         bfd_boolean bfd_cache_close (bfd *abfd);
+<span class="lineNum">     532 </span>            : 
+<span class="lineNum">     533 </span>            : DESCRIPTION
+<span class="lineNum">     534 </span>            :         Remove the BFD @var{abfd} from the cache. If the attached file is open,
+<span class="lineNum">     535 </span>            :         then close it too.
+<span class="lineNum">     536 </span>            : 
+<span class="lineNum">     537 </span>            : RETURNS
+<span class="lineNum">     538 </span>            :         &lt;&lt;FALSE&gt;&gt; is returned if closing the file fails, &lt;&lt;TRUE&gt;&gt; is
+<span class="lineNum">     539 </span>            :         returned if all is well.
+<span class="lineNum">     540 </span>            : */
+<a name="541"><span class="lineNum">     541 </span>            : </a>
+<span class="lineNum">     542 </span>            : bfd_boolean
+<span class="lineNum">     543 </span><span class="lineCov">         10 : bfd_cache_close (bfd *abfd)</span>
+<span class="lineNum">     544 </span>            : {
+<span class="lineNum">     545 </span><span class="lineCov">         10 :   if (abfd-&gt;iovec != &amp;cache_iovec)</span>
+<span class="lineNum">     546 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     547 </span>            : 
+<span class="lineNum">     548 </span><span class="lineCov">         10 :   if (abfd-&gt;iostream == NULL)</span>
+<span class="lineNum">     549 </span>            :     /* Previously closed.  */
+<span class="lineNum">     550 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     551 </span>            : 
+<span class="lineNum">     552 </span><span class="lineCov">         10 :   return bfd_cache_delete (abfd);</span>
+<span class="lineNum">     553 </span>            : }
+<span class="lineNum">     554 </span>            : 
+<span class="lineNum">     555 </span>            : /*
+<span class="lineNum">     556 </span>            : FUNCTION
+<span class="lineNum">     557 </span>            :         bfd_cache_close_all
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span>            : SYNOPSIS
+<span class="lineNum">     560 </span>            :         bfd_boolean bfd_cache_close_all (void);
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span>            : DESCRIPTION
+<span class="lineNum">     563 </span>            :         Remove all BFDs from the cache. If the attached file is open,
+<span class="lineNum">     564 </span>            :         then close it too.
+<span class="lineNum">     565 </span>            : 
+<span class="lineNum">     566 </span>            : RETURNS
+<span class="lineNum">     567 </span>            :         &lt;&lt;FALSE&gt;&gt; is returned if closing one of the file fails, &lt;&lt;TRUE&gt;&gt; is
+<span class="lineNum">     568 </span>            :         returned if all is well.
+<span class="lineNum">     569 </span>            : */
+<a name="570"><span class="lineNum">     570 </span>            : </a>
+<span class="lineNum">     571 </span>            : bfd_boolean
+<span class="lineNum">     572 </span><span class="lineNoCov">          0 : bfd_cache_close_all (void)</span>
+<span class="lineNum">     573 </span>            : {
+<span class="lineNum">     574 </span><span class="lineNoCov">          0 :   bfd_boolean ret = TRUE;</span>
+<span class="lineNum">     575 </span>            : 
+<span class="lineNum">     576 </span><span class="lineNoCov">          0 :   while (bfd_last_cache != NULL)</span>
+<span class="lineNum">     577 </span><span class="lineNoCov">          0 :     ret &amp;= bfd_cache_close (bfd_last_cache);</span>
+<span class="lineNum">     578 </span>            : 
+<span class="lineNum">     579 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     580 </span>            : }
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            : /*
+<span class="lineNum">     583 </span>            : INTERNAL_FUNCTION
+<span class="lineNum">     584 </span>            :         bfd_open_file
+<span class="lineNum">     585 </span>            : 
+<span class="lineNum">     586 </span>            : SYNOPSIS
+<span class="lineNum">     587 </span>            :         FILE* bfd_open_file (bfd *abfd);
+<span class="lineNum">     588 </span>            : 
+<span class="lineNum">     589 </span>            : DESCRIPTION
+<span class="lineNum">     590 </span>            :         Call the OS to open a file for @var{abfd}.  Return the &lt;&lt;FILE *&gt;&gt;
+<span class="lineNum">     591 </span>            :         (possibly &lt;&lt;NULL&gt;&gt;) that results from this operation.  Set up the
+<span class="lineNum">     592 </span>            :         BFD so that future accesses know the file is open. If the &lt;&lt;FILE *&gt;&gt;
+<span class="lineNum">     593 </span>            :         returned is &lt;&lt;NULL&gt;&gt;, then it won't have been put in the
+<span class="lineNum">     594 </span>            :         cache, so it won't have to be removed from it.
+<span class="lineNum">     595 </span>            : */
+<a name="596"><span class="lineNum">     596 </span>            : </a>
+<span class="lineNum">     597 </span>            : FILE *
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 : bfd_open_file (bfd *abfd)</span>
+<span class="lineNum">     599 </span>            : {
+<span class="lineNum">     600 </span><span class="lineNoCov">          0 :   abfd-&gt;cacheable = TRUE;    /* Allow it to be closed later.  */</span>
+<span class="lineNum">     601 </span>            : 
+<span class="lineNum">     602 </span><span class="lineNoCov">          0 :   if (open_files &gt;= bfd_cache_max_open ())</span>
+<span class="lineNum">     603 </span>            :     {
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :       if (! close_one ())</span>
+<span class="lineNum">     605 </span><span class="lineNoCov">          0 :         return NULL;</span>
+<span class="lineNum">     606 </span>            :     }
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span><span class="lineNoCov">          0 :   switch (abfd-&gt;direction)</span>
+<span class="lineNum">     609 </span>            :     {
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :     case read_direction:</span>
+<span class="lineNum">     611 </span>            :     case no_direction:
+<span class="lineNum">     612 </span><span class="lineNoCov">          0 :       abfd-&gt;iostream = real_fopen (abfd-&gt;filename, FOPEN_RB);</span>
+<span class="lineNum">     613 </span><span class="lineNoCov">          0 :       break;</span>
+<span class="lineNum">     614 </span><span class="lineNoCov">          0 :     case both_direction:</span>
+<span class="lineNum">     615 </span>            :     case write_direction:
+<span class="lineNum">     616 </span><span class="lineNoCov">          0 :       if (abfd-&gt;opened_once)</span>
+<span class="lineNum">     617 </span>            :         {
+<span class="lineNum">     618 </span><span class="lineNoCov">          0 :           abfd-&gt;iostream = real_fopen (abfd-&gt;filename, FOPEN_RUB);</span>
+<span class="lineNum">     619 </span><span class="lineNoCov">          0 :           if (abfd-&gt;iostream == NULL)</span>
+<span class="lineNum">     620 </span><span class="lineNoCov">          0 :             abfd-&gt;iostream = real_fopen (abfd-&gt;filename, FOPEN_WUB);</span>
+<span class="lineNum">     621 </span>            :         }
+<span class="lineNum">     622 </span>            :       else
+<span class="lineNum">     623 </span><span class="lineNoCov">          0 :         {</span>
+<span class="lineNum">     624 </span>            :           /* Create the file.
+<span class="lineNum">     625 </span>            : 
+<span class="lineNum">     626 </span>            :              Some operating systems won't let us overwrite a running
+<span class="lineNum">     627 </span>            :              binary.  For them, we want to unlink the file first.
+<span class="lineNum">     628 </span>            : 
+<span class="lineNum">     629 </span>            :              However, gcc 2.95 will create temporary files using
+<span class="lineNum">     630 </span>            :              O_EXCL and tight permissions to prevent other users from
+<span class="lineNum">     631 </span>            :              substituting other .o files during the compilation.  gcc
+<span class="lineNum">     632 </span>            :              will then tell the assembler to use the newly created
+<span class="lineNum">     633 </span>            :              file as an output file.  If we unlink the file here, we
+<span class="lineNum">     634 </span>            :              open a brief window when another user could still
+<span class="lineNum">     635 </span>            :              substitute a file.
+<span class="lineNum">     636 </span>            : 
+<span class="lineNum">     637 </span>            :              So we unlink the output file if and only if it has
+<span class="lineNum">     638 </span>            :              non-zero size.  */
+<span class="lineNum">     639 </span>            : #ifndef __MSDOS__
+<span class="lineNum">     640 </span>            :           /* Don't do this for MSDOS: it doesn't care about overwriting
+<span class="lineNum">     641 </span>            :              a running binary, but if this file is already open by
+<span class="lineNum">     642 </span>            :              another BFD, we will be in deep trouble if we delete an
+<span class="lineNum">     643 </span>            :              open file.  In fact, objdump does just that if invoked with
+<span class="lineNum">     644 </span>            :              the --info option.  */
+<span class="lineNum">     645 </span>            :           struct stat s;
+<span class="lineNum">     646 </span>            : 
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :           if (stat (abfd-&gt;filename, &amp;s) == 0 &amp;&amp; s.st_size != 0)</span>
+<span class="lineNum">     648 </span><span class="lineNoCov">          0 :             unlink_if_ordinary (abfd-&gt;filename);</span>
+<span class="lineNum">     649 </span>            : #endif
+<span class="lineNum">     650 </span><span class="lineNoCov">          0 :           abfd-&gt;iostream = real_fopen (abfd-&gt;filename, FOPEN_WUB);</span>
+<span class="lineNum">     651 </span><span class="lineNoCov">          0 :           abfd-&gt;opened_once = TRUE;</span>
+<span class="lineNum">     652 </span>            :         }
+<span class="lineNum">     653 </span><span class="lineNoCov">          0 :       break;</span>
+<span class="lineNum">     654 </span>            :     }
+<span class="lineNum">     655 </span>            : 
+<span class="lineNum">     656 </span><span class="lineNoCov">          0 :   if (abfd-&gt;iostream == NULL)</span>
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :     bfd_set_error (bfd_error_system_call);</span>
+<span class="lineNum">     658 </span>            :   else
+<span class="lineNum">     659 </span>            :     {
+<span class="lineNum">     660 </span><span class="lineNoCov">          0 :       if (! bfd_cache_init (abfd))</span>
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 :         return NULL;</span>
+<span class="lineNum">     662 </span>            :     }
+<span class="lineNum">     663 </span>            : 
+<span class="lineNum">     664 </span><span class="lineNoCov">          0 :   return (FILE *) abfd-&gt;iostream;</span>
+<span class="lineNum">     665 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

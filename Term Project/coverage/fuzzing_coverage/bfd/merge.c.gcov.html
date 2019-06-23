@@ -1,0 +1,1008 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/merge.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - merge.c<span style="font-size: 80%;"> (source / <a href="merge.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">436</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">15</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* SEC_MERGE support.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2001-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Written by Jakub Jelinek &lt;jakub@redhat.com&gt;.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            : /* This file contains support for merging duplicate entities within sections,
+<span class="lineNum">      24 </span>            :    as used in ELF SHF_MERGE.  */
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      27 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      28 </span>            : #include &quot;elf-bfd.h&quot;
+<span class="lineNum">      29 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      30 </span>            : #include &quot;hashtab.h&quot;
+<span class="lineNum">      31 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : struct sec_merge_sec_info;
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : /* An entry in the section merge hash table.  */
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : struct sec_merge_hash_entry
+<span class="lineNum">      38 </span>            : {
+<span class="lineNum">      39 </span>            :   struct bfd_hash_entry root;
+<span class="lineNum">      40 </span>            :   /* Length of this entry.  This includes the zero terminator.  */
+<span class="lineNum">      41 </span>            :   unsigned int len;
+<span class="lineNum">      42 </span>            :   /* Start of this string needs to be aligned to
+<span class="lineNum">      43 </span>            :      alignment octets (not 1 &lt;&lt; align).  */
+<span class="lineNum">      44 </span>            :   unsigned int alignment;
+<span class="lineNum">      45 </span>            :   union
+<span class="lineNum">      46 </span>            :   {
+<span class="lineNum">      47 </span>            :     /* Index within the merged section.  */
+<span class="lineNum">      48 </span>            :     bfd_size_type index;
+<span class="lineNum">      49 </span>            :     /* Entry this is a suffix of (if alignment is 0).  */
+<span class="lineNum">      50 </span>            :     struct sec_merge_hash_entry *suffix;
+<span class="lineNum">      51 </span>            :   } u;
+<span class="lineNum">      52 </span>            :   /* Which section is it in.  */
+<span class="lineNum">      53 </span>            :   struct sec_merge_sec_info *secinfo;
+<span class="lineNum">      54 </span>            :   /* Next entity in the hash table.  */
+<span class="lineNum">      55 </span>            :   struct sec_merge_hash_entry *next;
+<span class="lineNum">      56 </span>            : };
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            : /* The section merge hash table.  */
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : struct sec_merge_hash
+<span class="lineNum">      61 </span>            : {
+<span class="lineNum">      62 </span>            :   struct bfd_hash_table table;
+<span class="lineNum">      63 </span>            :   /* Next available index.  */
+<span class="lineNum">      64 </span>            :   bfd_size_type size;
+<span class="lineNum">      65 </span>            :   /* First entity in the SEC_MERGE sections of this type.  */
+<span class="lineNum">      66 </span>            :   struct sec_merge_hash_entry *first;
+<span class="lineNum">      67 </span>            :   /* Last entity in the SEC_MERGE sections of this type.  */
+<span class="lineNum">      68 </span>            :   struct sec_merge_hash_entry *last;
+<span class="lineNum">      69 </span>            :   /* Entity size.  */
+<span class="lineNum">      70 </span>            :   unsigned int entsize;
+<span class="lineNum">      71 </span>            :   /* Are entries fixed size or zero terminated strings?  */
+<span class="lineNum">      72 </span>            :   bfd_boolean strings;
+<span class="lineNum">      73 </span>            : };
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            : struct sec_merge_info
+<span class="lineNum">      76 </span>            : {
+<span class="lineNum">      77 </span>            :   /* Chain of sec_merge_infos.  */
+<span class="lineNum">      78 </span>            :   struct sec_merge_info *next;
+<span class="lineNum">      79 </span>            :   /* Chain of sec_merge_sec_infos.  */
+<span class="lineNum">      80 </span>            :   struct sec_merge_sec_info *chain;
+<span class="lineNum">      81 </span>            :   /* A hash table used to hold section content.  */
+<span class="lineNum">      82 </span>            :   struct sec_merge_hash *htab;
+<span class="lineNum">      83 </span>            : };
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : struct sec_merge_sec_info
+<span class="lineNum">      86 </span>            : {
+<span class="lineNum">      87 </span>            :   /* Chain of sec_merge_sec_infos.  */
+<span class="lineNum">      88 </span>            :   struct sec_merge_sec_info *next;
+<span class="lineNum">      89 </span>            :   /* The corresponding section.  */
+<span class="lineNum">      90 </span>            :   asection *sec;
+<span class="lineNum">      91 </span>            :   /* Pointer to merge_info pointing to us.  */
+<span class="lineNum">      92 </span>            :   void **psecinfo;
+<span class="lineNum">      93 </span>            :   /* A hash table used to hold section content.  */
+<span class="lineNum">      94 </span>            :   struct sec_merge_hash *htab;
+<span class="lineNum">      95 </span>            :   /* First string in this section.  */
+<span class="lineNum">      96 </span>            :   struct sec_merge_hash_entry *first_str;
+<span class="lineNum">      97 </span>            :   /* Original section content.  */
+<span class="lineNum">      98 </span>            :   unsigned char contents[1];
+<span class="lineNum">      99 </span>            : };
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : /* Routine to create an entry in a section merge hashtab.  */
+<a name="103"><span class="lineNum">     103 </span>            : </a>
+<span class="lineNum">     104 </span>            : static struct bfd_hash_entry *
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 : sec_merge_hash_newfunc (struct bfd_hash_entry *entry,</span>
+<span class="lineNum">     106 </span>            :                         struct bfd_hash_table *table, const char *string)
+<span class="lineNum">     107 </span>            : {
+<span class="lineNum">     108 </span>            :   /* Allocate the structure if it has not already been allocated by a
+<span class="lineNum">     109 </span>            :      subclass.  */
+<span class="lineNum">     110 </span><span class="lineNoCov">          0 :   if (entry == NULL)</span>
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :     entry = (struct bfd_hash_entry *)</span>
+<span class="lineNum">     112 </span>            :         bfd_hash_allocate (table, sizeof (struct sec_merge_hash_entry));
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :   if (entry == NULL)</span>
+<span class="lineNum">     114 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            :   /* Call the allocation method of the superclass.  */
+<span class="lineNum">     117 </span><span class="lineNoCov">          0 :   entry = bfd_hash_newfunc (entry, table, string);</span>
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :   if (entry != NULL)</span>
+<span class="lineNum">     120 </span>            :     {
+<span class="lineNum">     121 </span>            :       /* Initialize the local fields.  */
+<span class="lineNum">     122 </span><span class="lineNoCov">          0 :       struct sec_merge_hash_entry *ret = (struct sec_merge_hash_entry *) entry;</span>
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span><span class="lineNoCov">          0 :       ret-&gt;u.suffix = NULL;</span>
+<span class="lineNum">     125 </span><span class="lineNoCov">          0 :       ret-&gt;alignment = 0;</span>
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :       ret-&gt;secinfo = NULL;</span>
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :       ret-&gt;next = NULL;</span>
+<span class="lineNum">     128 </span>            :     }
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :   return entry;</span>
+<span class="lineNum">     131 </span>            : }
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            : /* Look up an entry in a section merge hash table.  */
+<a name="134"><span class="lineNum">     134 </span>            : </a>
+<span class="lineNum">     135 </span>            : static struct sec_merge_hash_entry *
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 : sec_merge_hash_lookup (struct sec_merge_hash *table, const char *string,</span>
+<span class="lineNum">     137 </span>            :                        unsigned int alignment, bfd_boolean create)
+<span class="lineNum">     138 </span>            : {
+<span class="lineNum">     139 </span>            :   const unsigned char *s;
+<span class="lineNum">     140 </span>            :   unsigned long hash;
+<span class="lineNum">     141 </span>            :   unsigned int c;
+<span class="lineNum">     142 </span>            :   struct sec_merge_hash_entry *hashp;
+<span class="lineNum">     143 </span>            :   unsigned int len, i;
+<span class="lineNum">     144 </span>            :   unsigned int _index;
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :   hash = 0;</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :   len = 0;</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :   s = (const unsigned char *) string;</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :   if (table-&gt;strings)</span>
+<span class="lineNum">     150 </span>            :     {
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :       if (table-&gt;entsize == 1)</span>
+<span class="lineNum">     152 </span>            :         {
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :           while ((c = *s++) != '\0')</span>
+<span class="lineNum">     154 </span>            :             {
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :               hash += c + (c &lt;&lt; 17);</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :               hash ^= hash &gt;&gt; 2;</span>
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :               ++len;</span>
+<span class="lineNum">     158 </span>            :             }
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 :           hash += len + (len &lt;&lt; 17);</span>
+<span class="lineNum">     160 </span>            :         }
+<span class="lineNum">     161 </span>            :       else
+<span class="lineNum">     162 </span>            :         {
+<span class="lineNum">     163 </span>            :           for (;;)
+<span class="lineNum">     164 </span>            :             {
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :               for (i = 0; i &lt; table-&gt;entsize; ++i)</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :                 if (s[i] != '\0')</span>
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :                   break;</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :               if (i == table-&gt;entsize)</span>
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :               for (i = 0; i &lt; table-&gt;entsize; ++i)</span>
+<span class="lineNum">     171 </span>            :                 {
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :                   c = *s++;</span>
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :                   hash += c + (c &lt;&lt; 17);</span>
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :                   hash ^= hash &gt;&gt; 2;</span>
+<span class="lineNum">     175 </span>            :                 }
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :               ++len;</span>
+<span class="lineNum">     177 </span>            :             }
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :           hash += len + (len &lt;&lt; 17);</span>
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :           len *= table-&gt;entsize;</span>
+<span class="lineNum">     180 </span>            :         }
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :       hash ^= hash &gt;&gt; 2;</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :       len += table-&gt;entsize;</span>
+<span class="lineNum">     183 </span>            :     }
+<span class="lineNum">     184 </span>            :   else
+<span class="lineNum">     185 </span>            :     {
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :       for (i = 0; i &lt; table-&gt;entsize; ++i)</span>
+<span class="lineNum">     187 </span>            :         {
+<span class="lineNum">     188 </span><span class="lineNoCov">          0 :           c = *s++;</span>
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :           hash += c + (c &lt;&lt; 17);</span>
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :           hash ^= hash &gt;&gt; 2;</span>
+<span class="lineNum">     191 </span>            :         }
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :       len = table-&gt;entsize;</span>
+<span class="lineNum">     193 </span>            :     }
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :   _index = hash % table-&gt;table.size;</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :   for (hashp = (struct sec_merge_hash_entry *) table-&gt;table.table[_index];</span>
+<span class="lineNum">     197 </span>            :        hashp != NULL;
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :        hashp = (struct sec_merge_hash_entry *) hashp-&gt;root.next)</span>
+<span class="lineNum">     199 </span>            :     {
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :       if (hashp-&gt;root.hash == hash</span>
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :           &amp;&amp; len == hashp-&gt;len</span>
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :           &amp;&amp; memcmp (hashp-&gt;root.string, string, len) == 0)</span>
+<span class="lineNum">     203 </span>            :         {
+<span class="lineNum">     204 </span>            :           /* If the string we found does not have at least the required
+<span class="lineNum">     205 </span>            :              alignment, we need to insert another copy.  */
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :           if (hashp-&gt;alignment &lt; alignment)</span>
+<span class="lineNum">     207 </span>            :             {
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 :               if (create)</span>
+<span class="lineNum">     209 </span>            :                 {
+<span class="lineNum">     210 </span>            :                   /*  Mark the less aligned copy as deleted.  */
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :                   hashp-&gt;len = 0;</span>
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :                   hashp-&gt;alignment = 0;</span>
+<span class="lineNum">     213 </span>            :                 }
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     215 </span>            :             }
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :           return hashp;</span>
+<span class="lineNum">     217 </span>            :         }
+<span class="lineNum">     218 </span>            :     }
+<span class="lineNum">     219 </span>            : 
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :   if (! create)</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 :   hashp = ((struct sec_merge_hash_entry *)</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :            bfd_hash_insert (&amp;table-&gt;table, string, hash));</span>
+<span class="lineNum">     225 </span><span class="lineNoCov">          0 :   if (hashp == NULL)</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :   hashp-&gt;len = len;</span>
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 :   hashp-&gt;alignment = alignment;</span>
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :   return hashp;</span>
+<span class="lineNum">     230 </span>            : }
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span>            : /* Create a new hash table.  */
+<a name="233"><span class="lineNum">     233 </span>            : </a>
+<span class="lineNum">     234 </span>            : static struct sec_merge_hash *
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 : sec_merge_init (unsigned int entsize, bfd_boolean strings)</span>
+<span class="lineNum">     236 </span>            : {
+<span class="lineNum">     237 </span>            :   struct sec_merge_hash *table;
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :   table = (struct sec_merge_hash *) bfd_malloc (sizeof (struct sec_merge_hash));</span>
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :   if (table == NULL)</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   if (! bfd_hash_table_init_n (&amp;table-&gt;table, sec_merge_hash_newfunc,</span>
+<span class="lineNum">     244 </span>            :                                sizeof (struct sec_merge_hash_entry), 16699))
+<span class="lineNum">     245 </span>            :     {
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :       free (table);</span>
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     248 </span>            :     }
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :   table-&gt;size = 0;</span>
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :   table-&gt;first = NULL;</span>
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :   table-&gt;last = NULL;</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :   table-&gt;entsize = entsize;</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :   table-&gt;strings = strings;</span>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :   return table;</span>
+<span class="lineNum">     257 </span>            : }
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            : /* Get the index of an entity in a hash table, adding it if it is not
+<span class="lineNum">     260 </span>            :    already present.  */
+<a name="261"><span class="lineNum">     261 </span>            : </a>
+<span class="lineNum">     262 </span>            : static struct sec_merge_hash_entry *
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 : sec_merge_add (struct sec_merge_hash *tab, const char *str,</span>
+<span class="lineNum">     264 </span>            :                unsigned int alignment, struct sec_merge_sec_info *secinfo)
+<span class="lineNum">     265 </span>            : {
+<span class="lineNum">     266 </span>            :   struct sec_merge_hash_entry *entry;
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :   entry = sec_merge_hash_lookup (tab, str, alignment, TRUE);</span>
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :   if (entry == NULL)</span>
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :   if (entry-&gt;secinfo == NULL)</span>
+<span class="lineNum">     273 </span>            :     {
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :       tab-&gt;size++;</span>
+<span class="lineNum">     275 </span><span class="lineNoCov">          0 :       entry-&gt;secinfo = secinfo;</span>
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 :       if (tab-&gt;first == NULL)</span>
+<span class="lineNum">     277 </span><span class="lineNoCov">          0 :         tab-&gt;first = entry;</span>
+<span class="lineNum">     278 </span>            :       else
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :         tab-&gt;last-&gt;next = entry;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :       tab-&gt;last = entry;</span>
+<span class="lineNum">     281 </span>            :     }
+<span class="lineNum">     282 </span>            : 
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :   return entry;</span>
+<span class="lineNum">     284 </span>            : }
+<a name="285"><span class="lineNum">     285 </span>            : </a>
+<span class="lineNum">     286 </span>            : static bfd_boolean
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 : sec_merge_emit (bfd *abfd, struct sec_merge_hash_entry *entry,</span>
+<span class="lineNum">     288 </span>            :                 unsigned char *contents, file_ptr offset)
+<span class="lineNum">     289 </span>            : {
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :   struct sec_merge_sec_info *secinfo = entry-&gt;secinfo;</span>
+<span class="lineNum">     291 </span><span class="lineNoCov">          0 :   asection *sec = secinfo-&gt;sec;</span>
+<span class="lineNum">     292 </span><span class="lineNoCov">          0 :   char *pad = NULL;</span>
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :   bfd_size_type off = 0;</span>
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 :   int alignment_power = sec-&gt;output_section-&gt;alignment_power;</span>
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span><span class="lineNoCov">          0 :   if (alignment_power)</span>
+<span class="lineNum">     297 </span>            :     {
+<span class="lineNum">     298 </span><span class="lineNoCov">          0 :       pad = (char *) bfd_zmalloc ((bfd_size_type) 1 &lt;&lt; alignment_power);</span>
+<span class="lineNum">     299 </span><span class="lineNoCov">          0 :       if (pad == NULL)</span>
+<span class="lineNum">     300 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     301 </span>            :     }
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span><span class="lineNoCov">          0 :   for (; entry != NULL &amp;&amp; entry-&gt;secinfo == secinfo; entry = entry-&gt;next)</span>
+<span class="lineNum">     304 </span>            :     {
+<span class="lineNum">     305 </span>            :       const char *str;
+<span class="lineNum">     306 </span>            :       bfd_size_type len;
+<span class="lineNum">     307 </span>            : 
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :       len = -off &amp; (entry-&gt;alignment - 1);</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :       if (len != 0)</span>
+<span class="lineNum">     310 </span>            :         {
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :           if (contents)</span>
+<span class="lineNum">     312 </span>            :             {
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :               memcpy (contents + offset, pad, len);</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :               offset += len;</span>
+<span class="lineNum">     315 </span>            :             }
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :           else if (bfd_bwrite (pad, len, abfd) != len)</span>
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :             goto err;</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :           off += len;</span>
+<span class="lineNum">     319 </span>            :         }
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :       str = entry-&gt;root.string;</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :       len = entry-&gt;len;</span>
+<span class="lineNum">     323 </span>            : 
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :       if (contents)</span>
+<span class="lineNum">     325 </span>            :         {
+<span class="lineNum">     326 </span><span class="lineNoCov">          0 :           memcpy (contents + offset, str, len);</span>
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :           offset += len;</span>
+<span class="lineNum">     328 </span>            :         }
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :       else if (bfd_bwrite (str, len, abfd) != len)</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :         goto err;</span>
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :       off += len;</span>
+<span class="lineNum">     333 </span>            :     }
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span>            :   /* Trailing alignment needed?  */
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :   off = sec-&gt;size - off;</span>
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :   if (off != 0)</span>
+<span class="lineNum">     338 </span>            :     {
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :       if (contents)</span>
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :         memcpy (contents + offset, pad, off);</span>
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :       else if (bfd_bwrite (pad, off, abfd) != off)</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :         goto err;</span>
+<span class="lineNum">     343 </span>            :     }
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :   if (pad != NULL)</span>
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :     free (pad);</span>
+<span class="lineNum">     347 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     348 </span>            : 
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :  err:</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :   if (pad != NULL)</span>
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :     free (pad);</span>
+<span class="lineNum">     352 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">     353 </span>            : }
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span>            : /* Register a SEC_MERGE section as a candidate for merging.
+<span class="lineNum">     356 </span>            :    This function is called for all non-dynamic SEC_MERGE input sections.  */
+<a name="357"><span class="lineNum">     357 </span>            : </a>
+<span class="lineNum">     358 </span>            : bfd_boolean
+<span class="lineNum">     359 </span><span class="lineNoCov">          0 : _bfd_add_merge_section (bfd *abfd, void **psinfo, asection *sec,</span>
+<span class="lineNum">     360 </span>            :                         void **psecinfo)
+<span class="lineNum">     361 </span>            : {
+<span class="lineNum">     362 </span>            :   struct sec_merge_info *sinfo;
+<span class="lineNum">     363 </span>            :   struct sec_merge_sec_info *secinfo;
+<span class="lineNum">     364 </span>            :   unsigned int align;
+<span class="lineNum">     365 </span>            :   bfd_size_type amt;
+<span class="lineNum">     366 </span>            :   bfd_byte *contents;
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span><span class="lineNoCov">          0 :   if ((abfd-&gt;flags &amp; DYNAMIC) != 0</span>
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :       || (sec-&gt;flags &amp; SEC_MERGE) == 0)</span>
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 :   if (sec-&gt;size == 0</span>
+<span class="lineNum">     373 </span><span class="lineNoCov">          0 :       || (sec-&gt;flags &amp; SEC_EXCLUDE) != 0</span>
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 :       || sec-&gt;entsize == 0)</span>
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     376 </span>            : 
+<span class="lineNum">     377 </span><span class="lineNoCov">          0 :   if ((sec-&gt;flags &amp; SEC_RELOC) != 0)</span>
+<span class="lineNum">     378 </span>            :     {
+<span class="lineNum">     379 </span>            :       /* We aren't prepared to handle relocations in merged sections.  */
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     381 </span>            :     }
+<span class="lineNum">     382 </span>            : 
+<span class="lineNum">     383 </span><span class="lineNoCov">          0 :   align = sec-&gt;alignment_power;</span>
+<span class="lineNum">     384 </span><span class="lineNoCov">          0 :   if ((sec-&gt;entsize &lt; (unsigned) 1 &lt;&lt; align</span>
+<span class="lineNum">     385 </span><span class="lineNoCov">          0 :        &amp;&amp; ((sec-&gt;entsize &amp; (sec-&gt;entsize - 1))</span>
+<span class="lineNum">     386 </span><span class="lineNoCov">          0 :            || !(sec-&gt;flags &amp; SEC_STRINGS)))</span>
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :       || (sec-&gt;entsize &gt; (unsigned) 1 &lt;&lt; align</span>
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :           &amp;&amp; (sec-&gt;entsize &amp; (((unsigned) 1 &lt;&lt; align) - 1))))</span>
+<span class="lineNum">     389 </span>            :     {
+<span class="lineNum">     390 </span>            :       /* Sanity check.  If string character size is smaller than
+<span class="lineNum">     391 </span>            :          alignment, then we require character size to be a power
+<span class="lineNum">     392 </span>            :          of 2, otherwise character size must be integer multiple
+<span class="lineNum">     393 </span>            :          of alignment.  For non-string constants, alignment must
+<span class="lineNum">     394 </span>            :          be smaller than or equal to entity size and entity size
+<span class="lineNum">     395 </span>            :          must be integer multiple of alignment.  */
+<span class="lineNum">     396 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     397 </span>            :     }
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span><span class="lineNoCov">          0 :   for (sinfo = (struct sec_merge_info *) *psinfo; sinfo; sinfo = sinfo-&gt;next)</span>
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :     if ((secinfo = sinfo-&gt;chain)</span>
+<span class="lineNum">     401 </span><span class="lineNoCov">          0 :         &amp;&amp; ! ((secinfo-&gt;sec-&gt;flags ^ sec-&gt;flags) &amp; (SEC_MERGE | SEC_STRINGS))</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :         &amp;&amp; secinfo-&gt;sec-&gt;entsize == sec-&gt;entsize</span>
+<span class="lineNum">     403 </span><span class="lineNoCov">          0 :         &amp;&amp; secinfo-&gt;sec-&gt;alignment_power == sec-&gt;alignment_power</span>
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :         &amp;&amp; secinfo-&gt;sec-&gt;output_section == sec-&gt;output_section)</span>
+<span class="lineNum">     405 </span><span class="lineNoCov">          0 :       break;</span>
+<span class="lineNum">     406 </span>            : 
+<span class="lineNum">     407 </span><span class="lineNoCov">          0 :   if (sinfo == NULL)</span>
+<span class="lineNum">     408 </span>            :     {
+<span class="lineNum">     409 </span>            :       /* Initialize the information we need to keep track of.  */
+<span class="lineNum">     410 </span><span class="lineNoCov">          0 :       sinfo = (struct sec_merge_info *)</span>
+<span class="lineNum">     411 </span>            :           bfd_alloc (abfd, sizeof (struct sec_merge_info));
+<span class="lineNum">     412 </span><span class="lineNoCov">          0 :       if (sinfo == NULL)</span>
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 :         goto error_return;</span>
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 :       sinfo-&gt;next = (struct sec_merge_info *) *psinfo;</span>
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :       sinfo-&gt;chain = NULL;</span>
+<span class="lineNum">     416 </span><span class="lineNoCov">          0 :       *psinfo = sinfo;</span>
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :       sinfo-&gt;htab = sec_merge_init (sec-&gt;entsize, (sec-&gt;flags &amp; SEC_STRINGS));</span>
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 :       if (sinfo-&gt;htab == NULL)</span>
+<span class="lineNum">     419 </span><span class="lineNoCov">          0 :         goto error_return;</span>
+<span class="lineNum">     420 </span>            :     }
+<span class="lineNum">     421 </span>            : 
+<span class="lineNum">     422 </span>            :   /* Read the section from abfd.  */
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :   amt = sizeof (struct sec_merge_sec_info) - 1 + sec-&gt;size;</span>
+<span class="lineNum">     425 </span><span class="lineNoCov">          0 :   if (sec-&gt;flags &amp; SEC_STRINGS)</span>
+<span class="lineNum">     426 </span>            :     /* Some versions of gcc may emit a string without a zero terminator.
+<span class="lineNum">     427 </span>            :        See http://gcc.gnu.org/ml/gcc-patches/2006-06/msg01004.html
+<span class="lineNum">     428 </span>            :        Allocate space for an extra zero.  */
+<span class="lineNum">     429 </span><span class="lineNoCov">          0 :     amt += sec-&gt;entsize;</span>
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 :   *psecinfo = bfd_alloc (abfd, amt);</span>
+<span class="lineNum">     431 </span><span class="lineNoCov">          0 :   if (*psecinfo == NULL)</span>
+<span class="lineNum">     432 </span><span class="lineNoCov">          0 :     goto error_return;</span>
+<span class="lineNum">     433 </span>            : 
+<span class="lineNum">     434 </span><span class="lineNoCov">          0 :   secinfo = (struct sec_merge_sec_info *) *psecinfo;</span>
+<span class="lineNum">     435 </span><span class="lineNoCov">          0 :   if (sinfo-&gt;chain)</span>
+<span class="lineNum">     436 </span>            :     {
+<span class="lineNum">     437 </span><span class="lineNoCov">          0 :       secinfo-&gt;next = sinfo-&gt;chain-&gt;next;</span>
+<span class="lineNum">     438 </span><span class="lineNoCov">          0 :       sinfo-&gt;chain-&gt;next = secinfo;</span>
+<span class="lineNum">     439 </span>            :     }
+<span class="lineNum">     440 </span>            :   else
+<span class="lineNum">     441 </span><span class="lineNoCov">          0 :     secinfo-&gt;next = secinfo;</span>
+<span class="lineNum">     442 </span><span class="lineNoCov">          0 :   sinfo-&gt;chain = secinfo;</span>
+<span class="lineNum">     443 </span><span class="lineNoCov">          0 :   secinfo-&gt;sec = sec;</span>
+<span class="lineNum">     444 </span><span class="lineNoCov">          0 :   secinfo-&gt;psecinfo = psecinfo;</span>
+<span class="lineNum">     445 </span><span class="lineNoCov">          0 :   secinfo-&gt;htab = sinfo-&gt;htab;</span>
+<span class="lineNum">     446 </span><span class="lineNoCov">          0 :   secinfo-&gt;first_str = NULL;</span>
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 :   sec-&gt;rawsize = sec-&gt;size;</span>
+<span class="lineNum">     449 </span><span class="lineNoCov">          0 :   if (sec-&gt;flags &amp; SEC_STRINGS)</span>
+<span class="lineNum">     450 </span><span class="lineNoCov">          0 :     memset (secinfo-&gt;contents + sec-&gt;size, 0, sec-&gt;entsize);</span>
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 :   contents = secinfo-&gt;contents;</span>
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :   if (! bfd_get_full_section_contents (sec-&gt;owner, sec, &amp;contents))</span>
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :     goto error_return;</span>
+<span class="lineNum">     454 </span>            : 
+<span class="lineNum">     455 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     456 </span>            : 
+<span class="lineNum">     457 </span><span class="lineNoCov">          0 :  error_return:</span>
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :   *psecinfo = NULL;</span>
+<span class="lineNum">     459 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">     460 </span>            : }
+<span class="lineNum">     461 </span>            : 
+<a name="462"><span class="lineNum">     462 </span>            : /* Record one section into the hash table.  */</a>
+<span class="lineNum">     463 </span>            : static bfd_boolean
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 : record_section (struct sec_merge_info *sinfo,</span>
+<span class="lineNum">     465 </span>            :                 struct sec_merge_sec_info *secinfo)
+<span class="lineNum">     466 </span>            : {
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :   asection *sec = secinfo-&gt;sec;</span>
+<span class="lineNum">     468 </span>            :   struct sec_merge_hash_entry *entry;
+<span class="lineNum">     469 </span>            :   bfd_boolean nul;
+<span class="lineNum">     470 </span>            :   unsigned char *p, *end;
+<span class="lineNum">     471 </span>            :   bfd_vma mask, eltalign;
+<span class="lineNum">     472 </span>            :   unsigned int align, i;
+<span class="lineNum">     473 </span>            : 
+<span class="lineNum">     474 </span><span class="lineNoCov">          0 :   align = sec-&gt;alignment_power;</span>
+<span class="lineNum">     475 </span><span class="lineNoCov">          0 :   end = secinfo-&gt;contents + sec-&gt;size;</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :   nul = FALSE;</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :   mask = ((bfd_vma) 1 &lt;&lt; align) - 1;</span>
+<span class="lineNum">     478 </span><span class="lineNoCov">          0 :   if (sec-&gt;flags &amp; SEC_STRINGS)</span>
+<span class="lineNum">     479 </span>            :     {
+<span class="lineNum">     480 </span><span class="lineNoCov">          0 :       for (p = secinfo-&gt;contents; p &lt; end; )</span>
+<span class="lineNum">     481 </span>            :         {
+<span class="lineNum">     482 </span><span class="lineNoCov">          0 :           eltalign = p - secinfo-&gt;contents;</span>
+<span class="lineNum">     483 </span><span class="lineNoCov">          0 :           eltalign = ((eltalign ^ (eltalign - 1)) + 1) &gt;&gt; 1;</span>
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :           if (!eltalign || eltalign &gt; mask)</span>
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :             eltalign = mask + 1;</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :           entry = sec_merge_add (sinfo-&gt;htab, (char *) p, (unsigned) eltalign,</span>
+<span class="lineNum">     487 </span>            :                                  secinfo);
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :           if (! entry)</span>
+<span class="lineNum">     489 </span><span class="lineNoCov">          0 :             goto error_return;</span>
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 :           p += entry-&gt;len;</span>
+<span class="lineNum">     491 </span><span class="lineNoCov">          0 :           if (sec-&gt;entsize == 1)</span>
+<span class="lineNum">     492 </span>            :             {
+<span class="lineNum">     493 </span><span class="lineNoCov">          0 :               while (p &lt; end &amp;&amp; *p == 0)</span>
+<span class="lineNum">     494 </span>            :                 {
+<span class="lineNum">     495 </span><span class="lineNoCov">          0 :                   if (!nul &amp;&amp; !((p - secinfo-&gt;contents) &amp; mask))</span>
+<span class="lineNum">     496 </span>            :                     {
+<span class="lineNum">     497 </span><span class="lineNoCov">          0 :                       nul = TRUE;</span>
+<span class="lineNum">     498 </span><span class="lineNoCov">          0 :                       entry = sec_merge_add (sinfo-&gt;htab, &quot;&quot;,</span>
+<span class="lineNum">     499 </span><span class="lineNoCov">          0 :                                              (unsigned) mask + 1, secinfo);</span>
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 :                       if (! entry)</span>
+<span class="lineNum">     501 </span><span class="lineNoCov">          0 :                         goto error_return;</span>
+<span class="lineNum">     502 </span>            :                     }
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :                   p++;</span>
+<span class="lineNum">     504 </span>            :                 }
+<span class="lineNum">     505 </span>            :             }
+<span class="lineNum">     506 </span>            :           else
+<span class="lineNum">     507 </span>            :             {
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :               while (p &lt; end)</span>
+<span class="lineNum">     509 </span>            :                 {
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :                   for (i = 0; i &lt; sec-&gt;entsize; i++)</span>
+<span class="lineNum">     511 </span><span class="lineNoCov">          0 :                     if (p[i] != '\0')</span>
+<span class="lineNum">     512 </span><span class="lineNoCov">          0 :                       break;</span>
+<span class="lineNum">     513 </span><span class="lineNoCov">          0 :                   if (i != sec-&gt;entsize)</span>
+<span class="lineNum">     514 </span><span class="lineNoCov">          0 :                     break;</span>
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :                   if (!nul &amp;&amp; !((p - secinfo-&gt;contents) &amp; mask))</span>
+<span class="lineNum">     516 </span>            :                     {
+<span class="lineNum">     517 </span><span class="lineNoCov">          0 :                       nul = TRUE;</span>
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 :                       entry = sec_merge_add (sinfo-&gt;htab, (char *) p,</span>
+<span class="lineNum">     519 </span><span class="lineNoCov">          0 :                                              (unsigned) mask + 1, secinfo);</span>
+<span class="lineNum">     520 </span><span class="lineNoCov">          0 :                       if (! entry)</span>
+<span class="lineNum">     521 </span><span class="lineNoCov">          0 :                         goto error_return;</span>
+<span class="lineNum">     522 </span>            :                     }
+<span class="lineNum">     523 </span><span class="lineNoCov">          0 :                   p += sec-&gt;entsize;</span>
+<span class="lineNum">     524 </span>            :                 }
+<span class="lineNum">     525 </span>            :             }
+<span class="lineNum">     526 </span>            :         }
+<span class="lineNum">     527 </span>            :     }
+<span class="lineNum">     528 </span>            :   else
+<span class="lineNum">     529 </span>            :     {
+<span class="lineNum">     530 </span><span class="lineNoCov">          0 :       for (p = secinfo-&gt;contents; p &lt; end; p += sec-&gt;entsize)</span>
+<span class="lineNum">     531 </span>            :         {
+<span class="lineNum">     532 </span><span class="lineNoCov">          0 :           entry = sec_merge_add (sinfo-&gt;htab, (char *) p, 1, secinfo);</span>
+<span class="lineNum">     533 </span><span class="lineNoCov">          0 :           if (! entry)</span>
+<span class="lineNum">     534 </span><span class="lineNoCov">          0 :             goto error_return;</span>
+<span class="lineNum">     535 </span>            :         }
+<span class="lineNum">     536 </span>            :     }
+<span class="lineNum">     537 </span>            : 
+<span class="lineNum">     538 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     539 </span>            : 
+<span class="lineNum">     540 </span><span class="lineNoCov">          0 : error_return:</span>
+<span class="lineNum">     541 </span><span class="lineNoCov">          0 :   for (secinfo = sinfo-&gt;chain; secinfo; secinfo = secinfo-&gt;next)</span>
+<span class="lineNum">     542 </span><span class="lineNoCov">          0 :     *secinfo-&gt;psecinfo = NULL;</span>
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">     544 </span>            : }
+<a name="545"><span class="lineNum">     545 </span>            : </a>
+<span class="lineNum">     546 </span>            : static int
+<span class="lineNum">     547 </span><span class="lineNoCov">          0 : strrevcmp (const void *a, const void *b)</span>
+<span class="lineNum">     548 </span>            : {
+<span class="lineNum">     549 </span><span class="lineNoCov">          0 :   struct sec_merge_hash_entry *A = *(struct sec_merge_hash_entry **) a;</span>
+<span class="lineNum">     550 </span><span class="lineNoCov">          0 :   struct sec_merge_hash_entry *B = *(struct sec_merge_hash_entry **) b;</span>
+<span class="lineNum">     551 </span><span class="lineNoCov">          0 :   unsigned int lenA = A-&gt;len;</span>
+<span class="lineNum">     552 </span><span class="lineNoCov">          0 :   unsigned int lenB = B-&gt;len;</span>
+<span class="lineNum">     553 </span><span class="lineNoCov">          0 :   const unsigned char *s = (const unsigned char *) A-&gt;root.string + lenA - 1;</span>
+<span class="lineNum">     554 </span><span class="lineNoCov">          0 :   const unsigned char *t = (const unsigned char *) B-&gt;root.string + lenB - 1;</span>
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :   int l = lenA &lt; lenB ? lenA : lenB;</span>
+<span class="lineNum">     556 </span>            : 
+<span class="lineNum">     557 </span><span class="lineNoCov">          0 :   while (l)</span>
+<span class="lineNum">     558 </span>            :     {
+<span class="lineNum">     559 </span><span class="lineNoCov">          0 :       if (*s != *t)</span>
+<span class="lineNum">     560 </span><span class="lineNoCov">          0 :         return (int) *s - (int) *t;</span>
+<span class="lineNum">     561 </span><span class="lineNoCov">          0 :       s--;</span>
+<span class="lineNum">     562 </span><span class="lineNoCov">          0 :       t--;</span>
+<span class="lineNum">     563 </span><span class="lineNoCov">          0 :       l--;</span>
+<span class="lineNum">     564 </span>            :     }
+<span class="lineNum">     565 </span><span class="lineNoCov">          0 :   return lenA - lenB;</span>
+<span class="lineNum">     566 </span>            : }
+<span class="lineNum">     567 </span>            : 
+<span class="lineNum">     568 </span>            : /* Like strrevcmp, but for the case where all strings have the same
+<span class="lineNum">     569 </span>            :    alignment &gt; entsize.  */
+<a name="570"><span class="lineNum">     570 </span>            : </a>
+<span class="lineNum">     571 </span>            : static int
+<span class="lineNum">     572 </span><span class="lineNoCov">          0 : strrevcmp_align (const void *a, const void *b)</span>
+<span class="lineNum">     573 </span>            : {
+<span class="lineNum">     574 </span><span class="lineNoCov">          0 :   struct sec_merge_hash_entry *A = *(struct sec_merge_hash_entry **) a;</span>
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :   struct sec_merge_hash_entry *B = *(struct sec_merge_hash_entry **) b;</span>
+<span class="lineNum">     576 </span><span class="lineNoCov">          0 :   unsigned int lenA = A-&gt;len;</span>
+<span class="lineNum">     577 </span><span class="lineNoCov">          0 :   unsigned int lenB = B-&gt;len;</span>
+<span class="lineNum">     578 </span><span class="lineNoCov">          0 :   const unsigned char *s = (const unsigned char *) A-&gt;root.string + lenA - 1;</span>
+<span class="lineNum">     579 </span><span class="lineNoCov">          0 :   const unsigned char *t = (const unsigned char *) B-&gt;root.string + lenB - 1;</span>
+<span class="lineNum">     580 </span><span class="lineNoCov">          0 :   int l = lenA &lt; lenB ? lenA : lenB;</span>
+<span class="lineNum">     581 </span><span class="lineNoCov">          0 :   int tail_align = (lenA &amp; (A-&gt;alignment - 1)) - (lenB &amp; (A-&gt;alignment - 1));</span>
+<span class="lineNum">     582 </span>            : 
+<span class="lineNum">     583 </span><span class="lineNoCov">          0 :   if (tail_align != 0)</span>
+<span class="lineNum">     584 </span><span class="lineNoCov">          0 :     return tail_align;</span>
+<span class="lineNum">     585 </span>            : 
+<span class="lineNum">     586 </span><span class="lineNoCov">          0 :   while (l)</span>
+<span class="lineNum">     587 </span>            :     {
+<span class="lineNum">     588 </span><span class="lineNoCov">          0 :       if (*s != *t)</span>
+<span class="lineNum">     589 </span><span class="lineNoCov">          0 :         return (int) *s - (int) *t;</span>
+<span class="lineNum">     590 </span><span class="lineNoCov">          0 :       s--;</span>
+<span class="lineNum">     591 </span><span class="lineNoCov">          0 :       t--;</span>
+<span class="lineNum">     592 </span><span class="lineNoCov">          0 :       l--;</span>
+<span class="lineNum">     593 </span>            :     }
+<span class="lineNum">     594 </span><span class="lineNoCov">          0 :   return lenA - lenB;</span>
+<span class="lineNum">     595 </span>            : }
+<a name="596"><span class="lineNum">     596 </span>            : </a>
+<span class="lineNum">     597 </span>            : static inline int
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 : is_suffix (const struct sec_merge_hash_entry *A,</span>
+<span class="lineNum">     599 </span>            :            const struct sec_merge_hash_entry *B)
+<span class="lineNum">     600 </span>            : {
+<span class="lineNum">     601 </span><span class="lineNoCov">          0 :   if (A-&gt;len &lt;= B-&gt;len)</span>
+<span class="lineNum">     602 </span>            :     /* B cannot be a suffix of A unless A is equal to B, which is guaranteed
+<span class="lineNum">     603 </span>            :        not to be equal by the hash table.  */
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     605 </span>            : 
+<span class="lineNum">     606 </span><span class="lineNoCov">          0 :   return memcmp (A-&gt;root.string + (A-&gt;len - B-&gt;len),</span>
+<span class="lineNum">     607 </span><span class="lineNoCov">          0 :                  B-&gt;root.string, B-&gt;len) == 0;</span>
+<span class="lineNum">     608 </span>            : }
+<span class="lineNum">     609 </span>            : 
+<span class="lineNum">     610 </span>            : /* This is a helper function for _bfd_merge_sections.  It attempts to
+<a name="611"><span class="lineNum">     611 </span>            :    merge strings matching suffixes of longer strings.  */</a>
+<span class="lineNum">     612 </span>            : static void
+<span class="lineNum">     613 </span><span class="lineNoCov">          0 : merge_strings (struct sec_merge_info *sinfo)</span>
+<span class="lineNum">     614 </span>            : {
+<span class="lineNum">     615 </span>            :   struct sec_merge_hash_entry **array, **a, *e;
+<span class="lineNum">     616 </span>            :   struct sec_merge_sec_info *secinfo;
+<span class="lineNum">     617 </span>            :   bfd_size_type size, amt;
+<span class="lineNum">     618 </span><span class="lineNoCov">          0 :   unsigned int alignment = 0;</span>
+<span class="lineNum">     619 </span>            : 
+<span class="lineNum">     620 </span>            :   /* Now sort the strings */
+<span class="lineNum">     621 </span><span class="lineNoCov">          0 :   amt = sinfo-&gt;htab-&gt;size * sizeof (struct sec_merge_hash_entry *);</span>
+<span class="lineNum">     622 </span><span class="lineNoCov">          0 :   array = (struct sec_merge_hash_entry **) bfd_malloc (amt);</span>
+<span class="lineNum">     623 </span><span class="lineNoCov">          0 :   if (array == NULL)</span>
+<span class="lineNum">     624 </span><span class="lineNoCov">          0 :     goto alloc_failure;</span>
+<span class="lineNum">     625 </span>            : 
+<span class="lineNum">     626 </span><span class="lineNoCov">          0 :   for (e = sinfo-&gt;htab-&gt;first, a = array; e; e = e-&gt;next)</span>
+<span class="lineNum">     627 </span><span class="lineNoCov">          0 :     if (e-&gt;alignment)</span>
+<span class="lineNum">     628 </span>            :       {
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 :         *a++ = e;</span>
+<span class="lineNum">     630 </span>            :         /* Adjust the length to not include the zero terminator.  */
+<span class="lineNum">     631 </span><span class="lineNoCov">          0 :         e-&gt;len -= sinfo-&gt;htab-&gt;entsize;</span>
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :         if (alignment != e-&gt;alignment)</span>
+<span class="lineNum">     633 </span>            :           {
+<span class="lineNum">     634 </span><span class="lineNoCov">          0 :             if (alignment == 0)</span>
+<span class="lineNum">     635 </span><span class="lineNoCov">          0 :               alignment = e-&gt;alignment;</span>
+<span class="lineNum">     636 </span>            :             else
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :               alignment = (unsigned) -1;</span>
+<span class="lineNum">     638 </span>            :           }
+<span class="lineNum">     639 </span>            :       }
+<span class="lineNum">     640 </span>            : 
+<span class="lineNum">     641 </span><span class="lineNoCov">          0 :   sinfo-&gt;htab-&gt;size = a - array;</span>
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :   if (sinfo-&gt;htab-&gt;size != 0)</span>
+<span class="lineNum">     643 </span>            :     {
+<span class="lineNum">     644 </span><span class="lineNoCov">          0 :       qsort (array, (size_t) sinfo-&gt;htab-&gt;size,</span>
+<span class="lineNum">     645 </span>            :              sizeof (struct sec_merge_hash_entry *),
+<span class="lineNum">     646 </span><span class="lineNoCov">          0 :              (alignment != (unsigned) -1 &amp;&amp; alignment &gt; sinfo-&gt;htab-&gt;entsize</span>
+<span class="lineNum">     647 </span>            :               ? strrevcmp_align : strrevcmp));
+<span class="lineNum">     648 </span>            : 
+<span class="lineNum">     649 </span>            :       /* Loop over the sorted array and merge suffixes */
+<span class="lineNum">     650 </span><span class="lineNoCov">          0 :       e = *--a;</span>
+<span class="lineNum">     651 </span><span class="lineNoCov">          0 :       e-&gt;len += sinfo-&gt;htab-&gt;entsize;</span>
+<span class="lineNum">     652 </span><span class="lineNoCov">          0 :       while (--a &gt;= array)</span>
+<span class="lineNum">     653 </span>            :         {
+<span class="lineNum">     654 </span><span class="lineNoCov">          0 :           struct sec_merge_hash_entry *cmp = *a;</span>
+<span class="lineNum">     655 </span>            : 
+<span class="lineNum">     656 </span><span class="lineNoCov">          0 :           cmp-&gt;len += sinfo-&gt;htab-&gt;entsize;</span>
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :           if (e-&gt;alignment &gt;= cmp-&gt;alignment</span>
+<span class="lineNum">     658 </span><span class="lineNoCov">          0 :               &amp;&amp; !((e-&gt;len - cmp-&gt;len) &amp; (cmp-&gt;alignment - 1))</span>
+<span class="lineNum">     659 </span><span class="lineNoCov">          0 :               &amp;&amp; is_suffix (e, cmp))</span>
+<span class="lineNum">     660 </span>            :             {
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 :               cmp-&gt;u.suffix = e;</span>
+<span class="lineNum">     662 </span><span class="lineNoCov">          0 :               cmp-&gt;alignment = 0;</span>
+<span class="lineNum">     663 </span>            :             }
+<span class="lineNum">     664 </span>            :           else
+<span class="lineNum">     665 </span><span class="lineNoCov">          0 :             e = cmp;</span>
+<span class="lineNum">     666 </span>            :         }
+<span class="lineNum">     667 </span>            :     }
+<span class="lineNum">     668 </span>            : 
+<span class="lineNum">     669 </span><span class="lineNoCov">          0 : alloc_failure:</span>
+<span class="lineNum">     670 </span><span class="lineNoCov">          0 :   if (array)</span>
+<span class="lineNum">     671 </span><span class="lineNoCov">          0 :     free (array);</span>
+<span class="lineNum">     672 </span>            : 
+<span class="lineNum">     673 </span>            :   /* Now assign positions to the strings we want to keep.  */
+<span class="lineNum">     674 </span><span class="lineNoCov">          0 :   size = 0;</span>
+<span class="lineNum">     675 </span><span class="lineNoCov">          0 :   secinfo = sinfo-&gt;htab-&gt;first-&gt;secinfo;</span>
+<span class="lineNum">     676 </span><span class="lineNoCov">          0 :   for (e = sinfo-&gt;htab-&gt;first; e; e = e-&gt;next)</span>
+<span class="lineNum">     677 </span>            :     {
+<span class="lineNum">     678 </span><span class="lineNoCov">          0 :       if (e-&gt;secinfo != secinfo)</span>
+<span class="lineNum">     679 </span>            :         {
+<span class="lineNum">     680 </span><span class="lineNoCov">          0 :           secinfo-&gt;sec-&gt;size = size;</span>
+<span class="lineNum">     681 </span><span class="lineNoCov">          0 :           secinfo = e-&gt;secinfo;</span>
+<span class="lineNum">     682 </span>            :         }
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :       if (e-&gt;alignment)</span>
+<span class="lineNum">     684 </span>            :         {
+<span class="lineNum">     685 </span><span class="lineNoCov">          0 :           if (e-&gt;secinfo-&gt;first_str == NULL)</span>
+<span class="lineNum">     686 </span>            :             {
+<span class="lineNum">     687 </span><span class="lineNoCov">          0 :               e-&gt;secinfo-&gt;first_str = e;</span>
+<span class="lineNum">     688 </span><span class="lineNoCov">          0 :               size = 0;</span>
+<span class="lineNum">     689 </span>            :             }
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :           size = (size + e-&gt;alignment - 1) &amp; ~((bfd_vma) e-&gt;alignment - 1);</span>
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :           e-&gt;u.index = size;</span>
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 :           size += e-&gt;len;</span>
+<span class="lineNum">     693 </span>            :         }
+<span class="lineNum">     694 </span>            :     }
+<span class="lineNum">     695 </span><span class="lineNoCov">          0 :   secinfo-&gt;sec-&gt;size = size;</span>
+<span class="lineNum">     696 </span><span class="lineNoCov">          0 :   if (secinfo-&gt;sec-&gt;alignment_power != 0)</span>
+<span class="lineNum">     697 </span>            :     {
+<span class="lineNum">     698 </span><span class="lineNoCov">          0 :       bfd_size_type align = (bfd_size_type) 1 &lt;&lt; secinfo-&gt;sec-&gt;alignment_power;</span>
+<span class="lineNum">     699 </span><span class="lineNoCov">          0 :       secinfo-&gt;sec-&gt;size = (secinfo-&gt;sec-&gt;size + align - 1) &amp; -align;</span>
+<span class="lineNum">     700 </span>            :     }
+<span class="lineNum">     701 </span>            : 
+<span class="lineNum">     702 </span>            :   /* And now adjust the rest, removing them from the chain (but not hashtable)
+<span class="lineNum">     703 </span>            :      at the same time.  */
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :   for (a = &amp;sinfo-&gt;htab-&gt;first, e = *a; e; e = e-&gt;next)</span>
+<span class="lineNum">     705 </span><span class="lineNoCov">          0 :     if (e-&gt;alignment)</span>
+<span class="lineNum">     706 </span><span class="lineNoCov">          0 :       a = &amp;e-&gt;next;</span>
+<span class="lineNum">     707 </span>            :     else
+<span class="lineNum">     708 </span>            :       {
+<span class="lineNum">     709 </span><span class="lineNoCov">          0 :         *a = e-&gt;next;</span>
+<span class="lineNum">     710 </span><span class="lineNoCov">          0 :         if (e-&gt;len)</span>
+<span class="lineNum">     711 </span>            :           {
+<span class="lineNum">     712 </span><span class="lineNoCov">          0 :             e-&gt;secinfo = e-&gt;u.suffix-&gt;secinfo;</span>
+<span class="lineNum">     713 </span><span class="lineNoCov">          0 :             e-&gt;alignment = e-&gt;u.suffix-&gt;alignment;</span>
+<span class="lineNum">     714 </span><span class="lineNoCov">          0 :             e-&gt;u.index = e-&gt;u.suffix-&gt;u.index + (e-&gt;u.suffix-&gt;len - e-&gt;len);</span>
+<span class="lineNum">     715 </span>            :           }
+<span class="lineNum">     716 </span>            :       }
+<span class="lineNum">     717 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span>            : /* This function is called once after all SEC_MERGE sections are registered
+<span class="lineNum">     720 </span>            :    with _bfd_merge_section.  */
+<a name="721"><span class="lineNum">     721 </span>            : </a>
+<span class="lineNum">     722 </span>            : bfd_boolean
+<span class="lineNum">     723 </span><span class="lineNoCov">          0 : _bfd_merge_sections (bfd *abfd,</span>
+<span class="lineNum">     724 </span>            :                      struct bfd_link_info *info ATTRIBUTE_UNUSED,
+<span class="lineNum">     725 </span>            :                      void *xsinfo,
+<span class="lineNum">     726 </span>            :                      void (*remove_hook) (bfd *, asection *))
+<span class="lineNum">     727 </span>            : {
+<span class="lineNum">     728 </span>            :   struct sec_merge_info *sinfo;
+<span class="lineNum">     729 </span>            : 
+<span class="lineNum">     730 </span><span class="lineNoCov">          0 :   for (sinfo = (struct sec_merge_info *) xsinfo; sinfo; sinfo = sinfo-&gt;next)</span>
+<span class="lineNum">     731 </span>            :     {
+<span class="lineNum">     732 </span>            :       struct sec_merge_sec_info * secinfo;
+<span class="lineNum">     733 </span>            : 
+<span class="lineNum">     734 </span><span class="lineNoCov">          0 :       if (! sinfo-&gt;chain)</span>
+<span class="lineNum">     735 </span><span class="lineNoCov">          0 :         continue;</span>
+<span class="lineNum">     736 </span>            : 
+<span class="lineNum">     737 </span>            :       /* Move sinfo-&gt;chain to head of the chain, terminate it.  */
+<span class="lineNum">     738 </span><span class="lineNoCov">          0 :       secinfo = sinfo-&gt;chain;</span>
+<span class="lineNum">     739 </span><span class="lineNoCov">          0 :       sinfo-&gt;chain = secinfo-&gt;next;</span>
+<span class="lineNum">     740 </span><span class="lineNoCov">          0 :       secinfo-&gt;next = NULL;</span>
+<span class="lineNum">     741 </span>            : 
+<span class="lineNum">     742 </span>            :       /* Record the sections into the hash table.  */
+<span class="lineNum">     743 </span><span class="lineNoCov">          0 :       for (secinfo = sinfo-&gt;chain; secinfo; secinfo = secinfo-&gt;next)</span>
+<span class="lineNum">     744 </span><span class="lineNoCov">          0 :         if (secinfo-&gt;sec-&gt;flags &amp; SEC_EXCLUDE)</span>
+<span class="lineNum">     745 </span>            :           {
+<span class="lineNum">     746 </span><span class="lineNoCov">          0 :             *secinfo-&gt;psecinfo = NULL;</span>
+<span class="lineNum">     747 </span><span class="lineNoCov">          0 :             if (remove_hook)</span>
+<span class="lineNum">     748 </span><span class="lineNoCov">          0 :               (*remove_hook) (abfd, secinfo-&gt;sec);</span>
+<span class="lineNum">     749 </span>            :           }
+<span class="lineNum">     750 </span><span class="lineNoCov">          0 :         else if (! record_section (sinfo, secinfo))</span>
+<span class="lineNum">     751 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     752 </span>            : 
+<span class="lineNum">     753 </span><span class="lineNoCov">          0 :       if (secinfo)</span>
+<span class="lineNum">     754 </span><span class="lineNoCov">          0 :         continue;</span>
+<span class="lineNum">     755 </span>            : 
+<span class="lineNum">     756 </span><span class="lineNoCov">          0 :       if (sinfo-&gt;htab-&gt;first == NULL)</span>
+<span class="lineNum">     757 </span><span class="lineNoCov">          0 :         continue;</span>
+<span class="lineNum">     758 </span>            : 
+<span class="lineNum">     759 </span><span class="lineNoCov">          0 :       if (sinfo-&gt;htab-&gt;strings)</span>
+<span class="lineNum">     760 </span><span class="lineNoCov">          0 :         merge_strings (sinfo);</span>
+<span class="lineNum">     761 </span>            :       else
+<span class="lineNum">     762 </span>            :         {
+<span class="lineNum">     763 </span>            :           struct sec_merge_hash_entry *e;
+<span class="lineNum">     764 </span><span class="lineNoCov">          0 :           bfd_size_type size = 0;</span>
+<span class="lineNum">     765 </span>            : 
+<span class="lineNum">     766 </span>            :           /* Things are much simpler for non-strings.
+<span class="lineNum">     767 </span>            :              Just assign them slots in the section.  */
+<span class="lineNum">     768 </span><span class="lineNoCov">          0 :           secinfo = NULL;</span>
+<span class="lineNum">     769 </span><span class="lineNoCov">          0 :           for (e = sinfo-&gt;htab-&gt;first; e; e = e-&gt;next)</span>
+<span class="lineNum">     770 </span>            :             {
+<span class="lineNum">     771 </span><span class="lineNoCov">          0 :               if (e-&gt;secinfo-&gt;first_str == NULL)</span>
+<span class="lineNum">     772 </span>            :                 {
+<span class="lineNum">     773 </span><span class="lineNoCov">          0 :                   if (secinfo)</span>
+<span class="lineNum">     774 </span><span class="lineNoCov">          0 :                     secinfo-&gt;sec-&gt;size = size;</span>
+<span class="lineNum">     775 </span><span class="lineNoCov">          0 :                   e-&gt;secinfo-&gt;first_str = e;</span>
+<span class="lineNum">     776 </span><span class="lineNoCov">          0 :                   size = 0;</span>
+<span class="lineNum">     777 </span>            :                 }
+<span class="lineNum">     778 </span><span class="lineNoCov">          0 :               size = (size + e-&gt;alignment - 1)</span>
+<span class="lineNum">     779 </span><span class="lineNoCov">          0 :                      &amp; ~((bfd_vma) e-&gt;alignment - 1);</span>
+<span class="lineNum">     780 </span><span class="lineNoCov">          0 :               e-&gt;u.index = size;</span>
+<span class="lineNum">     781 </span><span class="lineNoCov">          0 :               size += e-&gt;len;</span>
+<span class="lineNum">     782 </span><span class="lineNoCov">          0 :               secinfo = e-&gt;secinfo;</span>
+<span class="lineNum">     783 </span>            :             }
+<span class="lineNum">     784 </span><span class="lineNoCov">          0 :           secinfo-&gt;sec-&gt;size = size;</span>
+<span class="lineNum">     785 </span>            :         }
+<span class="lineNum">     786 </span>            : 
+<span class="lineNum">     787 </span>            :         /* Finally remove all input sections which have not made it into
+<span class="lineNum">     788 </span>            :            the hash table at all.  */
+<span class="lineNum">     789 </span><span class="lineNoCov">          0 :         for (secinfo = sinfo-&gt;chain; secinfo; secinfo = secinfo-&gt;next)</span>
+<span class="lineNum">     790 </span><span class="lineNoCov">          0 :           if (secinfo-&gt;first_str == NULL)</span>
+<span class="lineNum">     791 </span><span class="lineNoCov">          0 :             secinfo-&gt;sec-&gt;flags |= SEC_EXCLUDE | SEC_KEEP;</span>
+<span class="lineNum">     792 </span>            :     }
+<span class="lineNum">     793 </span>            : 
+<span class="lineNum">     794 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     795 </span>            : }
+<span class="lineNum">     796 </span>            : 
+<span class="lineNum">     797 </span>            : /* Write out the merged section.  */
+<a name="798"><span class="lineNum">     798 </span>            : </a>
+<span class="lineNum">     799 </span>            : bfd_boolean
+<span class="lineNum">     800 </span><span class="lineNoCov">          0 : _bfd_write_merged_section (bfd *output_bfd, asection *sec, void *psecinfo)</span>
+<span class="lineNum">     801 </span>            : {
+<span class="lineNum">     802 </span>            :   struct sec_merge_sec_info *secinfo;
+<span class="lineNum">     803 </span>            :   file_ptr pos;
+<span class="lineNum">     804 </span>            :   unsigned char *contents;
+<span class="lineNum">     805 </span>            :   Elf_Internal_Shdr *hdr;
+<span class="lineNum">     806 </span>            : 
+<span class="lineNum">     807 </span><span class="lineNoCov">          0 :   secinfo = (struct sec_merge_sec_info *) psecinfo;</span>
+<span class="lineNum">     808 </span>            : 
+<span class="lineNum">     809 </span><span class="lineNoCov">          0 :   if (!secinfo)</span>
+<span class="lineNum">     810 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     811 </span>            : 
+<span class="lineNum">     812 </span><span class="lineNoCov">          0 :   if (secinfo-&gt;first_str == NULL)</span>
+<span class="lineNum">     813 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     814 </span>            : 
+<span class="lineNum">     815 </span>            :   /* FIXME: octets_per_byte.  */
+<span class="lineNum">     816 </span><span class="lineNoCov">          0 :   hdr = &amp;elf_section_data (sec-&gt;output_section)-&gt;this_hdr;</span>
+<span class="lineNum">     817 </span><span class="lineNoCov">          0 :   if (hdr-&gt;sh_offset == (file_ptr) -1)</span>
+<span class="lineNum">     818 </span>            :     {
+<span class="lineNum">     819 </span>            :       /* We must compress this section.  Write output to the
+<span class="lineNum">     820 </span>            :          buffer.  */
+<span class="lineNum">     821 </span><span class="lineNoCov">          0 :       contents = hdr-&gt;contents;</span>
+<span class="lineNum">     822 </span><span class="lineNoCov">          0 :       if ((sec-&gt;output_section-&gt;flags &amp; SEC_ELF_COMPRESS) == 0</span>
+<span class="lineNum">     823 </span><span class="lineNoCov">          0 :           || contents == NULL)</span>
+<span class="lineNum">     824 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     825 </span>            :     }
+<span class="lineNum">     826 </span>            :   else
+<span class="lineNum">     827 </span>            :     {
+<span class="lineNum">     828 </span><span class="lineNoCov">          0 :       contents = NULL;</span>
+<span class="lineNum">     829 </span><span class="lineNoCov">          0 :       pos = sec-&gt;output_section-&gt;filepos + sec-&gt;output_offset;</span>
+<span class="lineNum">     830 </span><span class="lineNoCov">          0 :       if (bfd_seek (output_bfd, pos, SEEK_SET) != 0)</span>
+<span class="lineNum">     831 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     832 </span>            :     }
+<span class="lineNum">     833 </span>            : 
+<span class="lineNum">     834 </span><span class="lineNoCov">          0 :   if (! sec_merge_emit (output_bfd, secinfo-&gt;first_str, contents,</span>
+<span class="lineNum">     835 </span><span class="lineNoCov">          0 :                         sec-&gt;output_offset))</span>
+<span class="lineNum">     836 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     837 </span>            : 
+<span class="lineNum">     838 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     839 </span>            : }
+<span class="lineNum">     840 </span>            : 
+<span class="lineNum">     841 </span>            : /* Adjust an address in the SEC_MERGE section.  Given OFFSET within
+<span class="lineNum">     842 </span>            :    *PSEC, this returns the new offset in the adjusted SEC_MERGE
+<span class="lineNum">     843 </span>            :    section and writes the new section back into *PSEC.  */
+<a name="844"><span class="lineNum">     844 </span>            : </a>
+<span class="lineNum">     845 </span>            : bfd_vma
+<span class="lineNum">     846 </span><span class="lineNoCov">          0 : _bfd_merged_section_offset (bfd *output_bfd ATTRIBUTE_UNUSED, asection **psec,</span>
+<span class="lineNum">     847 </span>            :                             void *psecinfo, bfd_vma offset)
+<span class="lineNum">     848 </span>            : {
+<span class="lineNum">     849 </span>            :   struct sec_merge_sec_info *secinfo;
+<span class="lineNum">     850 </span>            :   struct sec_merge_hash_entry *entry;
+<span class="lineNum">     851 </span>            :   unsigned char *p;
+<span class="lineNum">     852 </span><span class="lineNoCov">          0 :   asection *sec = *psec;</span>
+<span class="lineNum">     853 </span>            : 
+<span class="lineNum">     854 </span><span class="lineNoCov">          0 :   secinfo = (struct sec_merge_sec_info *) psecinfo;</span>
+<span class="lineNum">     855 </span>            : 
+<span class="lineNum">     856 </span><span class="lineNoCov">          0 :   if (!secinfo)</span>
+<span class="lineNum">     857 </span><span class="lineNoCov">          0 :     return offset;</span>
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span><span class="lineNoCov">          0 :   if (offset &gt;= sec-&gt;rawsize)</span>
+<span class="lineNum">     860 </span>            :     {
+<span class="lineNum">     861 </span><span class="lineNoCov">          0 :       if (offset &gt; sec-&gt;rawsize)</span>
+<span class="lineNum">     862 </span><span class="lineNoCov">          0 :         _bfd_error_handler</span>
+<span class="lineNum">     863 </span>            :           /* xgettext:c-format */
+<span class="lineNum">     864 </span><span class="lineNoCov">          0 :           (_(&quot;%s: access beyond end of merged section (%ld)&quot;),</span>
+<span class="lineNum">     865 </span><span class="lineNoCov">          0 :            bfd_get_filename (sec-&gt;owner), (long) offset);</span>
+<span class="lineNum">     866 </span><span class="lineNoCov">          0 :       return secinfo-&gt;first_str ? sec-&gt;size : 0;</span>
+<span class="lineNum">     867 </span>            :     }
+<span class="lineNum">     868 </span>            : 
+<span class="lineNum">     869 </span><span class="lineNoCov">          0 :   if (secinfo-&gt;htab-&gt;strings)</span>
+<span class="lineNum">     870 </span>            :     {
+<span class="lineNum">     871 </span><span class="lineNoCov">          0 :       if (sec-&gt;entsize == 1)</span>
+<span class="lineNum">     872 </span>            :         {
+<span class="lineNum">     873 </span><span class="lineNoCov">          0 :           p = secinfo-&gt;contents + offset - 1;</span>
+<span class="lineNum">     874 </span><span class="lineNoCov">          0 :           while (p &gt;= secinfo-&gt;contents &amp;&amp; *p)</span>
+<span class="lineNum">     875 </span><span class="lineNoCov">          0 :             --p;</span>
+<span class="lineNum">     876 </span><span class="lineNoCov">          0 :           ++p;</span>
+<span class="lineNum">     877 </span>            :         }
+<span class="lineNum">     878 </span>            :       else
+<span class="lineNum">     879 </span>            :         {
+<span class="lineNum">     880 </span><span class="lineNoCov">          0 :           p = secinfo-&gt;contents + (offset / sec-&gt;entsize) * sec-&gt;entsize;</span>
+<span class="lineNum">     881 </span><span class="lineNoCov">          0 :           p -= sec-&gt;entsize;</span>
+<span class="lineNum">     882 </span><span class="lineNoCov">          0 :           while (p &gt;= secinfo-&gt;contents)</span>
+<span class="lineNum">     883 </span>            :             {
+<span class="lineNum">     884 </span>            :               unsigned int i;
+<span class="lineNum">     885 </span>            : 
+<span class="lineNum">     886 </span><span class="lineNoCov">          0 :               for (i = 0; i &lt; sec-&gt;entsize; ++i)</span>
+<span class="lineNum">     887 </span><span class="lineNoCov">          0 :                 if (p[i] != '\0')</span>
+<span class="lineNum">     888 </span><span class="lineNoCov">          0 :                   break;</span>
+<span class="lineNum">     889 </span><span class="lineNoCov">          0 :               if (i == sec-&gt;entsize)</span>
+<span class="lineNum">     890 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">     891 </span><span class="lineNoCov">          0 :               p -= sec-&gt;entsize;</span>
+<span class="lineNum">     892 </span>            :             }
+<span class="lineNum">     893 </span><span class="lineNoCov">          0 :           p += sec-&gt;entsize;</span>
+<span class="lineNum">     894 </span>            :         }
+<span class="lineNum">     895 </span>            :     }
+<span class="lineNum">     896 </span>            :   else
+<span class="lineNum">     897 </span>            :     {
+<span class="lineNum">     898 </span><span class="lineNoCov">          0 :       p = secinfo-&gt;contents + (offset / sec-&gt;entsize) * sec-&gt;entsize;</span>
+<span class="lineNum">     899 </span>            :     }
+<span class="lineNum">     900 </span><span class="lineNoCov">          0 :   entry = sec_merge_hash_lookup (secinfo-&gt;htab, (char *) p, 0, FALSE);</span>
+<span class="lineNum">     901 </span><span class="lineNoCov">          0 :   if (!entry)</span>
+<span class="lineNum">     902 </span>            :     {
+<span class="lineNum">     903 </span><span class="lineNoCov">          0 :       if (! secinfo-&gt;htab-&gt;strings)</span>
+<span class="lineNum">     904 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     905 </span>            :       /* This should only happen if somebody points into the padding
+<span class="lineNum">     906 </span>            :          after a NUL character but before next entity.  */
+<span class="lineNum">     907 </span><span class="lineNoCov">          0 :       if (*p)</span>
+<span class="lineNum">     908 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     909 </span><span class="lineNoCov">          0 :       if (! secinfo-&gt;htab-&gt;first)</span>
+<span class="lineNum">     910 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     911 </span><span class="lineNoCov">          0 :       entry = secinfo-&gt;htab-&gt;first;</span>
+<span class="lineNum">     912 </span><span class="lineNoCov">          0 :       p = (secinfo-&gt;contents + (offset / sec-&gt;entsize + 1) * sec-&gt;entsize</span>
+<span class="lineNum">     913 </span><span class="lineNoCov">          0 :            - entry-&gt;len);</span>
+<span class="lineNum">     914 </span>            :     }
+<span class="lineNum">     915 </span>            : 
+<span class="lineNum">     916 </span><span class="lineNoCov">          0 :   *psec = entry-&gt;secinfo-&gt;sec;</span>
+<span class="lineNum">     917 </span><span class="lineNoCov">          0 :   return entry-&gt;u.index + (secinfo-&gt;contents + offset - p);</span>
+<span class="lineNum">     918 </span>            : }
+<span class="lineNum">     919 </span>            : 
+<span class="lineNum">     920 </span>            : /* Tidy up when done.  */
+<a name="921"><span class="lineNum">     921 </span>            : </a>
+<span class="lineNum">     922 </span>            : void
+<span class="lineNum">     923 </span><span class="lineNoCov">          0 : _bfd_merge_sections_free (void *xsinfo)</span>
+<span class="lineNum">     924 </span>            : {
+<span class="lineNum">     925 </span>            :   struct sec_merge_info *sinfo;
+<span class="lineNum">     926 </span>            : 
+<span class="lineNum">     927 </span><span class="lineNoCov">          0 :   for (sinfo = (struct sec_merge_info *) xsinfo; sinfo; sinfo = sinfo-&gt;next)</span>
+<span class="lineNum">     928 </span>            :     {
+<span class="lineNum">     929 </span><span class="lineNoCov">          0 :       bfd_hash_table_free (&amp;sinfo-&gt;htab-&gt;table);</span>
+<span class="lineNum">     930 </span><span class="lineNoCov">          0 :       free (sinfo-&gt;htab);</span>
+<span class="lineNum">     931 </span>            :     }
+<span class="lineNum">     932 </span><span class="lineNoCov">          0 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

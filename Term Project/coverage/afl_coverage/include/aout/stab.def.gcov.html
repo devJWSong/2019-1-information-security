@@ -1,0 +1,358 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - include/aout/stab.def</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">include/aout</a> - stab.def<span style="font-size: 80%;"> (source / <a href="stab.def.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">49</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntryHi">-</td>
+          </tr>
+          <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Table of DBX symbol codes for the GNU system.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1988-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This program is free software; you can redistribute it and/or
+<span class="lineNum">       5 </span>            :    modify it under the terms of the GNU General Public License as
+<span class="lineNum">       6 </span>            :    published by the Free Software Foundation; either version 3 of the
+<span class="lineNum">       7 </span>            :    License, or (at your option) any later version.
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      16 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      17 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            : /* New stab from Solaris 2.  This uses an n_type of 0, which in a.out files
+<span class="lineNum">      20 </span>            :    overlaps the N_UNDF used for ordinary symbols.  In ELF files, the
+<span class="lineNum">      21 </span>            :    debug information is in a different file section, so there is no conflict.
+<span class="lineNum">      22 </span>            :    This symbol's n_value gives the size of the string section associated
+<span class="lineNum">      23 </span>            :    with this file.  The symbol's n_strx (relative to the just-updated
+<span class="lineNum">      24 </span>            :    string section start address) gives the name of the source file,
+<span class="lineNum">      25 </span>            :    e.g. &quot;foo.c&quot;, without any path information.  The symbol's n_desc gives
+<span class="lineNum">      26 </span>            :    the count of upcoming symbols associated with this file (not including
+<span class="lineNum">      27 </span>            :    this one).  */
+<span class="lineNum">      28 </span>            : /* __define_stab (N_UNDF, 0x00, &quot;UNDF&quot;)  */
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /* Global variable.  Only the name is significant.
+<span class="lineNum">      31 </span>            :    To find the address, look in the corresponding external symbol.  */
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 : __define_stab (N_GSYM, 0x20, &quot;GSYM&quot;)</span>
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : /* Function name for BSD Fortran.  Only the name is significant.
+<span class="lineNum">      35 </span>            :    To find the address, look in the corresponding external symbol.  */
+<span class="lineNum">      36 </span><span class="lineNoCov">          0 : __define_stab (N_FNAME, 0x22, &quot;FNAME&quot;)</span>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : /* Function name or text-segment variable for C.  Value is its address.
+<span class="lineNum">      39 </span>            :    Desc is supposedly starting line number, but GCC doesn't set it
+<span class="lineNum">      40 </span>            :    and DBX seems not to miss it.  */
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 : __define_stab (N_FUN, 0x24, &quot;FUN&quot;)</span>
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : /* Data-segment variable with internal linkage.  Value is its address.
+<span class="lineNum">      44 </span>            :    &quot;Static Sym&quot;.  */
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 : __define_stab (N_STSYM, 0x26, &quot;STSYM&quot;)</span>
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : /* BSS-segment variable with internal linkage.  Value is its address.  */
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 : __define_stab (N_LCSYM, 0x28, &quot;LCSYM&quot;)</span>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : /* Name of main routine.  Only the name is significant.  */
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 : __define_stab (N_MAIN, 0x2a, &quot;MAIN&quot;)</span>
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : /* Solaris2:  Read-only data symbols.  */
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 : __define_stab (N_ROSYM, 0x2c, &quot;ROSYM&quot;)</span>
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : /* MacOS X:
+<span class="lineNum">      57 </span>            :    The beginning of a relocatable function block - including stabs.  */
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 : __define_stab (N_BNSYM, 0x2e, &quot;BNSYM&quot;)</span>
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : /* Global symbol in Pascal.
+<span class="lineNum">      61 </span>            :    Supposedly the value is its line number; I'm skeptical.  */
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 : __define_stab (N_PC, 0x30, &quot;PC&quot;)</span>
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : /* Number of symbols:  0, files,,funcs,lines according to Ultrix V4.0. */
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 : __define_stab (N_NSYMS, 0x32, &quot;NSYMS&quot;)</span>
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : /* &quot;No DST map for sym: name, ,0,type,ignored&quot;  according to Ultrix V4.0. */
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 : __define_stab (N_NOMAP, 0x34, &quot;NOMAP&quot;)</span>
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : /* New stab from Solaris 2.  Like N_SO, but for the object file.  Two in
+<span class="lineNum">      71 </span>            :    a row provide the build directory and the relative path of the .o from it.
+<span class="lineNum">      72 </span>            :    Solaris2 uses this to avoid putting the stabs info into the linked
+<span class="lineNum">      73 </span>            :    executable; this stab goes into the &quot;.stab.index&quot; section, and the debugger
+<span class="lineNum">      74 </span>            :    reads the real stabs directly from the .o files instead.  */
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 : __define_stab (N_OBJ, 0x38, &quot;OBJ&quot;)</span>
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span>            : /* New stab from Solaris 2.  Options for the debugger, related to the
+<span class="lineNum">      78 </span>            :    source language for this module.  E.g. whether to use ANSI
+<span class="lineNum">      79 </span>            :    integral promotions or traditional integral promotions.  */
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 : __define_stab (N_OPT, 0x3c, &quot;OPT&quot;)</span>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            : /* Register variable.  Value is number of register.  */
+<span class="lineNum">      83 </span><span class="lineNoCov">          0 : __define_stab (N_RSYM, 0x40, &quot;RSYM&quot;)</span>
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /* Modula-2 compilation unit.  Can someone say what info it contains?  */
+<span class="lineNum">      86 </span><span class="lineNoCov">          0 : __define_stab (N_M2C, 0x42, &quot;M2C&quot;)</span>
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            : /* Line number in text segment.  Desc is the line number;
+<span class="lineNum">      89 </span>            :    value is corresponding address.  On Solaris2, the line number is
+<span class="lineNum">      90 </span>            :    relative to the start of the current function.  */
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 : __define_stab (N_SLINE, 0x44, &quot;SLINE&quot;)</span>
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            : /* Similar, for data segment.  */
+<span class="lineNum">      94 </span><span class="lineNoCov">          0 : __define_stab (N_DSLINE, 0x46, &quot;DSLINE&quot;)</span>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : /* Similar, for bss segment.  */
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 : __define_stab (N_BSLINE, 0x48, &quot;BSLINE&quot;)</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : /* Sun's source-code browser stabs.  ?? Don't know what the fields are.
+<span class="lineNum">     100 </span>            :    Supposedly the field is &quot;path to associated .cb file&quot;.  THIS VALUE
+<span class="lineNum">     101 </span>            :    OVERLAPS WITH N_BSLINE!  */
+<span class="lineNum">     102 </span>            : __define_stab_duplicate (N_BROWS, 0x48, &quot;BROWS&quot;)
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : /* GNU Modula-2 definition module dependency.  Value is the modification time
+<span class="lineNum">     105 </span>            :    of the definition file.  Other is non-zero if it is imported with the
+<span class="lineNum">     106 </span>            :    GNU M2 keyword %INITIALIZE.  Perhaps N_M2C can be used if there
+<span class="lineNum">     107 </span>            :    are enough empty fields? */
+<span class="lineNum">     108 </span><span class="lineNoCov">          0 : __define_stab(N_DEFD, 0x4a, &quot;DEFD&quot;)</span>
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            : /* New in Solaris2.  Function start/body/end line numbers.  */
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 : __define_stab(N_FLINE, 0x4C, &quot;FLINE&quot;)</span>
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            : /* MacOS X: This tells the end of a relocatable function + debugging info.  */
+<span class="lineNum">     114 </span><span class="lineNoCov">          0 : __define_stab(N_ENSYM, 0x4E, &quot;ENSYM&quot;)</span>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            : /* THE FOLLOWING TWO STAB VALUES CONFLICT.  Happily, one is for Modula-2
+<span class="lineNum">     117 </span>            :    and one is for C++.   Still,... */
+<span class="lineNum">     118 </span>            : /* GNU C++ exception variable.  Name is variable name.  */
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 : __define_stab (N_EHDECL, 0x50, &quot;EHDECL&quot;)</span>
+<span class="lineNum">     120 </span>            : /* Modula2 info &quot;for imc&quot;:  name,,0,0,0  according to Ultrix V4.0.  */
+<span class="lineNum">     121 </span>            : __define_stab_duplicate (N_MOD2, 0x50, &quot;MOD2&quot;)
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            : /* GNU C++ `catch' clause.  Value is its address.  Desc is nonzero if
+<span class="lineNum">     124 </span>            :    this entry is immediately followed by a CAUGHT stab saying what exception
+<span class="lineNum">     125 </span>            :    was caught.  Multiple CAUGHT stabs means that multiple exceptions
+<span class="lineNum">     126 </span>            :    can be caught here.  If Desc is 0, it means all exceptions are caught
+<span class="lineNum">     127 </span>            :    here.  */
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 : __define_stab (N_CATCH, 0x54, &quot;CATCH&quot;)</span>
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span>            : /* Structure or union element.  Value is offset in the structure.  */
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 : __define_stab (N_SSYM, 0x60, &quot;SSYM&quot;)</span>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            : /* Solaris2:  Last stab emitted for module.  */
+<span class="lineNum">     134 </span><span class="lineNoCov">          0 : __define_stab (N_ENDM, 0x62, &quot;ENDM&quot;)</span>
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            : /* Name of main source file.
+<span class="lineNum">     137 </span>            :    Value is starting text address of the compilation.
+<span class="lineNum">     138 </span>            :    If multiple N_SO's appear, the first to contain a trailing / is the
+<span class="lineNum">     139 </span>            :    compilation directory.  The first to not contain a trailing / is the
+<span class="lineNum">     140 </span>            :    source file name, relative to the compilation directory.  Others (perhaps
+<span class="lineNum">     141 </span>            :    resulting from cfront) are ignored.
+<span class="lineNum">     142 </span>            :    On Solaris2, value is undefined, but desc is a source-language code.  */
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 : __define_stab (N_SO, 0x64, &quot;SO&quot;)</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            : /* Apple:  This is the stab that associated the .o file with the
+<span class="lineNum">     147 </span>            :    N_SO stab, in the case where debug info is mostly stored in the .o file.  */
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 : __define_stab (N_OSO, 0x66, &quot;OSO&quot;)</span>
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span>            : /* SunPro F77:  Name of alias.  */
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 : __define_stab (N_ALIAS, 0x6c, &quot;ALIAS&quot;)</span>
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span>            : /* Automatic variable in the stack.  Value is offset from frame pointer.
+<span class="lineNum">     154 </span>            :    Also used for type descriptions.  */
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 : __define_stab (N_LSYM, 0x80, &quot;LSYM&quot;)</span>
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : /* Beginning of an include file.  Only Sun uses this.
+<span class="lineNum">     158 </span>            :    In an object file, only the name is significant.
+<span class="lineNum">     159 </span>            :    The Sun linker puts data into some of the other fields.  */
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 : __define_stab (N_BINCL, 0x82, &quot;BINCL&quot;)</span>
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : /* Name of sub-source file (#include file).
+<span class="lineNum">     163 </span>            :    Value is starting text address of the compilation.  */
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 : __define_stab (N_SOL, 0x84, &quot;SOL&quot;)</span>
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            : /* Parameter variable.  Value is offset from argument pointer.
+<span class="lineNum">     167 </span>            :    (On most machines the argument pointer is the same as the frame pointer.  */
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 : __define_stab (N_PSYM, 0xa0, &quot;PSYM&quot;)</span>
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            : /* End of an include file.  No name.
+<span class="lineNum">     171 </span>            :    This and N_BINCL act as brackets around the file's output.
+<span class="lineNum">     172 </span>            :    In an object file, there is no significant data in this entry.
+<span class="lineNum">     173 </span>            :    The Sun linker puts data into some of the fields.  */
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 : __define_stab (N_EINCL, 0xa2, &quot;EINCL&quot;)</span>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span>            : /* Alternate entry point.  Value is its address.  */
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 : __define_stab (N_ENTRY, 0xa4, &quot;ENTRY&quot;)</span>
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span>            : /* Beginning of lexical block.
+<span class="lineNum">     180 </span>            :    The desc is the nesting level in lexical blocks.
+<span class="lineNum">     181 </span>            :    The value is the address of the start of the text for the block.
+<span class="lineNum">     182 </span>            :    The variables declared inside the block *precede* the N_LBRAC symbol.
+<span class="lineNum">     183 </span>            :    On Solaris2, the value is relative to the start of the current function.  */
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 : __define_stab (N_LBRAC, 0xc0, &quot;LBRAC&quot;)</span>
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span>            : /* Place holder for deleted include file.  Replaces a N_BINCL and everything
+<span class="lineNum">     187 </span>            :    up to the corresponding N_EINCL.  The Sun linker generates these when
+<span class="lineNum">     188 </span>            :    it finds multiple identical copies of the symbols from an include file.
+<span class="lineNum">     189 </span>            :    This appears only in output from the Sun linker.  */
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 : __define_stab (N_EXCL, 0xc2, &quot;EXCL&quot;)</span>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span>            : /* Modula-2 scope information.  Can someone say what info it contains?  */
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 : __define_stab (N_SCOPE, 0xc4, &quot;SCOPE&quot;)</span>
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span>            : /* Solaris2: Patch Run Time Checker.  */
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 : __define_stab (N_PATCH, 0xd0, &quot;PATCH&quot;)</span>
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span>            : /* End of a lexical block.  Desc matches the N_LBRAC's desc.
+<span class="lineNum">     199 </span>            :    The value is the address of the end of the text for the block.
+<span class="lineNum">     200 </span>            :    On Solaris2, the value is relative to the start of the current function.  */
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 : __define_stab (N_RBRAC, 0xe0, &quot;RBRAC&quot;)</span>
+<span class="lineNum">     202 </span>            : 
+<span class="lineNum">     203 </span>            : /* Begin named common block.  Only the name is significant.  */
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 : __define_stab (N_BCOMM, 0xe2, &quot;BCOMM&quot;)</span>
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span>            : /* End named common block.  Only the name is significant
+<span class="lineNum">     207 </span>            :    (and it should match the N_BCOMM).  */
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 : __define_stab (N_ECOMM, 0xe4, &quot;ECOMM&quot;)</span>
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : /* Member of a common block; value is offset within the common block.
+<span class="lineNum">     211 </span>            :    This should occur within a BCOMM/ECOMM pair.  */
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 : __define_stab (N_ECOML, 0xe8, &quot;ECOML&quot;)</span>
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span>            : /* Solaris2: Pascal &quot;with&quot; statement: type,,0,0,offset */
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 : __define_stab (N_WITH, 0xea, &quot;WITH&quot;)</span>
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            : /* These STAB's are used on Gould systems for Non-Base register symbols
+<span class="lineNum">     218 </span>            :    or something like that.  FIXME.  I have assigned the values at random
+<span class="lineNum">     219 </span>            :    since I don't have a Gould here.  Fixups from Gould folk welcome... */
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 : __define_stab (N_NBTEXT, 0xF0, &quot;NBTEXT&quot;)</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 : __define_stab (N_NBDATA, 0xF2, &quot;NBDATA&quot;)</span>
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 : __define_stab (N_NBBSS,  0xF4, &quot;NBBSS&quot;)</span>
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 : __define_stab (N_NBSTS,  0xF6, &quot;NBSTS&quot;)</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 : __define_stab (N_NBLCS,  0xF8, &quot;NBLCS&quot;)</span>
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span>            : /* Second symbol entry containing a length-value for the preceding entry.
+<span class="lineNum">     227 </span>            :    The value is the length.  */
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 : __define_stab (N_LENG, 0xfe, &quot;LENG&quot;)</span>
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            : /* The above information, in matrix format.
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span>            :                         STAB MATRIX
+<span class="lineNum">     233 </span>            :         _________________________________________________
+<span class="lineNum">     234 </span>            :         | 00 - 1F are not dbx stab symbols              |
+<span class="lineNum">     235 </span>            :         | In most cases, the low bit is the EXTernal bit|
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            :         | 00 UNDEF  | 02 ABS    | 04 TEXT   | 06 DATA   |
+<span class="lineNum">     238 </span>            :         | 01  |EXT  | 03  |EXT  | 05  |EXT  | 07  |EXT  |
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span>            :         | 08 BSS    | 0A INDR   | 0C FN_SEQ | 0E WEAKA  |
+<span class="lineNum">     241 </span>            :         | 09  |EXT  | 0B        | 0D WEAKU  | 0F WEAKT  |
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span>            :         | 10 WEAKD  | 12 COMM   | 14 SETA   | 16 SETT   |
+<span class="lineNum">     244 </span>            :         | 11 WEAKB  | 13        | 15        | 17        |
+<span class="lineNum">     245 </span>            : 
+<span class="lineNum">     246 </span>            :         | 18 SETD   | 1A SETB   | 1C SETV   | 1E WARNING|
+<span class="lineNum">     247 </span>            :         | 19        | 1B        | 1D        | 1F FN     |
+<span class="lineNum">     248 </span>            : 
+<span class="lineNum">     249 </span>            :         |_______________________________________________|
+<span class="lineNum">     250 </span>            :         | Debug entries with bit 01 set are unused.     |
+<span class="lineNum">     251 </span>            :         | 20 GSYM   | 22 FNAME  | 24 FUN    | 26 STSYM  |
+<span class="lineNum">     252 </span>            :         | 28 LCSYM  | 2A MAIN   | 2C ROSYM  | 2E        |
+<span class="lineNum">     253 </span>            :         | 30 PC     | 32 NSYMS  | 34 NOMAP  | 36        |
+<span class="lineNum">     254 </span>            :         | 38 OBJ    | 3A        | 3C OPT    | 3E        |
+<span class="lineNum">     255 </span>            :         | 40 RSYM   | 42 M2C    | 44 SLINE  | 46 DSLINE |
+<span class="lineNum">     256 </span>            :         | 48 BSLINE*| 4A DEFD   | 4C FLINE  | 4E        |
+<span class="lineNum">     257 </span>            :         | 50 EHDECL*| 52        | 54 CATCH  | 56        |
+<span class="lineNum">     258 </span>            :         | 58        | 5A        | 5C        | 5E        |
+<span class="lineNum">     259 </span>            :         | 60 SSYM   | 62 ENDM   | 64 SO     | 66        |
+<span class="lineNum">     260 </span>            :         | 68        | 6A        | 6C ALIAS  | 6E        |
+<span class="lineNum">     261 </span>            :         | 70        | 72        | 74        | 76        |
+<span class="lineNum">     262 </span>            :         | 78        | 7A        | 7C        | 7E        |
+<span class="lineNum">     263 </span>            :         | 80 LSYM   | 82 BINCL  | 84 SOL    | 86        |
+<span class="lineNum">     264 </span>            :         | 88        | 8A        | 8C        | 8E        |
+<span class="lineNum">     265 </span>            :         | 90        | 92        | 94        | 96        |
+<span class="lineNum">     266 </span>            :         | 98        | 9A        | 9C        | 9E        |
+<span class="lineNum">     267 </span>            :         | A0 PSYM   | A2 EINCL  | A4 ENTRY  | A6        |
+<span class="lineNum">     268 </span>            :         | A8        | AA        | AC        | AE        |
+<span class="lineNum">     269 </span>            :         | B0        | B2        | B4        | B6        |
+<span class="lineNum">     270 </span>            :         | B8        | BA        | BC        | BE        |
+<span class="lineNum">     271 </span>            :         | C0 LBRAC  | C2 EXCL   | C4 SCOPE  | C6        |
+<span class="lineNum">     272 </span>            :         | C8        | CA        | CC        | CE        |
+<span class="lineNum">     273 </span>            :         | D0 PATCH  | D2        | D4        | D6        |
+<span class="lineNum">     274 </span>            :         | D8        | DA        | DC        | DE        |
+<span class="lineNum">     275 </span>            :         | E0 RBRAC  | E2 BCOMM  | E4 ECOMM  | E6        |
+<span class="lineNum">     276 </span>            :         | E8 ECOML  | EA WITH   | EC        | EE        |
+<span class="lineNum">     277 </span>            :         | F0        | F2        | F4        | F6        |
+<span class="lineNum">     278 </span>            :         | F8        | FA        | FC        | FE LENG   |
+<span class="lineNum">     279 </span>            :         +-----------------------------------------------+
+<span class="lineNum">     280 </span>            :  * 50 EHDECL is also MOD2.
+<span class="lineNum">     281 </span>            :  * 48 BSLINE is also BROWS.
+<span class="lineNum">     282 </span>            :  */
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

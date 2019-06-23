@@ -1,0 +1,1074 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - libiberty/hashtab.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libiberty</a> - hashtab.c<span style="font-size: 80%;"> (source / <a href="hashtab.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">317</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* An expandable hash tables datatype.  </a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2009, 2010
+<span class="lineNum">       3 </span>            :    Free Software Foundation, Inc.
+<span class="lineNum">       4 </span>            :    Contributed by Vladimir Makarov (vmakarov@cygnus.com).
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : This file is part of the libiberty library.
+<span class="lineNum">       7 </span>            : Libiberty is free software; you can redistribute it and/or
+<span class="lineNum">       8 </span>            : modify it under the terms of the GNU Library General Public
+<span class="lineNum">       9 </span>            : License as published by the Free Software Foundation; either
+<span class="lineNum">      10 </span>            : version 2 of the License, or (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : Libiberty is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            : but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            : MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+<span class="lineNum">      15 </span>            : Library General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            : You should have received a copy of the GNU Library General Public
+<span class="lineNum">      18 </span>            : License along with libiberty; see the file COPYING.LIB.  If
+<span class="lineNum">      19 </span>            : not, write to the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
+<span class="lineNum">      20 </span>            : Boston, MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /* This package implements basic hash table functionality.  It is possible
+<span class="lineNum">      23 </span>            :    to search for an entry, create an entry and destroy an entry.
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            :    Elements in the table are generic pointers.
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            :    The size of the table is not fixed; if the occupancy of the table
+<span class="lineNum">      28 </span>            :    grows too high the hash table will be expanded.
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            :    The abstract data implementation is based on generalized Algorithm D
+<span class="lineNum">      31 </span>            :    from Knuth's book &quot;The art of computer programming&quot;.  Hash table is
+<span class="lineNum">      32 </span>            :    expanded by creation of new hash table and transferring elements from
+<span class="lineNum">      33 </span>            :    the old table to the new table. */
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : #ifdef HAVE_CONFIG_H
+<span class="lineNum">      36 </span>            : #include &quot;config.h&quot;
+<span class="lineNum">      37 </span>            : #endif
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : #include &lt;sys/types.h&gt;
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #ifdef HAVE_STDLIB_H
+<span class="lineNum">      42 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      43 </span>            : #endif
+<span class="lineNum">      44 </span>            : #ifdef HAVE_STRING_H
+<span class="lineNum">      45 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      46 </span>            : #endif
+<span class="lineNum">      47 </span>            : #ifdef HAVE_MALLOC_H
+<span class="lineNum">      48 </span>            : #include &lt;malloc.h&gt;
+<span class="lineNum">      49 </span>            : #endif
+<span class="lineNum">      50 </span>            : #ifdef HAVE_LIMITS_H
+<span class="lineNum">      51 </span>            : #include &lt;limits.h&gt;
+<span class="lineNum">      52 </span>            : #endif
+<span class="lineNum">      53 </span>            : #ifdef HAVE_INTTYPES_H
+<span class="lineNum">      54 </span>            : #include &lt;inttypes.h&gt;
+<span class="lineNum">      55 </span>            : #endif
+<span class="lineNum">      56 </span>            : #ifdef HAVE_STDINT_H
+<span class="lineNum">      57 </span>            : #include &lt;stdint.h&gt;
+<span class="lineNum">      58 </span>            : #endif
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      63 </span>            : #include &quot;ansidecl.h&quot;
+<span class="lineNum">      64 </span>            : #include &quot;hashtab.h&quot;
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            : #ifndef CHAR_BIT
+<span class="lineNum">      67 </span>            : #define CHAR_BIT 8
+<span class="lineNum">      68 </span>            : #endif
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : static unsigned int higher_prime_index (unsigned long);
+<span class="lineNum">      71 </span>            : static hashval_t htab_mod_1 (hashval_t, hashval_t, hashval_t, int);
+<span class="lineNum">      72 </span>            : static hashval_t htab_mod (hashval_t, htab_t);
+<span class="lineNum">      73 </span>            : static hashval_t htab_mod_m2 (hashval_t, htab_t);
+<span class="lineNum">      74 </span>            : static hashval_t hash_pointer (const void *);
+<span class="lineNum">      75 </span>            : static int eq_pointer (const void *, const void *);
+<span class="lineNum">      76 </span>            : static int htab_expand (htab_t);
+<span class="lineNum">      77 </span>            : static PTR *find_empty_slot_for_expand (htab_t, hashval_t);
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span>            : /* At some point, we could make these be NULL, and modify the
+<span class="lineNum">      80 </span>            :    hash-table routines to handle NULL specially; that would avoid
+<span class="lineNum">      81 </span>            :    function-call overhead for the common case of hashing pointers.  */
+<span class="lineNum">      82 </span>            : htab_hash htab_hash_pointer = hash_pointer;
+<span class="lineNum">      83 </span>            : htab_eq htab_eq_pointer = eq_pointer;
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /* Table of primes and multiplicative inverses.
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :    Note that these are not minimally reduced inverses.  Unlike when generating
+<span class="lineNum">      88 </span>            :    code to divide by a constant, we want to be able to use the same algorithm
+<span class="lineNum">      89 </span>            :    all the time.  All of these inverses (are implied to) have bit 32 set.
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :    For the record, here's the function that computed the table; it's a 
+<span class="lineNum">      92 </span>            :    vastly simplified version of the function of the same name from gcc.  */
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : #if 0
+<span class="lineNum">      95 </span>            : unsigned int
+<span class="lineNum">      96 </span>            : ceil_log2 (unsigned int x)
+<span class="lineNum">      97 </span>            : {
+<span class="lineNum">      98 </span>            :   int i;
+<span class="lineNum">      99 </span>            :   for (i = 31; i &gt;= 0 ; --i)
+<span class="lineNum">     100 </span>            :     if (x &gt; (1u &lt;&lt; i))
+<span class="lineNum">     101 </span>            :       return i+1;
+<span class="lineNum">     102 </span>            :   abort ();
+<span class="lineNum">     103 </span>            : }
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            : unsigned int
+<span class="lineNum">     106 </span>            : choose_multiplier (unsigned int d, unsigned int *mlp, unsigned char *shiftp)
+<span class="lineNum">     107 </span>            : {
+<span class="lineNum">     108 </span>            :   unsigned long long mhigh;
+<span class="lineNum">     109 </span>            :   double nx;
+<span class="lineNum">     110 </span>            :   int lgup, post_shift;
+<span class="lineNum">     111 </span>            :   int pow, pow2;
+<span class="lineNum">     112 </span>            :   int n = 32, precision = 32;
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            :   lgup = ceil_log2 (d);
+<span class="lineNum">     115 </span>            :   pow = n + lgup;
+<span class="lineNum">     116 </span>            :   pow2 = n + lgup - precision;
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            :   nx = ldexp (1.0, pow) + ldexp (1.0, pow2);
+<span class="lineNum">     119 </span>            :   mhigh = nx / d;
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :   *shiftp = lgup - 1;
+<span class="lineNum">     122 </span>            :   *mlp = mhigh;
+<span class="lineNum">     123 </span>            :   return mhigh &gt;&gt; 32;
+<span class="lineNum">     124 </span>            : }
+<span class="lineNum">     125 </span>            : #endif
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span>            : struct prime_ent
+<span class="lineNum">     128 </span>            : {
+<span class="lineNum">     129 </span>            :   hashval_t prime;
+<span class="lineNum">     130 </span>            :   hashval_t inv;
+<span class="lineNum">     131 </span>            :   hashval_t inv_m2;     /* inverse of prime-2 */
+<span class="lineNum">     132 </span>            :   hashval_t shift;
+<span class="lineNum">     133 </span>            : };
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            : static struct prime_ent const prime_tab[] = {
+<span class="lineNum">     136 </span>            :   {          7, 0x24924925, 0x9999999b, 2 },
+<span class="lineNum">     137 </span>            :   {         13, 0x3b13b13c, 0x745d1747, 3 },
+<span class="lineNum">     138 </span>            :   {         31, 0x08421085, 0x1a7b9612, 4 },
+<span class="lineNum">     139 </span>            :   {         61, 0x0c9714fc, 0x15b1e5f8, 5 },
+<span class="lineNum">     140 </span>            :   {        127, 0x02040811, 0x0624dd30, 6 },
+<span class="lineNum">     141 </span>            :   {        251, 0x05197f7e, 0x073260a5, 7 },
+<span class="lineNum">     142 </span>            :   {        509, 0x01824366, 0x02864fc8, 8 },
+<span class="lineNum">     143 </span>            :   {       1021, 0x00c0906d, 0x014191f7, 9 },
+<span class="lineNum">     144 </span>            :   {       2039, 0x0121456f, 0x0161e69e, 10 },
+<span class="lineNum">     145 </span>            :   {       4093, 0x00300902, 0x00501908, 11 },
+<span class="lineNum">     146 </span>            :   {       8191, 0x00080041, 0x00180241, 12 },
+<span class="lineNum">     147 </span>            :   {      16381, 0x000c0091, 0x00140191, 13 },
+<span class="lineNum">     148 </span>            :   {      32749, 0x002605a5, 0x002a06e6, 14 },
+<span class="lineNum">     149 </span>            :   {      65521, 0x000f00e2, 0x00110122, 15 },
+<span class="lineNum">     150 </span>            :   {     131071, 0x00008001, 0x00018003, 16 },
+<span class="lineNum">     151 </span>            :   {     262139, 0x00014002, 0x0001c004, 17 },
+<span class="lineNum">     152 </span>            :   {     524287, 0x00002001, 0x00006001, 18 },
+<span class="lineNum">     153 </span>            :   {    1048573, 0x00003001, 0x00005001, 19 },
+<span class="lineNum">     154 </span>            :   {    2097143, 0x00004801, 0x00005801, 20 },
+<span class="lineNum">     155 </span>            :   {    4194301, 0x00000c01, 0x00001401, 21 },
+<span class="lineNum">     156 </span>            :   {    8388593, 0x00001e01, 0x00002201, 22 },
+<span class="lineNum">     157 </span>            :   {   16777213, 0x00000301, 0x00000501, 23 },
+<span class="lineNum">     158 </span>            :   {   33554393, 0x00001381, 0x00001481, 24 },
+<span class="lineNum">     159 </span>            :   {   67108859, 0x00000141, 0x000001c1, 25 },
+<span class="lineNum">     160 </span>            :   {  134217689, 0x000004e1, 0x00000521, 26 },
+<span class="lineNum">     161 </span>            :   {  268435399, 0x00000391, 0x000003b1, 27 },
+<span class="lineNum">     162 </span>            :   {  536870909, 0x00000019, 0x00000029, 28 },
+<span class="lineNum">     163 </span>            :   { 1073741789, 0x0000008d, 0x00000095, 29 },
+<span class="lineNum">     164 </span>            :   { 2147483647, 0x00000003, 0x00000007, 30 },
+<span class="lineNum">     165 </span>            :   /* Avoid &quot;decimal constant so large it is unsigned&quot; for 4294967291.  */
+<span class="lineNum">     166 </span>            :   { 0xfffffffb, 0x00000006, 0x00000008, 31 }
+<span class="lineNum">     167 </span>            : };
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            : /* The following function returns an index into the above table of the
+<span class="lineNum">     170 </span>            :    nearest prime number which is greater than N, and near a power of two. */
+<a name="171"><span class="lineNum">     171 </span>            : </a>
+<span class="lineNum">     172 </span>            : static unsigned int
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 : higher_prime_index (unsigned long n)</span>
+<span class="lineNum">     174 </span>            : {
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :   unsigned int low = 0;</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :   unsigned int high = sizeof(prime_tab) / sizeof(prime_tab[0]);</span>
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :   while (low != high)</span>
+<span class="lineNum">     179 </span>            :     {
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :       unsigned int mid = low + (high - low) / 2;</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :       if (n &gt; prime_tab[mid].prime)</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :         low = mid + 1;</span>
+<span class="lineNum">     183 </span>            :       else
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :         high = mid;</span>
+<span class="lineNum">     185 </span>            :     }
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            :   /* If we've run out of primes, abort.  */
+<span class="lineNum">     188 </span><span class="lineNoCov">          0 :   if (n &gt; prime_tab[low].prime)</span>
+<span class="lineNum">     189 </span>            :     {
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :       fprintf (stderr, &quot;Cannot find prime bigger than %lu\n&quot;, n);</span>
+<span class="lineNum">     191 </span><span class="lineNoCov">          0 :       abort ();</span>
+<span class="lineNum">     192 </span>            :     }
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :   return low;</span>
+<span class="lineNum">     195 </span>            : }
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            : /* Returns non-zero if P1 and P2 are equal.  */
+<a name="198"><span class="lineNum">     198 </span>            : </a>
+<span class="lineNum">     199 </span>            : static int
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 : eq_pointer (const PTR p1, const PTR p2)</span>
+<span class="lineNum">     201 </span>            : {
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :   return p1 == p2;</span>
+<span class="lineNum">     203 </span>            : }
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span>            : /* The parens around the function names in the next two definitions
+<span class="lineNum">     207 </span>            :    are essential in order to prevent macro expansions of the name.
+<span class="lineNum">     208 </span>            :    The bodies, however, are expanded as expected, so they are not
+<span class="lineNum">     209 </span>            :    recursive definitions.  */
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span>            : /* Return the current size of given hash table.  */
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span>            : #define htab_size(htab)  ((htab)-&gt;size)
+<a name="214"><span class="lineNum">     214 </span>            : </a>
+<span class="lineNum">     215 </span>            : size_t
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 : (htab_size) (htab_t htab)</span>
+<span class="lineNum">     217 </span>            : {
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :   return htab_size (htab);</span>
+<span class="lineNum">     219 </span>            : }
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            : /* Return the current number of elements in given hash table. */
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span>            : #define htab_elements(htab)  ((htab)-&gt;n_elements - (htab)-&gt;n_deleted)
+<a name="224"><span class="lineNum">     224 </span>            : </a>
+<span class="lineNum">     225 </span>            : size_t
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 : (htab_elements) (htab_t htab)</span>
+<span class="lineNum">     227 </span>            : {
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 :   return htab_elements (htab);</span>
+<span class="lineNum">     229 </span>            : }
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span>            : /* Return X % Y.  */
+<a name="232"><span class="lineNum">     232 </span>            : </a>
+<span class="lineNum">     233 </span>            : static inline hashval_t
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 : htab_mod_1 (hashval_t x, hashval_t y, hashval_t inv, int shift)</span>
+<span class="lineNum">     235 </span>            : {
+<span class="lineNum">     236 </span>            :   /* The multiplicative inverses computed above are for 32-bit types, and
+<span class="lineNum">     237 </span>            :      requires that we be able to compute a highpart multiply.  */
+<span class="lineNum">     238 </span>            : #ifdef UNSIGNED_64BIT_TYPE
+<span class="lineNum">     239 </span>            :   __extension__ typedef UNSIGNED_64BIT_TYPE ull;
+<span class="lineNum">     240 </span>            :   if (sizeof (hashval_t) * CHAR_BIT &lt;= 32)
+<span class="lineNum">     241 </span>            :     {
+<span class="lineNum">     242 </span>            :       hashval_t t1, t2, t3, t4, q, r;
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineNoCov">          0 :       t1 = ((ull)x * inv) &gt;&gt; 32;</span>
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :       t2 = x - t1;</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :       t3 = t2 &gt;&gt; 1;</span>
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :       t4 = t1 + t3;</span>
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :       q  = t4 &gt;&gt; shift;</span>
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :       r  = x - (q * y);</span>
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :       return r;</span>
+<span class="lineNum">     252 </span>            :     }
+<span class="lineNum">     253 </span>            : #endif
+<span class="lineNum">     254 </span>            : 
+<span class="lineNum">     255 </span>            :   /* Otherwise just use the native division routines.  */
+<span class="lineNum">     256 </span>            :   return x % y;
+<span class="lineNum">     257 </span>            : }
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            : /* Compute the primary hash for HASH given HTAB's current size.  */
+<a name="260"><span class="lineNum">     260 </span>            : </a>
+<span class="lineNum">     261 </span>            : static inline hashval_t
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 : htab_mod (hashval_t hash, htab_t htab)</span>
+<span class="lineNum">     263 </span>            : {
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :   const struct prime_ent *p = &amp;prime_tab[htab-&gt;size_prime_index];</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :   return htab_mod_1 (hash, p-&gt;prime, p-&gt;inv, p-&gt;shift);</span>
+<span class="lineNum">     266 </span>            : }
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : /* Compute the secondary hash for HASH given HTAB's current size.  */
+<a name="269"><span class="lineNum">     269 </span>            : </a>
+<span class="lineNum">     270 </span>            : static inline hashval_t
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 : htab_mod_m2 (hashval_t hash, htab_t htab)</span>
+<span class="lineNum">     272 </span>            : {
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :   const struct prime_ent *p = &amp;prime_tab[htab-&gt;size_prime_index];</span>
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :   return 1 + htab_mod_1 (hash, p-&gt;prime - 2, p-&gt;inv_m2, p-&gt;shift);</span>
+<span class="lineNum">     275 </span>            : }
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            : /* This function creates table with length slightly longer than given
+<span class="lineNum">     278 </span>            :    source length.  Created hash table is initiated as empty (all the
+<span class="lineNum">     279 </span>            :    hash table entries are HTAB_EMPTY_ENTRY).  The function returns the
+<span class="lineNum">     280 </span>            :    created hash table, or NULL if memory allocation fails.  */
+<a name="281"><span class="lineNum">     281 </span>            : </a>
+<span class="lineNum">     282 </span>            : htab_t
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 : htab_create_alloc (size_t size, htab_hash hash_f, htab_eq eq_f,</span>
+<span class="lineNum">     284 </span>            :                    htab_del del_f, htab_alloc alloc_f, htab_free free_f)
+<span class="lineNum">     285 </span>            : {
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :   return htab_create_typed_alloc (size, hash_f, eq_f, del_f, alloc_f, alloc_f,</span>
+<span class="lineNum">     287 </span>            :                                   free_f);
+<span class="lineNum">     288 </span>            : }
+<span class="lineNum">     289 </span>            : 
+<span class="lineNum">     290 </span>            : /* As above, but uses the variants of ALLOC_F and FREE_F which accept
+<span class="lineNum">     291 </span>            :    an extra argument.  */
+<a name="292"><span class="lineNum">     292 </span>            : </a>
+<span class="lineNum">     293 </span>            : htab_t
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 : htab_create_alloc_ex (size_t size, htab_hash hash_f, htab_eq eq_f,</span>
+<span class="lineNum">     295 </span>            :                       htab_del del_f, void *alloc_arg,
+<span class="lineNum">     296 </span>            :                       htab_alloc_with_arg alloc_f,
+<span class="lineNum">     297 </span>            :                       htab_free_with_arg free_f)
+<span class="lineNum">     298 </span>            : {
+<span class="lineNum">     299 </span>            :   htab_t result;
+<span class="lineNum">     300 </span>            :   unsigned int size_prime_index;
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span><span class="lineNoCov">          0 :   size_prime_index = higher_prime_index (size);</span>
+<span class="lineNum">     303 </span><span class="lineNoCov">          0 :   size = prime_tab[size_prime_index].prime;</span>
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :   result = (htab_t) (*alloc_f) (alloc_arg, 1, sizeof (struct htab));</span>
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :   if (result == NULL)</span>
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :   result-&gt;entries = (PTR *) (*alloc_f) (alloc_arg, size, sizeof (PTR));</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :   if (result-&gt;entries == NULL)</span>
+<span class="lineNum">     310 </span>            :     {
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :       if (free_f != NULL)</span>
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 :         (*free_f) (alloc_arg, result);</span>
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     314 </span>            :     }
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :   result-&gt;size = size;</span>
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :   result-&gt;size_prime_index = size_prime_index;</span>
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :   result-&gt;hash_f = hash_f;</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :   result-&gt;eq_f = eq_f;</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :   result-&gt;del_f = del_f;</span>
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 :   result-&gt;alloc_arg = alloc_arg;</span>
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :   result-&gt;alloc_with_arg_f = alloc_f;</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :   result-&gt;free_with_arg_f = free_f;</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     324 </span>            : }
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span>            : /*
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            : @deftypefn Supplemental htab_t htab_create_typed_alloc (size_t @var{size}, @
+<span class="lineNum">     329 </span>            : htab_hash @var{hash_f}, htab_eq @var{eq_f}, htab_del @var{del_f}, @
+<span class="lineNum">     330 </span>            : htab_alloc @var{alloc_tab_f}, htab_alloc @var{alloc_f}, @
+<span class="lineNum">     331 </span>            : htab_free @var{free_f})
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            : This function creates a hash table that uses two different allocators
+<span class="lineNum">     334 </span>            : @var{alloc_tab_f} and @var{alloc_f} to use for allocating the table itself
+<span class="lineNum">     335 </span>            : and its entries respectively.  This is useful when variables of different
+<span class="lineNum">     336 </span>            : types need to be allocated with different allocators.
+<span class="lineNum">     337 </span>            : 
+<span class="lineNum">     338 </span>            : The created hash table is slightly larger than @var{size} and it is
+<span class="lineNum">     339 </span>            : initially empty (all the hash table entries are @code{HTAB_EMPTY_ENTRY}).
+<span class="lineNum">     340 </span>            : The function returns the created hash table, or @code{NULL} if memory
+<span class="lineNum">     341 </span>            : allocation fails.
+<span class="lineNum">     342 </span>            : 
+<span class="lineNum">     343 </span>            : @end deftypefn
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span>            : */
+<a name="346"><span class="lineNum">     346 </span>            : </a>
+<span class="lineNum">     347 </span>            : htab_t
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 : htab_create_typed_alloc (size_t size, htab_hash hash_f, htab_eq eq_f,</span>
+<span class="lineNum">     349 </span>            :                          htab_del del_f, htab_alloc alloc_tab_f,
+<span class="lineNum">     350 </span>            :                          htab_alloc alloc_f, htab_free free_f)
+<span class="lineNum">     351 </span>            : {
+<span class="lineNum">     352 </span>            :   htab_t result;
+<span class="lineNum">     353 </span>            :   unsigned int size_prime_index;
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :   size_prime_index = higher_prime_index (size);</span>
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :   size = prime_tab[size_prime_index].prime;</span>
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span><span class="lineNoCov">          0 :   result = (htab_t) (*alloc_tab_f) (1, sizeof (struct htab));</span>
+<span class="lineNum">     359 </span><span class="lineNoCov">          0 :   if (result == NULL)</span>
+<span class="lineNum">     360 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     361 </span><span class="lineNoCov">          0 :   result-&gt;entries = (PTR *) (*alloc_f) (size, sizeof (PTR));</span>
+<span class="lineNum">     362 </span><span class="lineNoCov">          0 :   if (result-&gt;entries == NULL)</span>
+<span class="lineNum">     363 </span>            :     {
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :       if (free_f != NULL)</span>
+<span class="lineNum">     365 </span><span class="lineNoCov">          0 :         (*free_f) (result);</span>
+<span class="lineNum">     366 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     367 </span>            :     }
+<span class="lineNum">     368 </span><span class="lineNoCov">          0 :   result-&gt;size = size;</span>
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :   result-&gt;size_prime_index = size_prime_index;</span>
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :   result-&gt;hash_f = hash_f;</span>
+<span class="lineNum">     371 </span><span class="lineNoCov">          0 :   result-&gt;eq_f = eq_f;</span>
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 :   result-&gt;del_f = del_f;</span>
+<span class="lineNum">     373 </span><span class="lineNoCov">          0 :   result-&gt;alloc_f = alloc_f;</span>
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 :   result-&gt;free_f = free_f;</span>
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     376 </span>            : }
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span>            : /* Update the function pointers and allocation parameter in the htab_t.  */
+<a name="380"><span class="lineNum">     380 </span>            : </a>
+<span class="lineNum">     381 </span>            : void
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 : htab_set_functions_ex (htab_t htab, htab_hash hash_f, htab_eq eq_f,</span>
+<span class="lineNum">     383 </span>            :                        htab_del del_f, PTR alloc_arg,
+<span class="lineNum">     384 </span>            :                        htab_alloc_with_arg alloc_f, htab_free_with_arg free_f)
+<span class="lineNum">     385 </span>            : {
+<span class="lineNum">     386 </span><span class="lineNoCov">          0 :   htab-&gt;hash_f = hash_f;</span>
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :   htab-&gt;eq_f = eq_f;</span>
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :   htab-&gt;del_f = del_f;</span>
+<span class="lineNum">     389 </span><span class="lineNoCov">          0 :   htab-&gt;alloc_arg = alloc_arg;</span>
+<span class="lineNum">     390 </span><span class="lineNoCov">          0 :   htab-&gt;alloc_with_arg_f = alloc_f;</span>
+<span class="lineNum">     391 </span><span class="lineNoCov">          0 :   htab-&gt;free_with_arg_f = free_f;</span>
+<span class="lineNum">     392 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span>            : /* These functions exist solely for backward compatibility.  */
+<span class="lineNum">     395 </span>            : 
+<a name="396"><span class="lineNum">     396 </span>            : #undef htab_create</a>
+<span class="lineNum">     397 </span>            : htab_t
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 : htab_create (size_t size, htab_hash hash_f, htab_eq eq_f, htab_del del_f)</span>
+<span class="lineNum">     399 </span>            : {
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :   return htab_create_alloc (size, hash_f, eq_f, del_f, xcalloc, free);</span>
+<span class="lineNum">     401 </span>            : }
+<a name="402"><span class="lineNum">     402 </span>            : </a>
+<span class="lineNum">     403 </span>            : htab_t
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 : htab_try_create (size_t size, htab_hash hash_f, htab_eq eq_f, htab_del del_f)</span>
+<span class="lineNum">     405 </span>            : {
+<span class="lineNum">     406 </span><span class="lineNoCov">          0 :   return htab_create_alloc (size, hash_f, eq_f, del_f, calloc, free);</span>
+<span class="lineNum">     407 </span>            : }
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            : /* This function frees all memory allocated for given hash table.
+<span class="lineNum">     410 </span>            :    Naturally the hash table must already exist. */
+<a name="411"><span class="lineNum">     411 </span>            : </a>
+<span class="lineNum">     412 </span>            : void
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 : htab_delete (htab_t htab)</span>
+<span class="lineNum">     414 </span>            : {
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :   size_t size = htab_size (htab);</span>
+<span class="lineNum">     416 </span><span class="lineNoCov">          0 :   PTR *entries = htab-&gt;entries;</span>
+<span class="lineNum">     417 </span>            :   int i;
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span><span class="lineNoCov">          0 :   if (htab-&gt;del_f)</span>
+<span class="lineNum">     420 </span><span class="lineNoCov">          0 :     for (i = size - 1; i &gt;= 0; i--)</span>
+<span class="lineNum">     421 </span><span class="lineNoCov">          0 :       if (entries[i] != HTAB_EMPTY_ENTRY &amp;&amp; entries[i] != HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     422 </span><span class="lineNoCov">          0 :         (*htab-&gt;del_f) (entries[i]);</span>
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :   if (htab-&gt;free_f != NULL)</span>
+<span class="lineNum">     425 </span>            :     {
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :       (*htab-&gt;free_f) (entries);</span>
+<span class="lineNum">     427 </span><span class="lineNoCov">          0 :       (*htab-&gt;free_f) (htab);</span>
+<span class="lineNum">     428 </span>            :     }
+<span class="lineNum">     429 </span><span class="lineNoCov">          0 :   else if (htab-&gt;free_with_arg_f != NULL)</span>
+<span class="lineNum">     430 </span>            :     {
+<span class="lineNum">     431 </span><span class="lineNoCov">          0 :       (*htab-&gt;free_with_arg_f) (htab-&gt;alloc_arg, entries);</span>
+<span class="lineNum">     432 </span><span class="lineNoCov">          0 :       (*htab-&gt;free_with_arg_f) (htab-&gt;alloc_arg, htab);</span>
+<span class="lineNum">     433 </span>            :     }
+<span class="lineNum">     434 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     435 </span>            : 
+<span class="lineNum">     436 </span>            : /* This function clears all entries in the given hash table.  */
+<a name="437"><span class="lineNum">     437 </span>            : </a>
+<span class="lineNum">     438 </span>            : void
+<span class="lineNum">     439 </span><span class="lineNoCov">          0 : htab_empty (htab_t htab)</span>
+<span class="lineNum">     440 </span>            : {
+<span class="lineNum">     441 </span><span class="lineNoCov">          0 :   size_t size = htab_size (htab);</span>
+<span class="lineNum">     442 </span><span class="lineNoCov">          0 :   PTR *entries = htab-&gt;entries;</span>
+<span class="lineNum">     443 </span>            :   int i;
+<span class="lineNum">     444 </span>            : 
+<span class="lineNum">     445 </span><span class="lineNoCov">          0 :   if (htab-&gt;del_f)</span>
+<span class="lineNum">     446 </span><span class="lineNoCov">          0 :     for (i = size - 1; i &gt;= 0; i--)</span>
+<span class="lineNum">     447 </span><span class="lineNoCov">          0 :       if (entries[i] != HTAB_EMPTY_ENTRY &amp;&amp; entries[i] != HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 :         (*htab-&gt;del_f) (entries[i]);</span>
+<span class="lineNum">     449 </span>            : 
+<span class="lineNum">     450 </span>            :   /* Instead of clearing megabyte, downsize the table.  */
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 :   if (size &gt; 1024*1024 / sizeof (PTR))</span>
+<span class="lineNum">     452 </span>            :     {
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :       int nindex = higher_prime_index (1024 / sizeof (PTR));</span>
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :       int nsize = prime_tab[nindex].prime;</span>
+<span class="lineNum">     455 </span>            : 
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :       if (htab-&gt;free_f != NULL)</span>
+<span class="lineNum">     457 </span><span class="lineNoCov">          0 :         (*htab-&gt;free_f) (htab-&gt;entries);</span>
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :       else if (htab-&gt;free_with_arg_f != NULL)</span>
+<span class="lineNum">     459 </span><span class="lineNoCov">          0 :         (*htab-&gt;free_with_arg_f) (htab-&gt;alloc_arg, htab-&gt;entries);</span>
+<span class="lineNum">     460 </span><span class="lineNoCov">          0 :       if (htab-&gt;alloc_with_arg_f != NULL)</span>
+<span class="lineNum">     461 </span><span class="lineNoCov">          0 :         htab-&gt;entries = (PTR *) (*htab-&gt;alloc_with_arg_f) (htab-&gt;alloc_arg, nsize,</span>
+<span class="lineNum">     462 </span>            :                                                            sizeof (PTR *));
+<span class="lineNum">     463 </span>            :       else
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :         htab-&gt;entries = (PTR *) (*htab-&gt;alloc_f) (nsize, sizeof (PTR *));</span>
+<span class="lineNum">     465 </span><span class="lineNoCov">          0 :      htab-&gt;size = nsize;</span>
+<span class="lineNum">     466 </span><span class="lineNoCov">          0 :      htab-&gt;size_prime_index = nindex;</span>
+<span class="lineNum">     467 </span>            :     }
+<span class="lineNum">     468 </span>            :   else
+<span class="lineNum">     469 </span><span class="lineNoCov">          0 :     memset (entries, 0, size * sizeof (PTR));</span>
+<span class="lineNum">     470 </span><span class="lineNoCov">          0 :   htab-&gt;n_deleted = 0;</span>
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :   htab-&gt;n_elements = 0;</span>
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     473 </span>            : 
+<span class="lineNum">     474 </span>            : /* Similar to htab_find_slot, but without several unwanted side effects:
+<span class="lineNum">     475 </span>            :     - Does not call htab-&gt;eq_f when it finds an existing entry.
+<span class="lineNum">     476 </span>            :     - Does not change the count of elements/searches/collisions in the
+<span class="lineNum">     477 </span>            :       hash table.
+<span class="lineNum">     478 </span>            :    This function also assumes there are no deleted entries in the table.
+<span class="lineNum">     479 </span>            :    HASH is the hash value for the element to be inserted.  */
+<a name="480"><span class="lineNum">     480 </span>            : </a>
+<span class="lineNum">     481 </span>            : static PTR *
+<span class="lineNum">     482 </span><span class="lineNoCov">          0 : find_empty_slot_for_expand (htab_t htab, hashval_t hash)</span>
+<span class="lineNum">     483 </span>            : {
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :   hashval_t index = htab_mod (hash, htab);</span>
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :   size_t size = htab_size (htab);</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :   PTR *slot = htab-&gt;entries + index;</span>
+<span class="lineNum">     487 </span>            :   hashval_t hash2;
+<span class="lineNum">     488 </span>            : 
+<span class="lineNum">     489 </span><span class="lineNoCov">          0 :   if (*slot == HTAB_EMPTY_ENTRY)</span>
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 :     return slot;</span>
+<span class="lineNum">     491 </span><span class="lineNoCov">          0 :   else if (*slot == HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     492 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     493 </span>            : 
+<span class="lineNum">     494 </span><span class="lineNoCov">          0 :   hash2 = htab_mod_m2 (hash, htab);</span>
+<span class="lineNum">     495 </span>            :   for (;;)
+<span class="lineNum">     496 </span>            :     {
+<span class="lineNum">     497 </span><span class="lineNoCov">          0 :       index += hash2;</span>
+<span class="lineNum">     498 </span><span class="lineNoCov">          0 :       if (index &gt;= size)</span>
+<span class="lineNum">     499 </span><span class="lineNoCov">          0 :         index -= size;</span>
+<span class="lineNum">     500 </span>            : 
+<span class="lineNum">     501 </span><span class="lineNoCov">          0 :       slot = htab-&gt;entries + index;</span>
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :       if (*slot == HTAB_EMPTY_ENTRY)</span>
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :         return slot;</span>
+<span class="lineNum">     504 </span><span class="lineNoCov">          0 :       else if (*slot == HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     506 </span>            :     }
+<span class="lineNum">     507 </span>            : }
+<span class="lineNum">     508 </span>            : 
+<span class="lineNum">     509 </span>            : /* The following function changes size of memory allocated for the
+<span class="lineNum">     510 </span>            :    entries and repeatedly inserts the table elements.  The occupancy
+<span class="lineNum">     511 </span>            :    of the table after the call will be about 50%.  Naturally the hash
+<span class="lineNum">     512 </span>            :    table must already exist.  Remember also that the place of the
+<span class="lineNum">     513 </span>            :    table entries is changed.  If memory allocation failures are allowed,
+<span class="lineNum">     514 </span>            :    this function will return zero, indicating that the table could not be
+<span class="lineNum">     515 </span>            :    expanded.  If all goes well, it will return a non-zero value.  */
+<a name="516"><span class="lineNum">     516 </span>            : </a>
+<span class="lineNum">     517 </span>            : static int
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 : htab_expand (htab_t htab)</span>
+<span class="lineNum">     519 </span>            : {
+<span class="lineNum">     520 </span>            :   PTR *oentries;
+<span class="lineNum">     521 </span>            :   PTR *olimit;
+<span class="lineNum">     522 </span>            :   PTR *p;
+<span class="lineNum">     523 </span>            :   PTR *nentries;
+<span class="lineNum">     524 </span>            :   size_t nsize, osize, elts;
+<span class="lineNum">     525 </span>            :   unsigned int oindex, nindex;
+<span class="lineNum">     526 </span>            : 
+<span class="lineNum">     527 </span><span class="lineNoCov">          0 :   oentries = htab-&gt;entries;</span>
+<span class="lineNum">     528 </span><span class="lineNoCov">          0 :   oindex = htab-&gt;size_prime_index;</span>
+<span class="lineNum">     529 </span><span class="lineNoCov">          0 :   osize = htab-&gt;size;</span>
+<span class="lineNum">     530 </span><span class="lineNoCov">          0 :   olimit = oentries + osize;</span>
+<span class="lineNum">     531 </span><span class="lineNoCov">          0 :   elts = htab_elements (htab);</span>
+<span class="lineNum">     532 </span>            : 
+<span class="lineNum">     533 </span>            :   /* Resize only when table after removal of unused elements is either
+<span class="lineNum">     534 </span>            :      too full or too empty.  */
+<span class="lineNum">     535 </span><span class="lineNoCov">          0 :   if (elts * 2 &gt; osize || (elts * 8 &lt; osize &amp;&amp; osize &gt; 32))</span>
+<span class="lineNum">     536 </span>            :     {
+<span class="lineNum">     537 </span><span class="lineNoCov">          0 :       nindex = higher_prime_index (elts * 2);</span>
+<span class="lineNum">     538 </span><span class="lineNoCov">          0 :       nsize = prime_tab[nindex].prime;</span>
+<span class="lineNum">     539 </span>            :     }
+<span class="lineNum">     540 </span>            :   else
+<span class="lineNum">     541 </span>            :     {
+<span class="lineNum">     542 </span><span class="lineNoCov">          0 :       nindex = oindex;</span>
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :       nsize = osize;</span>
+<span class="lineNum">     544 </span>            :     }
+<span class="lineNum">     545 </span>            : 
+<span class="lineNum">     546 </span><span class="lineNoCov">          0 :   if (htab-&gt;alloc_with_arg_f != NULL)</span>
+<span class="lineNum">     547 </span><span class="lineNoCov">          0 :     nentries = (PTR *) (*htab-&gt;alloc_with_arg_f) (htab-&gt;alloc_arg, nsize,</span>
+<span class="lineNum">     548 </span>            :                                                   sizeof (PTR *));
+<span class="lineNum">     549 </span>            :   else
+<span class="lineNum">     550 </span><span class="lineNoCov">          0 :     nentries = (PTR *) (*htab-&gt;alloc_f) (nsize, sizeof (PTR *));</span>
+<span class="lineNum">     551 </span><span class="lineNoCov">          0 :   if (nentries == NULL)</span>
+<span class="lineNum">     552 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     553 </span><span class="lineNoCov">          0 :   htab-&gt;entries = nentries;</span>
+<span class="lineNum">     554 </span><span class="lineNoCov">          0 :   htab-&gt;size = nsize;</span>
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :   htab-&gt;size_prime_index = nindex;</span>
+<span class="lineNum">     556 </span><span class="lineNoCov">          0 :   htab-&gt;n_elements -= htab-&gt;n_deleted;</span>
+<span class="lineNum">     557 </span><span class="lineNoCov">          0 :   htab-&gt;n_deleted = 0;</span>
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span><span class="lineNoCov">          0 :   p = oentries;</span>
+<span class="lineNum">     560 </span>            :   do
+<span class="lineNum">     561 </span>            :     {
+<span class="lineNum">     562 </span><span class="lineNoCov">          0 :       PTR x = *p;</span>
+<span class="lineNum">     563 </span>            : 
+<span class="lineNum">     564 </span><span class="lineNoCov">          0 :       if (x != HTAB_EMPTY_ENTRY &amp;&amp; x != HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     565 </span>            :         {
+<span class="lineNum">     566 </span><span class="lineNoCov">          0 :           PTR *q = find_empty_slot_for_expand (htab, (*htab-&gt;hash_f) (x));</span>
+<span class="lineNum">     567 </span>            : 
+<span class="lineNum">     568 </span><span class="lineNoCov">          0 :           *q = x;</span>
+<span class="lineNum">     569 </span>            :         }
+<span class="lineNum">     570 </span>            : 
+<span class="lineNum">     571 </span><span class="lineNoCov">          0 :       p++;</span>
+<span class="lineNum">     572 </span>            :     }
+<span class="lineNum">     573 </span><span class="lineNoCov">          0 :   while (p &lt; olimit);</span>
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :   if (htab-&gt;free_f != NULL)</span>
+<span class="lineNum">     576 </span><span class="lineNoCov">          0 :     (*htab-&gt;free_f) (oentries);</span>
+<span class="lineNum">     577 </span><span class="lineNoCov">          0 :   else if (htab-&gt;free_with_arg_f != NULL)</span>
+<span class="lineNum">     578 </span><span class="lineNoCov">          0 :     (*htab-&gt;free_with_arg_f) (htab-&gt;alloc_arg, oentries);</span>
+<span class="lineNum">     579 </span><span class="lineNoCov">          0 :   return 1;</span>
+<span class="lineNum">     580 </span>            : }
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            : /* This function searches for a hash table entry equal to the given
+<span class="lineNum">     583 </span>            :    element.  It cannot be used to insert or delete an element.  */
+<a name="584"><span class="lineNum">     584 </span>            : </a>
+<span class="lineNum">     585 </span>            : PTR
+<span class="lineNum">     586 </span><span class="lineNoCov">          0 : htab_find_with_hash (htab_t htab, const PTR element, hashval_t hash)</span>
+<span class="lineNum">     587 </span>            : {
+<span class="lineNum">     588 </span>            :   hashval_t index, hash2;
+<span class="lineNum">     589 </span>            :   size_t size;
+<span class="lineNum">     590 </span>            :   PTR entry;
+<span class="lineNum">     591 </span>            : 
+<span class="lineNum">     592 </span><span class="lineNoCov">          0 :   htab-&gt;searches++;</span>
+<span class="lineNum">     593 </span><span class="lineNoCov">          0 :   size = htab_size (htab);</span>
+<span class="lineNum">     594 </span><span class="lineNoCov">          0 :   index = htab_mod (hash, htab);</span>
+<span class="lineNum">     595 </span>            : 
+<span class="lineNum">     596 </span><span class="lineNoCov">          0 :   entry = htab-&gt;entries[index];</span>
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :   if (entry == HTAB_EMPTY_ENTRY</span>
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 :       || (entry != HTAB_DELETED_ENTRY &amp;&amp; (*htab-&gt;eq_f) (entry, element)))</span>
+<span class="lineNum">     599 </span><span class="lineNoCov">          0 :     return entry;</span>
+<span class="lineNum">     600 </span>            : 
+<span class="lineNum">     601 </span><span class="lineNoCov">          0 :   hash2 = htab_mod_m2 (hash, htab);</span>
+<span class="lineNum">     602 </span>            :   for (;;)
+<span class="lineNum">     603 </span>            :     {
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :       htab-&gt;collisions++;</span>
+<span class="lineNum">     605 </span><span class="lineNoCov">          0 :       index += hash2;</span>
+<span class="lineNum">     606 </span><span class="lineNoCov">          0 :       if (index &gt;= size)</span>
+<span class="lineNum">     607 </span><span class="lineNoCov">          0 :         index -= size;</span>
+<span class="lineNum">     608 </span>            : 
+<span class="lineNum">     609 </span><span class="lineNoCov">          0 :       entry = htab-&gt;entries[index];</span>
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :       if (entry == HTAB_EMPTY_ENTRY</span>
+<span class="lineNum">     611 </span><span class="lineNoCov">          0 :           || (entry != HTAB_DELETED_ENTRY &amp;&amp; (*htab-&gt;eq_f) (entry, element)))</span>
+<span class="lineNum">     612 </span><span class="lineNoCov">          0 :         return entry;</span>
+<span class="lineNum">     613 </span>            :     }
+<span class="lineNum">     614 </span>            : }
+<span class="lineNum">     615 </span>            : 
+<span class="lineNum">     616 </span>            : /* Like htab_find_slot_with_hash, but compute the hash value from the
+<span class="lineNum">     617 </span>            :    element.  */
+<a name="618"><span class="lineNum">     618 </span>            : </a>
+<span class="lineNum">     619 </span>            : PTR
+<span class="lineNum">     620 </span><span class="lineNoCov">          0 : htab_find (htab_t htab, const PTR element)</span>
+<span class="lineNum">     621 </span>            : {
+<span class="lineNum">     622 </span><span class="lineNoCov">          0 :   return htab_find_with_hash (htab, element, (*htab-&gt;hash_f) (element));</span>
+<span class="lineNum">     623 </span>            : }
+<span class="lineNum">     624 </span>            : 
+<span class="lineNum">     625 </span>            : /* This function searches for a hash table slot containing an entry
+<span class="lineNum">     626 </span>            :    equal to the given element.  To delete an entry, call this with
+<span class="lineNum">     627 </span>            :    insert=NO_INSERT, then call htab_clear_slot on the slot returned
+<span class="lineNum">     628 </span>            :    (possibly after doing some checks).  To insert an entry, call this
+<span class="lineNum">     629 </span>            :    with insert=INSERT, then write the value you want into the returned
+<span class="lineNum">     630 </span>            :    slot.  When inserting an entry, NULL may be returned if memory
+<span class="lineNum">     631 </span>            :    allocation fails.  */
+<a name="632"><span class="lineNum">     632 </span>            : </a>
+<span class="lineNum">     633 </span>            : PTR *
+<span class="lineNum">     634 </span><span class="lineNoCov">          0 : htab_find_slot_with_hash (htab_t htab, const PTR element,</span>
+<span class="lineNum">     635 </span>            :                           hashval_t hash, enum insert_option insert)
+<span class="lineNum">     636 </span>            : {
+<span class="lineNum">     637 </span>            :   PTR *first_deleted_slot;
+<span class="lineNum">     638 </span>            :   hashval_t index, hash2;
+<span class="lineNum">     639 </span>            :   size_t size;
+<span class="lineNum">     640 </span>            :   PTR entry;
+<span class="lineNum">     641 </span>            : 
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :   size = htab_size (htab);</span>
+<span class="lineNum">     643 </span><span class="lineNoCov">          0 :   if (insert == INSERT &amp;&amp; size * 3 &lt;= htab-&gt;n_elements * 4)</span>
+<span class="lineNum">     644 </span>            :     {
+<span class="lineNum">     645 </span><span class="lineNoCov">          0 :       if (htab_expand (htab) == 0)</span>
+<span class="lineNum">     646 </span><span class="lineNoCov">          0 :         return NULL;</span>
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :       size = htab_size (htab);</span>
+<span class="lineNum">     648 </span>            :     }
+<span class="lineNum">     649 </span>            : 
+<span class="lineNum">     650 </span><span class="lineNoCov">          0 :   index = htab_mod (hash, htab);</span>
+<span class="lineNum">     651 </span>            : 
+<span class="lineNum">     652 </span><span class="lineNoCov">          0 :   htab-&gt;searches++;</span>
+<span class="lineNum">     653 </span><span class="lineNoCov">          0 :   first_deleted_slot = NULL;</span>
+<span class="lineNum">     654 </span>            : 
+<span class="lineNum">     655 </span><span class="lineNoCov">          0 :   entry = htab-&gt;entries[index];</span>
+<span class="lineNum">     656 </span><span class="lineNoCov">          0 :   if (entry == HTAB_EMPTY_ENTRY)</span>
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :     goto empty_entry;</span>
+<span class="lineNum">     658 </span><span class="lineNoCov">          0 :   else if (entry == HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     659 </span><span class="lineNoCov">          0 :     first_deleted_slot = &amp;htab-&gt;entries[index];</span>
+<span class="lineNum">     660 </span><span class="lineNoCov">          0 :   else if ((*htab-&gt;eq_f) (entry, element))</span>
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 :     return &amp;htab-&gt;entries[index];</span>
+<span class="lineNum">     662 </span>            :       
+<span class="lineNum">     663 </span><span class="lineNoCov">          0 :   hash2 = htab_mod_m2 (hash, htab);</span>
+<span class="lineNum">     664 </span>            :   for (;;)
+<span class="lineNum">     665 </span>            :     {
+<span class="lineNum">     666 </span><span class="lineNoCov">          0 :       htab-&gt;collisions++;</span>
+<span class="lineNum">     667 </span><span class="lineNoCov">          0 :       index += hash2;</span>
+<span class="lineNum">     668 </span><span class="lineNoCov">          0 :       if (index &gt;= size)</span>
+<span class="lineNum">     669 </span><span class="lineNoCov">          0 :         index -= size;</span>
+<span class="lineNum">     670 </span>            :       
+<span class="lineNum">     671 </span><span class="lineNoCov">          0 :       entry = htab-&gt;entries[index];</span>
+<span class="lineNum">     672 </span><span class="lineNoCov">          0 :       if (entry == HTAB_EMPTY_ENTRY)</span>
+<span class="lineNum">     673 </span><span class="lineNoCov">          0 :         goto empty_entry;</span>
+<span class="lineNum">     674 </span><span class="lineNoCov">          0 :       else if (entry == HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     675 </span>            :         {
+<span class="lineNum">     676 </span><span class="lineNoCov">          0 :           if (!first_deleted_slot)</span>
+<span class="lineNum">     677 </span><span class="lineNoCov">          0 :             first_deleted_slot = &amp;htab-&gt;entries[index];</span>
+<span class="lineNum">     678 </span>            :         }
+<span class="lineNum">     679 </span><span class="lineNoCov">          0 :       else if ((*htab-&gt;eq_f) (entry, element))</span>
+<span class="lineNum">     680 </span><span class="lineNoCov">          0 :         return &amp;htab-&gt;entries[index];</span>
+<span class="lineNum">     681 </span>            :     }
+<span class="lineNum">     682 </span>            : 
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :  empty_entry:</span>
+<span class="lineNum">     684 </span><span class="lineNoCov">          0 :   if (insert == NO_INSERT)</span>
+<span class="lineNum">     685 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     686 </span>            : 
+<span class="lineNum">     687 </span><span class="lineNoCov">          0 :   if (first_deleted_slot)</span>
+<span class="lineNum">     688 </span>            :     {
+<span class="lineNum">     689 </span><span class="lineNoCov">          0 :       htab-&gt;n_deleted--;</span>
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :       *first_deleted_slot = HTAB_EMPTY_ENTRY;</span>
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :       return first_deleted_slot;</span>
+<span class="lineNum">     692 </span>            :     }
+<span class="lineNum">     693 </span>            : 
+<span class="lineNum">     694 </span><span class="lineNoCov">          0 :   htab-&gt;n_elements++;</span>
+<span class="lineNum">     695 </span><span class="lineNoCov">          0 :   return &amp;htab-&gt;entries[index];</span>
+<span class="lineNum">     696 </span>            : }
+<span class="lineNum">     697 </span>            : 
+<span class="lineNum">     698 </span>            : /* Like htab_find_slot_with_hash, but compute the hash value from the
+<span class="lineNum">     699 </span>            :    element.  */
+<a name="700"><span class="lineNum">     700 </span>            : </a>
+<span class="lineNum">     701 </span>            : PTR *
+<span class="lineNum">     702 </span><span class="lineNoCov">          0 : htab_find_slot (htab_t htab, const PTR element, enum insert_option insert)</span>
+<span class="lineNum">     703 </span>            : {
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :   return htab_find_slot_with_hash (htab, element, (*htab-&gt;hash_f) (element),</span>
+<span class="lineNum">     705 </span>            :                                    insert);
+<span class="lineNum">     706 </span>            : }
+<span class="lineNum">     707 </span>            : 
+<span class="lineNum">     708 </span>            : /* This function deletes an element with the given value from hash
+<span class="lineNum">     709 </span>            :    table (the hash is computed from the element).  If there is no matching
+<span class="lineNum">     710 </span>            :    element in the hash table, this function does nothing.  */
+<a name="711"><span class="lineNum">     711 </span>            : </a>
+<span class="lineNum">     712 </span>            : void
+<span class="lineNum">     713 </span><span class="lineNoCov">          0 : htab_remove_elt (htab_t htab, PTR element)</span>
+<span class="lineNum">     714 </span>            : {
+<span class="lineNum">     715 </span><span class="lineNoCov">          0 :   htab_remove_elt_with_hash (htab, element, (*htab-&gt;hash_f) (element));</span>
+<span class="lineNum">     716 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     717 </span>            : 
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span>            : /* This function deletes an element with the given value from hash
+<span class="lineNum">     720 </span>            :    table.  If there is no matching element in the hash table, this
+<span class="lineNum">     721 </span>            :    function does nothing.  */
+<a name="722"><span class="lineNum">     722 </span>            : </a>
+<span class="lineNum">     723 </span>            : void
+<span class="lineNum">     724 </span><span class="lineNoCov">          0 : htab_remove_elt_with_hash (htab_t htab, PTR element, hashval_t hash)</span>
+<span class="lineNum">     725 </span>            : {
+<span class="lineNum">     726 </span>            :   PTR *slot;
+<span class="lineNum">     727 </span>            : 
+<span class="lineNum">     728 </span><span class="lineNoCov">          0 :   slot = htab_find_slot_with_hash (htab, element, hash, NO_INSERT);</span>
+<span class="lineNum">     729 </span><span class="lineNoCov">          0 :   if (*slot == HTAB_EMPTY_ENTRY)</span>
+<span class="lineNum">     730 </span><span class="lineNoCov">          0 :     return;</span>
+<span class="lineNum">     731 </span>            : 
+<span class="lineNum">     732 </span><span class="lineNoCov">          0 :   if (htab-&gt;del_f)</span>
+<span class="lineNum">     733 </span><span class="lineNoCov">          0 :     (*htab-&gt;del_f) (*slot);</span>
+<span class="lineNum">     734 </span>            : 
+<span class="lineNum">     735 </span><span class="lineNoCov">          0 :   *slot = HTAB_DELETED_ENTRY;</span>
+<span class="lineNum">     736 </span><span class="lineNoCov">          0 :   htab-&gt;n_deleted++;</span>
+<span class="lineNum">     737 </span>            : }
+<span class="lineNum">     738 </span>            : 
+<span class="lineNum">     739 </span>            : /* This function clears a specified slot in a hash table.  It is
+<span class="lineNum">     740 </span>            :    useful when you've already done the lookup and don't want to do it
+<span class="lineNum">     741 </span>            :    again.  */
+<a name="742"><span class="lineNum">     742 </span>            : </a>
+<span class="lineNum">     743 </span>            : void
+<span class="lineNum">     744 </span><span class="lineNoCov">          0 : htab_clear_slot (htab_t htab, PTR *slot)</span>
+<span class="lineNum">     745 </span>            : {
+<span class="lineNum">     746 </span><span class="lineNoCov">          0 :   if (slot &lt; htab-&gt;entries || slot &gt;= htab-&gt;entries + htab_size (htab)</span>
+<span class="lineNum">     747 </span><span class="lineNoCov">          0 :       || *slot == HTAB_EMPTY_ENTRY || *slot == HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     748 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     749 </span>            : 
+<span class="lineNum">     750 </span><span class="lineNoCov">          0 :   if (htab-&gt;del_f)</span>
+<span class="lineNum">     751 </span><span class="lineNoCov">          0 :     (*htab-&gt;del_f) (*slot);</span>
+<span class="lineNum">     752 </span>            : 
+<span class="lineNum">     753 </span><span class="lineNoCov">          0 :   *slot = HTAB_DELETED_ENTRY;</span>
+<span class="lineNum">     754 </span><span class="lineNoCov">          0 :   htab-&gt;n_deleted++;</span>
+<span class="lineNum">     755 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     756 </span>            : 
+<span class="lineNum">     757 </span>            : /* This function scans over the entire hash table calling
+<span class="lineNum">     758 </span>            :    CALLBACK for each live entry.  If CALLBACK returns false,
+<span class="lineNum">     759 </span>            :    the iteration stops.  INFO is passed as CALLBACK's second
+<span class="lineNum">     760 </span>            :    argument.  */
+<a name="761"><span class="lineNum">     761 </span>            : </a>
+<span class="lineNum">     762 </span>            : void
+<span class="lineNum">     763 </span><span class="lineNoCov">          0 : htab_traverse_noresize (htab_t htab, htab_trav callback, PTR info)</span>
+<span class="lineNum">     764 </span>            : {
+<span class="lineNum">     765 </span>            :   PTR *slot;
+<span class="lineNum">     766 </span>            :   PTR *limit;
+<span class="lineNum">     767 </span>            :   
+<span class="lineNum">     768 </span><span class="lineNoCov">          0 :   slot = htab-&gt;entries;</span>
+<span class="lineNum">     769 </span><span class="lineNoCov">          0 :   limit = slot + htab_size (htab);</span>
+<span class="lineNum">     770 </span>            : 
+<span class="lineNum">     771 </span>            :   do
+<span class="lineNum">     772 </span>            :     {
+<span class="lineNum">     773 </span><span class="lineNoCov">          0 :       PTR x = *slot;</span>
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span><span class="lineNoCov">          0 :       if (x != HTAB_EMPTY_ENTRY &amp;&amp; x != HTAB_DELETED_ENTRY)</span>
+<span class="lineNum">     776 </span><span class="lineNoCov">          0 :         if (!(*callback) (slot, info))</span>
+<span class="lineNum">     777 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     778 </span>            :     }
+<span class="lineNum">     779 </span><span class="lineNoCov">          0 :   while (++slot &lt; limit);</span>
+<span class="lineNum">     780 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     781 </span>            : 
+<span class="lineNum">     782 </span>            : /* Like htab_traverse_noresize, but does resize the table when it is
+<span class="lineNum">     783 </span>            :    too empty to improve effectivity of subsequent calls.  */
+<a name="784"><span class="lineNum">     784 </span>            : </a>
+<span class="lineNum">     785 </span>            : void
+<span class="lineNum">     786 </span><span class="lineNoCov">          0 : htab_traverse (htab_t htab, htab_trav callback, PTR info)</span>
+<span class="lineNum">     787 </span>            : {
+<span class="lineNum">     788 </span><span class="lineNoCov">          0 :   size_t size = htab_size (htab);</span>
+<span class="lineNum">     789 </span><span class="lineNoCov">          0 :   if (htab_elements (htab) * 8 &lt; size &amp;&amp; size &gt; 32)</span>
+<span class="lineNum">     790 </span><span class="lineNoCov">          0 :     htab_expand (htab);</span>
+<span class="lineNum">     791 </span>            : 
+<span class="lineNum">     792 </span><span class="lineNoCov">          0 :   htab_traverse_noresize (htab, callback, info);</span>
+<span class="lineNum">     793 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     794 </span>            : 
+<span class="lineNum">     795 </span>            : /* Return the fraction of fixed collisions during all work with given
+<span class="lineNum">     796 </span>            :    hash table. */
+<a name="797"><span class="lineNum">     797 </span>            : </a>
+<span class="lineNum">     798 </span>            : double
+<span class="lineNum">     799 </span><span class="lineNoCov">          0 : htab_collisions (htab_t htab)</span>
+<span class="lineNum">     800 </span>            : {
+<span class="lineNum">     801 </span><span class="lineNoCov">          0 :   if (htab-&gt;searches == 0)</span>
+<span class="lineNum">     802 </span><span class="lineNoCov">          0 :     return 0.0;</span>
+<span class="lineNum">     803 </span>            : 
+<span class="lineNum">     804 </span><span class="lineNoCov">          0 :   return (double) htab-&gt;collisions / (double) htab-&gt;searches;</span>
+<span class="lineNum">     805 </span>            : }
+<span class="lineNum">     806 </span>            : 
+<span class="lineNum">     807 </span>            : /* Hash P as a null-terminated string.
+<span class="lineNum">     808 </span>            : 
+<span class="lineNum">     809 </span>            :    Copied from gcc/hashtable.c.  Zack had the following to say with respect
+<span class="lineNum">     810 </span>            :    to applicability, though note that unlike hashtable.c, this hash table
+<span class="lineNum">     811 </span>            :    implementation re-hashes rather than chain buckets.
+<span class="lineNum">     812 </span>            : 
+<span class="lineNum">     813 </span>            :    http://gcc.gnu.org/ml/gcc-patches/2001-08/msg01021.html
+<span class="lineNum">     814 </span>            :    From: Zack Weinberg &lt;zackw@panix.com&gt;
+<span class="lineNum">     815 </span>            :    Date: Fri, 17 Aug 2001 02:15:56 -0400
+<span class="lineNum">     816 </span>            : 
+<span class="lineNum">     817 </span>            :    I got it by extracting all the identifiers from all the source code
+<span class="lineNum">     818 </span>            :    I had lying around in mid-1999, and testing many recurrences of
+<span class="lineNum">     819 </span>            :    the form &quot;H_n = H_{n-1} * K + c_n * L + M&quot; where K, L, M were either
+<span class="lineNum">     820 </span>            :    prime numbers or the appropriate identity.  This was the best one.
+<span class="lineNum">     821 </span>            :    I don't remember exactly what constituted &quot;best&quot;, except I was
+<span class="lineNum">     822 </span>            :    looking at bucket-length distributions mostly.
+<span class="lineNum">     823 </span>            :    
+<span class="lineNum">     824 </span>            :    So it should be very good at hashing identifiers, but might not be
+<span class="lineNum">     825 </span>            :    as good at arbitrary strings.
+<span class="lineNum">     826 </span>            :    
+<span class="lineNum">     827 </span>            :    I'll add that it thoroughly trounces the hash functions recommended
+<span class="lineNum">     828 </span>            :    for this use at http://burtleburtle.net/bob/hash/index.html, both
+<span class="lineNum">     829 </span>            :    on speed and bucket distribution.  I haven't tried it against the
+<span class="lineNum">     830 </span>            :    function they just started using for Perl's hashes.  */
+<a name="831"><span class="lineNum">     831 </span>            : </a>
+<span class="lineNum">     832 </span>            : hashval_t
+<span class="lineNum">     833 </span><span class="lineNoCov">          0 : htab_hash_string (const PTR p)</span>
+<span class="lineNum">     834 </span>            : {
+<span class="lineNum">     835 </span><span class="lineNoCov">          0 :   const unsigned char *str = (const unsigned char *) p;</span>
+<span class="lineNum">     836 </span><span class="lineNoCov">          0 :   hashval_t r = 0;</span>
+<span class="lineNum">     837 </span>            :   unsigned char c;
+<span class="lineNum">     838 </span>            : 
+<span class="lineNum">     839 </span><span class="lineNoCov">          0 :   while ((c = *str++) != 0)</span>
+<span class="lineNum">     840 </span><span class="lineNoCov">          0 :     r = r * 67 + c - 113;</span>
+<span class="lineNum">     841 </span>            : 
+<span class="lineNum">     842 </span><span class="lineNoCov">          0 :   return r;</span>
+<span class="lineNum">     843 </span>            : }
+<span class="lineNum">     844 </span>            : 
+<span class="lineNum">     845 </span>            : /* DERIVED FROM:
+<span class="lineNum">     846 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     847 </span>            : lookup2.c, by Bob Jenkins, December 1996, Public Domain.
+<span class="lineNum">     848 </span>            : hash(), hash2(), hash3, and mix() are externally useful functions.
+<span class="lineNum">     849 </span>            : Routines to test the hash are included if SELF_TEST is defined.
+<span class="lineNum">     850 </span>            : You can use this free for any purpose.  It has no warranty.
+<span class="lineNum">     851 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     852 </span>            : */
+<span class="lineNum">     853 </span>            : 
+<span class="lineNum">     854 </span>            : /*
+<span class="lineNum">     855 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     856 </span>            : mix -- mix 3 32-bit values reversibly.
+<span class="lineNum">     857 </span>            : For every delta with one or two bit set, and the deltas of all three
+<span class="lineNum">     858 </span>            :   high bits or all three low bits, whether the original value of a,b,c
+<span class="lineNum">     859 </span>            :   is almost all zero or is uniformly distributed,
+<span class="lineNum">     860 </span>            : * If mix() is run forward or backward, at least 32 bits in a,b,c
+<span class="lineNum">     861 </span>            :   have at least 1/4 probability of changing.
+<span class="lineNum">     862 </span>            : * If mix() is run forward, every bit of c will change between 1/3 and
+<span class="lineNum">     863 </span>            :   2/3 of the time.  (Well, 22/100 and 78/100 for some 2-bit deltas.)
+<span class="lineNum">     864 </span>            : mix() was built out of 36 single-cycle latency instructions in a 
+<span class="lineNum">     865 </span>            :   structure that could supported 2x parallelism, like so:
+<span class="lineNum">     866 </span>            :       a -= b; 
+<span class="lineNum">     867 </span>            :       a -= c; x = (c&gt;&gt;13);
+<span class="lineNum">     868 </span>            :       b -= c; a ^= x;
+<span class="lineNum">     869 </span>            :       b -= a; x = (a&lt;&lt;8);
+<span class="lineNum">     870 </span>            :       c -= a; b ^= x;
+<span class="lineNum">     871 </span>            :       c -= b; x = (b&gt;&gt;13);
+<span class="lineNum">     872 </span>            :       ...
+<span class="lineNum">     873 </span>            :   Unfortunately, superscalar Pentiums and Sparcs can't take advantage 
+<span class="lineNum">     874 </span>            :   of that parallelism.  They've also turned some of those single-cycle
+<span class="lineNum">     875 </span>            :   latency instructions into multi-cycle latency instructions.  Still,
+<span class="lineNum">     876 </span>            :   this is the fastest good hash I could find.  There were about 2^^68
+<span class="lineNum">     877 </span>            :   to choose from.  I only looked at a billion or so.
+<span class="lineNum">     878 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     879 </span>            : */
+<span class="lineNum">     880 </span>            : /* same, but slower, works on systems that might have 8 byte hashval_t's */
+<span class="lineNum">     881 </span>            : #define mix(a,b,c) \
+<span class="lineNum">     882 </span>            : { \
+<span class="lineNum">     883 </span>            :   a -= b; a -= c; a ^= (c&gt;&gt;13); \
+<span class="lineNum">     884 </span>            :   b -= c; b -= a; b ^= (a&lt;&lt; 8); \
+<span class="lineNum">     885 </span>            :   c -= a; c -= b; c ^= ((b&amp;0xffffffff)&gt;&gt;13); \
+<span class="lineNum">     886 </span>            :   a -= b; a -= c; a ^= ((c&amp;0xffffffff)&gt;&gt;12); \
+<span class="lineNum">     887 </span>            :   b -= c; b -= a; b = (b ^ (a&lt;&lt;16)) &amp; 0xffffffff; \
+<span class="lineNum">     888 </span>            :   c -= a; c -= b; c = (c ^ (b&gt;&gt; 5)) &amp; 0xffffffff; \
+<span class="lineNum">     889 </span>            :   a -= b; a -= c; a = (a ^ (c&gt;&gt; 3)) &amp; 0xffffffff; \
+<span class="lineNum">     890 </span>            :   b -= c; b -= a; b = (b ^ (a&lt;&lt;10)) &amp; 0xffffffff; \
+<span class="lineNum">     891 </span>            :   c -= a; c -= b; c = (c ^ (b&gt;&gt;15)) &amp; 0xffffffff; \
+<span class="lineNum">     892 </span>            : }
+<span class="lineNum">     893 </span>            : 
+<span class="lineNum">     894 </span>            : /*
+<span class="lineNum">     895 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     896 </span>            : hash() -- hash a variable-length key into a 32-bit value
+<span class="lineNum">     897 </span>            :   k     : the key (the unaligned variable-length array of bytes)
+<span class="lineNum">     898 </span>            :   len   : the length of the key, counting by bytes
+<span class="lineNum">     899 </span>            :   level : can be any 4-byte value
+<span class="lineNum">     900 </span>            : Returns a 32-bit value.  Every bit of the key affects every bit of
+<span class="lineNum">     901 </span>            : the return value.  Every 1-bit and 2-bit delta achieves avalanche.
+<span class="lineNum">     902 </span>            : About 36+6len instructions.
+<span class="lineNum">     903 </span>            : 
+<span class="lineNum">     904 </span>            : The best hash table sizes are powers of 2.  There is no need to do
+<span class="lineNum">     905 </span>            : mod a prime (mod is sooo slow!).  If you need less than 32 bits,
+<span class="lineNum">     906 </span>            : use a bitmask.  For example, if you need only 10 bits, do
+<span class="lineNum">     907 </span>            :   h = (h &amp; hashmask(10));
+<span class="lineNum">     908 </span>            : In which case, the hash table should have hashsize(10) elements.
+<span class="lineNum">     909 </span>            : 
+<span class="lineNum">     910 </span>            : If you are hashing n strings (ub1 **)k, do it like this:
+<span class="lineNum">     911 </span>            :   for (i=0, h=0; i&lt;n; ++i) h = hash( k[i], len[i], h);
+<span class="lineNum">     912 </span>            : 
+<span class="lineNum">     913 </span>            : By Bob Jenkins, 1996.  bob_jenkins@burtleburtle.net.  You may use this
+<span class="lineNum">     914 </span>            : code any way you wish, private, educational, or commercial.  It's free.
+<span class="lineNum">     915 </span>            : 
+<span class="lineNum">     916 </span>            : See http://burtleburtle.net/bob/hash/evahash.html
+<span class="lineNum">     917 </span>            : Use for hash table lookup, or anything where one collision in 2^32 is
+<span class="lineNum">     918 </span>            : acceptable.  Do NOT use for cryptographic purposes.
+<span class="lineNum">     919 </span>            : --------------------------------------------------------------------
+<span class="lineNum">     920 </span>            : */
+<a name="921"><span class="lineNum">     921 </span>            : </a>
+<span class="lineNum">     922 </span>            : hashval_t
+<span class="lineNum">     923 </span><span class="lineNoCov">          0 : iterative_hash (const PTR k_in /* the key */,</span>
+<span class="lineNum">     924 </span>            :                 register size_t  length /* the length of the key */,
+<span class="lineNum">     925 </span>            :                 register hashval_t initval /* the previous hash, or
+<span class="lineNum">     926 </span>            :                                               an arbitrary value */)
+<span class="lineNum">     927 </span>            : {
+<span class="lineNum">     928 </span><span class="lineNoCov">          0 :   register const unsigned char *k = (const unsigned char *)k_in;</span>
+<span class="lineNum">     929 </span>            :   register hashval_t a,b,c,len;
+<span class="lineNum">     930 </span>            : 
+<span class="lineNum">     931 </span>            :   /* Set up the internal state */
+<span class="lineNum">     932 </span><span class="lineNoCov">          0 :   len = length;</span>
+<span class="lineNum">     933 </span><span class="lineNoCov">          0 :   a = b = 0x9e3779b9;  /* the golden ratio; an arbitrary value */</span>
+<span class="lineNum">     934 </span><span class="lineNoCov">          0 :   c = initval;           /* the previous hash value */</span>
+<span class="lineNum">     935 </span>            : 
+<span class="lineNum">     936 </span>            :   /*---------------------------------------- handle most of the key */
+<span class="lineNum">     937 </span>            : #ifndef WORDS_BIGENDIAN
+<span class="lineNum">     938 </span>            :   /* On a little-endian machine, if the data is 4-byte aligned we can hash
+<span class="lineNum">     939 </span>            :      by word for better speed.  This gives nondeterministic results on
+<span class="lineNum">     940 </span>            :      big-endian machines.  */
+<span class="lineNum">     941 </span><span class="lineNoCov">          0 :   if (sizeof (hashval_t) == 4 &amp;&amp; (((size_t)k)&amp;3) == 0)</span>
+<span class="lineNum">     942 </span><span class="lineNoCov">          0 :     while (len &gt;= 12)    /* aligned */</span>
+<span class="lineNum">     943 </span>            :       {
+<span class="lineNum">     944 </span><span class="lineNoCov">          0 :         a += *(hashval_t *)(k+0);</span>
+<span class="lineNum">     945 </span><span class="lineNoCov">          0 :         b += *(hashval_t *)(k+4);</span>
+<span class="lineNum">     946 </span><span class="lineNoCov">          0 :         c += *(hashval_t *)(k+8);</span>
+<span class="lineNum">     947 </span><span class="lineNoCov">          0 :         mix(a,b,c);</span>
+<span class="lineNum">     948 </span><span class="lineNoCov">          0 :         k += 12; len -= 12;</span>
+<span class="lineNum">     949 </span>            :       }
+<span class="lineNum">     950 </span>            :   else /* unaligned */
+<span class="lineNum">     951 </span>            : #endif
+<span class="lineNum">     952 </span><span class="lineNoCov">          0 :     while (len &gt;= 12)</span>
+<span class="lineNum">     953 </span>            :       {
+<span class="lineNum">     954 </span><span class="lineNoCov">          0 :         a += (k[0] +((hashval_t)k[1]&lt;&lt;8) +((hashval_t)k[2]&lt;&lt;16) +((hashval_t)k[3]&lt;&lt;24));</span>
+<span class="lineNum">     955 </span><span class="lineNoCov">          0 :         b += (k[4] +((hashval_t)k[5]&lt;&lt;8) +((hashval_t)k[6]&lt;&lt;16) +((hashval_t)k[7]&lt;&lt;24));</span>
+<span class="lineNum">     956 </span><span class="lineNoCov">          0 :         c += (k[8] +((hashval_t)k[9]&lt;&lt;8) +((hashval_t)k[10]&lt;&lt;16)+((hashval_t)k[11]&lt;&lt;24));</span>
+<span class="lineNum">     957 </span><span class="lineNoCov">          0 :         mix(a,b,c);</span>
+<span class="lineNum">     958 </span><span class="lineNoCov">          0 :         k += 12; len -= 12;</span>
+<span class="lineNum">     959 </span>            :       }
+<span class="lineNum">     960 </span>            : 
+<span class="lineNum">     961 </span>            :   /*------------------------------------- handle the last 11 bytes */
+<span class="lineNum">     962 </span><span class="lineNoCov">          0 :   c += length;</span>
+<span class="lineNum">     963 </span><span class="lineNoCov">          0 :   switch(len)              /* all the case statements fall through */</span>
+<span class="lineNum">     964 </span>            :     {
+<span class="lineNum">     965 </span><span class="lineNoCov">          0 :     case 11: c+=((hashval_t)k[10]&lt;&lt;24);   /* fall through */</span>
+<span class="lineNum">     966 </span><span class="lineNoCov">          0 :     case 10: c+=((hashval_t)k[9]&lt;&lt;16);    /* fall through */</span>
+<span class="lineNum">     967 </span><span class="lineNoCov">          0 :     case 9 : c+=((hashval_t)k[8]&lt;&lt;8);     /* fall through */</span>
+<span class="lineNum">     968 </span>            :       /* the first byte of c is reserved for the length */
+<span class="lineNum">     969 </span><span class="lineNoCov">          0 :     case 8 : b+=((hashval_t)k[7]&lt;&lt;24);    /* fall through */</span>
+<span class="lineNum">     970 </span><span class="lineNoCov">          0 :     case 7 : b+=((hashval_t)k[6]&lt;&lt;16);    /* fall through */</span>
+<span class="lineNum">     971 </span><span class="lineNoCov">          0 :     case 6 : b+=((hashval_t)k[5]&lt;&lt;8);     /* fall through */</span>
+<span class="lineNum">     972 </span><span class="lineNoCov">          0 :     case 5 : b+=k[4];                   /* fall through */</span>
+<span class="lineNum">     973 </span><span class="lineNoCov">          0 :     case 4 : a+=((hashval_t)k[3]&lt;&lt;24);    /* fall through */</span>
+<span class="lineNum">     974 </span><span class="lineNoCov">          0 :     case 3 : a+=((hashval_t)k[2]&lt;&lt;16);    /* fall through */</span>
+<span class="lineNum">     975 </span><span class="lineNoCov">          0 :     case 2 : a+=((hashval_t)k[1]&lt;&lt;8);     /* fall through */</span>
+<span class="lineNum">     976 </span><span class="lineNoCov">          0 :     case 1 : a+=k[0];</span>
+<span class="lineNum">     977 </span>            :       /* case 0: nothing left to add */
+<span class="lineNum">     978 </span>            :     }
+<span class="lineNum">     979 </span><span class="lineNoCov">          0 :   mix(a,b,c);</span>
+<span class="lineNum">     980 </span>            :   /*-------------------------------------------- report the result */
+<span class="lineNum">     981 </span><span class="lineNoCov">          0 :   return c;</span>
+<span class="lineNum">     982 </span>            : }
+<span class="lineNum">     983 </span>            : 
+<span class="lineNum">     984 </span>            : /* Returns a hash code for pointer P. Simplified version of evahash */
+<a name="985"><span class="lineNum">     985 </span>            : </a>
+<span class="lineNum">     986 </span>            : static hashval_t
+<span class="lineNum">     987 </span><span class="lineNoCov">          0 : hash_pointer (const PTR p)</span>
+<span class="lineNum">     988 </span>            : {
+<span class="lineNum">     989 </span><span class="lineNoCov">          0 :   intptr_t v = (intptr_t) p;</span>
+<span class="lineNum">     990 </span>            :   unsigned a, b, c;
+<span class="lineNum">     991 </span>            : 
+<span class="lineNum">     992 </span><span class="lineNoCov">          0 :   a = b = 0x9e3779b9;</span>
+<span class="lineNum">     993 </span><span class="lineNoCov">          0 :   a += v &gt;&gt; (sizeof (intptr_t) * CHAR_BIT / 2);</span>
+<span class="lineNum">     994 </span><span class="lineNoCov">          0 :   b += v &amp; (((intptr_t) 1 &lt;&lt; (sizeof (intptr_t) * CHAR_BIT / 2)) - 1);</span>
+<span class="lineNum">     995 </span><span class="lineNoCov">          0 :   c = 0x42135234;</span>
+<span class="lineNum">     996 </span><span class="lineNoCov">          0 :   mix (a, b, c);</span>
+<span class="lineNum">     997 </span><span class="lineNoCov">          0 :   return c;</span>
+<span class="lineNum">     998 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

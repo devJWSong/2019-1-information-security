@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/verilog.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - verilog.c<span style="font-size: 80%;"> (source / <a href="verilog.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">95</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* BFD back-end for verilog hex memory dump files.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2009-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Written by Anthony Green &lt;green@moxielogic.com&gt;
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            : /* SUBSECTION
+<span class="lineNum">      24 </span>            :         Verilog hex memory file handling
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :    DESCRIPTION
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            :         Verilog hex memory files cannot hold anything but addresses
+<span class="lineNum">      29 </span>            :         and data, so that's all that we implement.
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            :         The syntax of the text file is described in the IEEE standard
+<span class="lineNum">      32 </span>            :         for Verilog.  Briefly, the file contains two types of tokens:
+<span class="lineNum">      33 </span>            :         data and optional addresses.  The tokens are separated by
+<span class="lineNum">      34 </span>            :         whitespace and comments.  Comments may be single line or
+<span class="lineNum">      35 </span>            :         multiline, using syntax similar to C++.  Addresses are
+<span class="lineNum">      36 </span>            :         specified by a leading &quot;at&quot; character (@) and are always
+<span class="lineNum">      37 </span>            :         hexadecimal strings.  Data and addresses may contain
+<span class="lineNum">      38 </span>            :         underscore (_) characters.
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            :         If no address is specified, the data is assumed to start at
+<span class="lineNum">      41 </span>            :         address 0.  Similarly, if data exists before the first
+<span class="lineNum">      42 </span>            :         specified address, then that data is assumed to start at
+<span class="lineNum">      43 </span>            :         address 0.
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            :    EXAMPLE
+<span class="lineNum">      47 </span>            :         @1000
+<span class="lineNum">      48 </span>            :         01 ae 3f 45 12
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            :    DESCRIPTION
+<span class="lineNum">      51 </span>            :         @1000 specifies the starting address for the memory data.
+<span class="lineNum">      52 </span>            :         The following characters describe the 5 bytes at 0x1000.  */
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      56 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      57 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      58 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      59 </span>            : #include &quot;safe-ctype.h&quot;
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span>            : /* Macros for converting between hex and binary.  */
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            : static const char digs[] = &quot;0123456789ABCDEF&quot;;
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : #define NIBBLE(x)    hex_value(x)
+<span class="lineNum">      66 </span>            : #define HEX(buffer) ((NIBBLE ((buffer)[0])&lt;&lt;4) + NIBBLE ((buffer)[1]))
+<span class="lineNum">      67 </span>            : #define TOHEX(d, x) \
+<span class="lineNum">      68 </span>            :         d[1] = digs[(x) &amp; 0xf]; \
+<span class="lineNum">      69 </span>            :         d[0] = digs[((x) &gt;&gt; 4) &amp; 0xf];
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : /* When writing a verilog memory dump file, we write them in the order
+<span class="lineNum">      72 </span>            :    in which they appear in memory. This structure is used to hold them
+<span class="lineNum">      73 </span>            :    in memory.  */
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            : struct verilog_data_list_struct
+<span class="lineNum">      76 </span>            : {
+<span class="lineNum">      77 </span>            :   struct verilog_data_list_struct *next;
+<span class="lineNum">      78 </span>            :   bfd_byte * data;
+<span class="lineNum">      79 </span>            :   bfd_vma where;
+<span class="lineNum">      80 </span>            :   bfd_size_type size;
+<span class="lineNum">      81 </span>            : };
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            : typedef struct verilog_data_list_struct verilog_data_list_type;
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /* The verilog tdata information.  */
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            : typedef struct verilog_data_struct
+<span class="lineNum">      88 </span>            : {
+<span class="lineNum">      89 </span>            :   verilog_data_list_type *head;
+<span class="lineNum">      90 </span>            :   verilog_data_list_type *tail;
+<span class="lineNum">      91 </span>            : }
+<span class="lineNum">      92 </span>            : tdata_type;
+<a name="93"><span class="lineNum">      93 </span>            : </a>
+<span class="lineNum">      94 </span>            : static bfd_boolean
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 : verilog_set_arch_mach (bfd *abfd, enum bfd_architecture arch, unsigned long mach)</span>
+<span class="lineNum">      96 </span>            : {
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :   if (arch != bfd_arch_unknown)</span>
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :     return bfd_default_set_arch_mach (abfd, arch, mach);</span>
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span><span class="lineNoCov">          0 :   abfd-&gt;arch_info = &amp; bfd_default_arch_struct;</span>
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     102 </span>            : }
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : /* We have to save up all the outpu for a splurge before output.  */
+<a name="105"><span class="lineNum">     105 </span>            : </a>
+<span class="lineNum">     106 </span>            : static bfd_boolean
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 : verilog_set_section_contents (bfd *abfd,</span>
+<span class="lineNum">     108 </span>            :                               sec_ptr section,
+<span class="lineNum">     109 </span>            :                               const void * location,
+<span class="lineNum">     110 </span>            :                               file_ptr offset,
+<span class="lineNum">     111 </span>            :                               bfd_size_type bytes_to_do)
+<span class="lineNum">     112 </span>            : {
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :   tdata_type *tdata = abfd-&gt;tdata.verilog_data;</span>
+<span class="lineNum">     114 </span>            :   verilog_data_list_type *entry;
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineNoCov">          0 :   entry = (verilog_data_list_type *) bfd_alloc (abfd, sizeof (* entry));</span>
+<span class="lineNum">     117 </span><span class="lineNoCov">          0 :   if (entry == NULL)</span>
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span><span class="lineNoCov">          0 :   if (bytes_to_do</span>
+<span class="lineNum">     121 </span><span class="lineNoCov">          0 :       &amp;&amp; (section-&gt;flags &amp; SEC_ALLOC)</span>
+<span class="lineNum">     122 </span><span class="lineNoCov">          0 :       &amp;&amp; (section-&gt;flags &amp; SEC_LOAD))</span>
+<span class="lineNum">     123 </span>            :     {
+<span class="lineNum">     124 </span>            :       bfd_byte *data;
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :       data = (bfd_byte *) bfd_alloc (abfd, bytes_to_do);</span>
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :       if (data == NULL)</span>
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     129 </span><span class="lineNoCov">          0 :       memcpy ((void *) data, location, (size_t) bytes_to_do);</span>
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :       entry-&gt;data = data;</span>
+<span class="lineNum">     132 </span><span class="lineNoCov">          0 :       entry-&gt;where = section-&gt;lma + offset;</span>
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :       entry-&gt;size = bytes_to_do;</span>
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            :       /* Sort the records by address.  Optimize for the common case of
+<span class="lineNum">     136 </span>            :          adding a record to the end of the list.  */
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :       if (tdata-&gt;tail != NULL</span>
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :           &amp;&amp; entry-&gt;where &gt;= tdata-&gt;tail-&gt;where)</span>
+<span class="lineNum">     139 </span>            :         {
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :           tdata-&gt;tail-&gt;next = entry;</span>
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :           entry-&gt;next = NULL;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :           tdata-&gt;tail = entry;</span>
+<span class="lineNum">     143 </span>            :         }
+<span class="lineNum">     144 </span>            :       else
+<span class="lineNum">     145 </span>            :         {
+<span class="lineNum">     146 </span>            :           verilog_data_list_type **look;
+<span class="lineNum">     147 </span>            : 
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :           for (look = &amp;tdata-&gt;head;</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :                *look != NULL &amp;&amp; (*look)-&gt;where &lt; entry-&gt;where;</span>
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :                look = &amp;(*look)-&gt;next)</span>
+<span class="lineNum">     151 </span>            :             ;
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :           entry-&gt;next = *look;</span>
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :           *look = entry;</span>
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :           if (entry-&gt;next == NULL)</span>
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :             tdata-&gt;tail = entry;</span>
+<span class="lineNum">     156 </span>            :         }
+<span class="lineNum">     157 </span>            :     }
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     159 </span>            : }
+<a name="160"><span class="lineNum">     160 </span>            : </a>
+<span class="lineNum">     161 </span>            : static bfd_boolean
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 : verilog_write_address (bfd *abfd, bfd_vma address)</span>
+<span class="lineNum">     163 </span>            : {
+<span class="lineNum">     164 </span>            :   char buffer[12];
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :   char *dst = buffer;</span>
+<span class="lineNum">     166 </span>            :   bfd_size_type wrlen;
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            :   /* Write the address.  */
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :   *dst++ = '@';</span>
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :   TOHEX (dst, (address &gt;&gt; 24));</span>
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 :   dst += 2;</span>
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :   TOHEX (dst, (address &gt;&gt; 16));</span>
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :   dst += 2;</span>
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :   TOHEX (dst, (address &gt;&gt; 8));</span>
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :   dst += 2;</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :   TOHEX (dst, (address));</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :   dst += 2;</span>
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :   *dst++ = '\r';</span>
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :   *dst++ = '\n';</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :   wrlen = dst - buffer;</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :   return bfd_bwrite ((void *) buffer, wrlen, abfd) == wrlen;</span>
+<span class="lineNum">     183 </span>            : }
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            : /* Write a record of type, of the supplied number of bytes. The
+<span class="lineNum">     186 </span>            :    supplied bytes and length don't have a checksum. That's worked out
+<span class="lineNum">     187 </span>            :    here.  */
+<a name="188"><span class="lineNum">     188 </span>            : </a>
+<span class="lineNum">     189 </span>            : static bfd_boolean
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 : verilog_write_record (bfd *abfd,</span>
+<span class="lineNum">     191 </span>            :                       const bfd_byte *data,
+<span class="lineNum">     192 </span>            :                       const bfd_byte *end)
+<span class="lineNum">     193 </span>            : {
+<span class="lineNum">     194 </span>            :   char buffer[50];
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :   const bfd_byte *src = data;</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :   char *dst = buffer;</span>
+<span class="lineNum">     197 </span>            :   bfd_size_type wrlen;
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            :   /* Write the data.  */
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :   for (src = data; src &lt; end; src++)</span>
+<span class="lineNum">     201 </span>            :     {
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :       TOHEX (dst, *src);</span>
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :       dst += 2;</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :       *dst++ = ' ';</span>
+<span class="lineNum">     205 </span>            :     }
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :   *dst++ = '\r';</span>
+<span class="lineNum">     207 </span><span class="lineNoCov">          0 :   *dst++ = '\n';</span>
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 :   wrlen = dst - buffer;</span>
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 :   return bfd_bwrite ((void *) buffer, wrlen, abfd) == wrlen;</span>
+<span class="lineNum">     211 </span>            : }
+<a name="212"><span class="lineNum">     212 </span>            : </a>
+<span class="lineNum">     213 </span>            : static bfd_boolean
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 : verilog_write_section (bfd *abfd,</span>
+<span class="lineNum">     215 </span>            :                        tdata_type *tdata ATTRIBUTE_UNUSED,
+<span class="lineNum">     216 </span>            :                        verilog_data_list_type *list)
+<span class="lineNum">     217 </span>            : {
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :   unsigned int octets_written = 0;</span>
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :   bfd_byte *location = list-&gt;data;</span>
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :   verilog_write_address (abfd, list-&gt;where);</span>
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :   while (octets_written &lt; list-&gt;size)</span>
+<span class="lineNum">     223 </span>            :     {
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :       unsigned int octets_this_chunk = list-&gt;size - octets_written;</span>
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :       if (octets_this_chunk &gt; 16)</span>
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :         octets_this_chunk = 16;</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :       if (! verilog_write_record (abfd,</span>
+<span class="lineNum">     230 </span>            :                                   location,
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :                                   location + octets_this_chunk))</span>
+<span class="lineNum">     232 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :       octets_written += octets_this_chunk;</span>
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :       location += octets_this_chunk;</span>
+<span class="lineNum">     236 </span>            :     }
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     239 </span>            : }
+<a name="240"><span class="lineNum">     240 </span>            : </a>
+<span class="lineNum">     241 </span>            : static bfd_boolean
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 : verilog_write_object_contents (bfd *abfd)</span>
+<span class="lineNum">     243 </span>            : {
+<span class="lineNum">     244 </span><span class="lineNoCov">          0 :   tdata_type *tdata = abfd-&gt;tdata.verilog_data;</span>
+<span class="lineNum">     245 </span>            :   verilog_data_list_type *list;
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span>            :   /* Now wander though all the sections provided and output them.  */
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :   list = tdata-&gt;head;</span>
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :   while (list != (verilog_data_list_type *) NULL)</span>
+<span class="lineNum">     251 </span>            :     {
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :       if (! verilog_write_section (abfd, tdata, list))</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :       list = list-&gt;next;</span>
+<span class="lineNum">     255 </span>            :     }
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     257 </span>            : }
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            : /* Initialize by filling in the hex conversion array.  */
+<a name="260"><span class="lineNum">     260 </span>            : </a>
+<span class="lineNum">     261 </span>            : static void
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 : verilog_init (void)</span>
+<span class="lineNum">     263 </span>            : {
+<span class="lineNum">     264 </span>            :   static bfd_boolean inited = FALSE;
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span><span class="lineNoCov">          0 :   if (! inited)</span>
+<span class="lineNum">     267 </span>            :     {
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :       inited = TRUE;</span>
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :       hex_init ();</span>
+<span class="lineNum">     270 </span>            :     }
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            : /* Set up the verilog tdata information.  */
+<a name="274"><span class="lineNum">     274 </span>            : </a>
+<span class="lineNum">     275 </span>            : static bfd_boolean
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 : verilog_mkobject (bfd *abfd)</span>
+<span class="lineNum">     277 </span>            : {
+<span class="lineNum">     278 </span>            :   tdata_type *tdata;
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :   verilog_init ();</span>
+<span class="lineNum">     281 </span>            : 
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :   tdata = (tdata_type *) bfd_alloc (abfd, sizeof (tdata_type));</span>
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :   if (tdata == NULL)</span>
+<span class="lineNum">     284 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :   abfd-&gt;tdata.verilog_data = tdata;</span>
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :   tdata-&gt;head = NULL;</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :   tdata-&gt;tail = NULL;</span>
+<span class="lineNum">     289 </span>            : 
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     291 </span>            : }
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            : #define verilog_close_and_cleanup                    _bfd_generic_close_and_cleanup
+<span class="lineNum">     294 </span>            : #define verilog_bfd_free_cached_info                 _bfd_generic_bfd_free_cached_info
+<span class="lineNum">     295 </span>            : #define verilog_new_section_hook                     _bfd_generic_new_section_hook
+<span class="lineNum">     296 </span>            : #define verilog_bfd_is_target_special_symbol         ((bfd_boolean (*) (bfd *, asymbol *)) bfd_false)
+<span class="lineNum">     297 </span>            : #define verilog_bfd_is_local_label_name              bfd_generic_is_local_label_name
+<span class="lineNum">     298 </span>            : #define verilog_get_lineno                           _bfd_nosymbols_get_lineno
+<span class="lineNum">     299 </span>            : #define verilog_find_nearest_line                    _bfd_nosymbols_find_nearest_line
+<span class="lineNum">     300 </span>            : #define verilog_find_inliner_info                    _bfd_nosymbols_find_inliner_info
+<span class="lineNum">     301 </span>            : #define verilog_make_empty_symbol                    _bfd_generic_make_empty_symbol
+<span class="lineNum">     302 </span>            : #define verilog_bfd_make_debug_symbol                _bfd_nosymbols_bfd_make_debug_symbol
+<span class="lineNum">     303 </span>            : #define verilog_read_minisymbols                     _bfd_generic_read_minisymbols
+<span class="lineNum">     304 </span>            : #define verilog_minisymbol_to_symbol                 _bfd_generic_minisymbol_to_symbol
+<span class="lineNum">     305 </span>            : #define verilog_get_section_contents_in_window       _bfd_generic_get_section_contents_in_window
+<span class="lineNum">     306 </span>            : #define verilog_bfd_get_relocated_section_contents   bfd_generic_get_relocated_section_contents
+<span class="lineNum">     307 </span>            : #define verilog_bfd_relax_section                    bfd_generic_relax_section
+<span class="lineNum">     308 </span>            : #define verilog_bfd_gc_sections                      bfd_generic_gc_sections
+<span class="lineNum">     309 </span>            : #define verilog_bfd_merge_sections                   bfd_generic_merge_sections
+<span class="lineNum">     310 </span>            : #define verilog_bfd_is_group_section                 bfd_generic_is_group_section
+<span class="lineNum">     311 </span>            : #define verilog_bfd_discard_group                    bfd_generic_discard_group
+<span class="lineNum">     312 </span>            : #define verilog_section_already_linked               _bfd_generic_section_already_linked
+<span class="lineNum">     313 </span>            : #define verilog_bfd_link_hash_table_create           _bfd_generic_link_hash_table_create
+<span class="lineNum">     314 </span>            : #define verilog_bfd_link_add_symbols                 _bfd_generic_link_add_symbols
+<span class="lineNum">     315 </span>            : #define verilog_bfd_link_just_syms                   _bfd_generic_link_just_syms
+<span class="lineNum">     316 </span>            : #define verilog_bfd_final_link                       _bfd_generic_final_link
+<span class="lineNum">     317 </span>            : #define verilog_bfd_link_split_section               _bfd_generic_link_split_section
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span>            : const bfd_target verilog_vec =
+<span class="lineNum">     320 </span>            : {
+<span class="lineNum">     321 </span>            :   &quot;verilog&quot;,                  /* Name.  */
+<span class="lineNum">     322 </span>            :   bfd_target_verilog_flavour,
+<span class="lineNum">     323 </span>            :   BFD_ENDIAN_UNKNOWN,           /* Target byte order.  */
+<span class="lineNum">     324 </span>            :   BFD_ENDIAN_UNKNOWN,           /* Target headers byte order.  */
+<span class="lineNum">     325 </span>            :   (HAS_RELOC | EXEC_P |         /* Object flags.  */
+<span class="lineNum">     326 </span>            :    HAS_LINENO | HAS_DEBUG |
+<span class="lineNum">     327 </span>            :    HAS_SYMS | HAS_LOCALS | WP_TEXT | D_PAGED),
+<span class="lineNum">     328 </span>            :   (SEC_CODE | SEC_DATA | SEC_ROM | SEC_HAS_CONTENTS
+<span class="lineNum">     329 </span>            :    | SEC_ALLOC | SEC_LOAD | SEC_RELOC), /* Section flags.  */
+<span class="lineNum">     330 </span>            :   0,                            /* Leading underscore.  */
+<span class="lineNum">     331 </span>            :   ' ',                          /* AR_pad_char.  */
+<span class="lineNum">     332 </span>            :   16,                           /* AR_max_namelen.  */
+<span class="lineNum">     333 </span>            :   0,                            /* match priority.  */
+<span class="lineNum">     334 </span>            :   bfd_getb64, bfd_getb_signed_64, bfd_putb64,
+<span class="lineNum">     335 </span>            :   bfd_getb32, bfd_getb_signed_32, bfd_putb32,
+<span class="lineNum">     336 </span>            :   bfd_getb16, bfd_getb_signed_16, bfd_putb16,   /* Data.  */
+<span class="lineNum">     337 </span>            :   bfd_getb64, bfd_getb_signed_64, bfd_putb64,
+<span class="lineNum">     338 </span>            :   bfd_getb32, bfd_getb_signed_32, bfd_putb32,
+<span class="lineNum">     339 </span>            :   bfd_getb16, bfd_getb_signed_16, bfd_putb16,   /* Hdrs.  */
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            :   {
+<span class="lineNum">     342 </span>            :     _bfd_dummy_target,
+<span class="lineNum">     343 </span>            :     _bfd_dummy_target,
+<span class="lineNum">     344 </span>            :     _bfd_dummy_target,
+<span class="lineNum">     345 </span>            :     _bfd_dummy_target,
+<span class="lineNum">     346 </span>            :   },
+<span class="lineNum">     347 </span>            :   {
+<span class="lineNum">     348 </span>            :     bfd_false,
+<span class="lineNum">     349 </span>            :     verilog_mkobject,
+<span class="lineNum">     350 </span>            :     bfd_false,
+<span class="lineNum">     351 </span>            :     bfd_false,
+<span class="lineNum">     352 </span>            :   },
+<span class="lineNum">     353 </span>            :   {                             /* bfd_write_contents.  */
+<span class="lineNum">     354 </span>            :     bfd_false,
+<span class="lineNum">     355 </span>            :     verilog_write_object_contents,
+<span class="lineNum">     356 </span>            :     bfd_false,
+<span class="lineNum">     357 </span>            :     bfd_false,
+<span class="lineNum">     358 </span>            :   },
+<span class="lineNum">     359 </span>            : 
+<span class="lineNum">     360 </span>            :   BFD_JUMP_TABLE_GENERIC (_bfd_generic),
+<span class="lineNum">     361 </span>            :   BFD_JUMP_TABLE_COPY (_bfd_generic),
+<span class="lineNum">     362 </span>            :   BFD_JUMP_TABLE_CORE (_bfd_nocore),
+<span class="lineNum">     363 </span>            :   BFD_JUMP_TABLE_ARCHIVE (_bfd_noarchive),
+<span class="lineNum">     364 </span>            :   BFD_JUMP_TABLE_SYMBOLS (_bfd_nosymbols),
+<span class="lineNum">     365 </span>            :   BFD_JUMP_TABLE_RELOCS (_bfd_norelocs),
+<span class="lineNum">     366 </span>            :   BFD_JUMP_TABLE_WRITE (verilog),
+<span class="lineNum">     367 </span>            :   BFD_JUMP_TABLE_LINK (_bfd_nolink),
+<span class="lineNum">     368 </span>            :   BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span>            :   NULL,
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span>            :   NULL
+<span class="lineNum">     373 </span>            : };
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

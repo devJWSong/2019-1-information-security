@@ -1,0 +1,1972 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/targets.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - targets.c<span style="font-size: 80%;"> (source / <a href="targets.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">24</td>
+            <td class="headerCovTableEntry">130</td>
+            <td class="headerCovTableEntryLo">18.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">37.5 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Generic target-file-type support for the BFD library.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Written by Cygnus Support.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;fnmatch.h&quot;
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : /*
+<span class="lineNum">      28 </span>            :    It's okay to see some:
+<span class="lineNum">      29 </span>            : #if 0
+<span class="lineNum">      30 </span>            :    directives in this source file, as targets.c uses them to exclude
+<span class="lineNum">      31 </span>            :    certain BFD vectors.  This comment is specially formatted to catch
+<span class="lineNum">      32 </span>            :    users who grep for ^#if 0, so please keep it this way!
+<span class="lineNum">      33 </span>            : */
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : /*
+<span class="lineNum">      36 </span>            : SECTION
+<span class="lineNum">      37 </span>            :         Targets
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : DESCRIPTION
+<span class="lineNum">      40 </span>            :         Each port of BFD to a different machine requires the creation
+<span class="lineNum">      41 </span>            :         of a target back end. All the back end provides to the root
+<span class="lineNum">      42 </span>            :         part of BFD is a structure containing pointers to functions
+<span class="lineNum">      43 </span>            :         which perform certain low level operations on files. BFD
+<span class="lineNum">      44 </span>            :         translates the applications's requests through a pointer into
+<span class="lineNum">      45 </span>            :         calls to the back end routines.
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            :         When a file is opened with &lt;&lt;bfd_openr&gt;&gt;, its format and
+<span class="lineNum">      48 </span>            :         target are unknown. BFD uses various mechanisms to determine
+<span class="lineNum">      49 </span>            :         how to interpret the file. The operations performed are:
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            :         o Create a BFD by calling the internal routine
+<span class="lineNum">      52 </span>            :         &lt;&lt;_bfd_new_bfd&gt;&gt;, then call &lt;&lt;bfd_find_target&gt;&gt; with the
+<span class="lineNum">      53 </span>            :         target string supplied to &lt;&lt;bfd_openr&gt;&gt; and the new BFD pointer.
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            :         o If a null target string was provided to &lt;&lt;bfd_find_target&gt;&gt;,
+<span class="lineNum">      56 </span>            :         look up the environment variable &lt;&lt;GNUTARGET&gt;&gt; and use
+<span class="lineNum">      57 </span>            :         that as the target string.
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            :         o If the target string is still &lt;&lt;NULL&gt;&gt;, or the target string is
+<span class="lineNum">      60 </span>            :         &lt;&lt;default&gt;&gt;, then use the first item in the target vector
+<span class="lineNum">      61 </span>            :         as the target type, and set &lt;&lt;target_defaulted&gt;&gt; in the BFD to
+<span class="lineNum">      62 </span>            :         cause &lt;&lt;bfd_check_format&gt;&gt; to loop through all the targets.
+<span class="lineNum">      63 </span>            :         @xref{bfd_target}.  @xref{Formats}.
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :         o Otherwise, inspect the elements in the target vector
+<span class="lineNum">      66 </span>            :         one by one, until a match on target name is found. When found,
+<span class="lineNum">      67 </span>            :         use it.
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            :         o Otherwise return the error &lt;&lt;bfd_error_invalid_target&gt;&gt; to
+<span class="lineNum">      70 </span>            :         &lt;&lt;bfd_openr&gt;&gt;.
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :         o &lt;&lt;bfd_openr&gt;&gt; attempts to open the file using
+<span class="lineNum">      73 </span>            :         &lt;&lt;bfd_open_file&gt;&gt;, and returns the BFD.
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            :         Once the BFD has been opened and the target selected, the file
+<span class="lineNum">      76 </span>            :         format may be determined. This is done by calling
+<span class="lineNum">      77 </span>            :         &lt;&lt;bfd_check_format&gt;&gt; on the BFD with a suggested format.
+<span class="lineNum">      78 </span>            :         If &lt;&lt;target_defaulted&gt;&gt; has been set, each possible target
+<span class="lineNum">      79 </span>            :         type is tried to see if it recognizes the specified format.
+<span class="lineNum">      80 </span>            :         &lt;&lt;bfd_check_format&gt;&gt; returns &lt;&lt;TRUE&gt;&gt; when the caller guesses right.
+<span class="lineNum">      81 </span>            : @menu
+<span class="lineNum">      82 </span>            : @* bfd_target::
+<span class="lineNum">      83 </span>            : @end menu
+<span class="lineNum">      84 </span>            : */
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            : /*
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            : INODE
+<span class="lineNum">      89 </span>            :         bfd_target,  , Targets, Targets
+<span class="lineNum">      90 </span>            : DOCDD
+<span class="lineNum">      91 </span>            : SUBSECTION
+<span class="lineNum">      92 </span>            :         bfd_target
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : DESCRIPTION
+<span class="lineNum">      95 </span>            :         This structure contains everything that BFD knows about a
+<span class="lineNum">      96 </span>            :         target. It includes things like its byte order, name, and which
+<span class="lineNum">      97 </span>            :         routines to call to do various operations.
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            :         Every BFD points to a target structure with its &lt;&lt;xvec&gt;&gt;
+<span class="lineNum">     100 </span>            :         member.
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            :         The macros below are used to dispatch to functions through the
+<span class="lineNum">     103 </span>            :         &lt;&lt;bfd_target&gt;&gt; vector. They are used in a number of macros further
+<span class="lineNum">     104 </span>            :         down in @file{bfd.h}, and are also used when calling various
+<span class="lineNum">     105 </span>            :         routines by hand inside the BFD implementation.  The @var{arglist}
+<span class="lineNum">     106 </span>            :         argument must be parenthesized; it contains all the arguments
+<span class="lineNum">     107 </span>            :         to the called function.
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :         They make the documentation (more) unpleasant to read, so if
+<span class="lineNum">     110 </span>            :         someone wants to fix this and not break the above, please do.
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            : .#define BFD_SEND(bfd, message, arglist) \
+<span class="lineNum">     113 </span>            : .  ((*((bfd)-&gt;xvec-&gt;message)) arglist)
+<span class="lineNum">     114 </span>            : .
+<span class="lineNum">     115 </span>            : .#ifdef DEBUG_BFD_SEND
+<span class="lineNum">     116 </span>            : .#undef BFD_SEND
+<span class="lineNum">     117 </span>            : .#define BFD_SEND(bfd, message, arglist) \
+<span class="lineNum">     118 </span>            : .  (((bfd) &amp;&amp; (bfd)-&gt;xvec &amp;&amp; (bfd)-&gt;xvec-&gt;message) ? \
+<span class="lineNum">     119 </span>            : .    ((*((bfd)-&gt;xvec-&gt;message)) arglist) : \
+<span class="lineNum">     120 </span>            : .    (bfd_assert (__FILE__,__LINE__), NULL))
+<span class="lineNum">     121 </span>            : .#endif
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            :         For operations which index on the BFD format:
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span>            : .#define BFD_SEND_FMT(bfd, message, arglist) \
+<span class="lineNum">     126 </span>            : .  (((bfd)-&gt;xvec-&gt;message[(int) ((bfd)-&gt;format)]) arglist)
+<span class="lineNum">     127 </span>            : .
+<span class="lineNum">     128 </span>            : .#ifdef DEBUG_BFD_SEND
+<span class="lineNum">     129 </span>            : .#undef BFD_SEND_FMT
+<span class="lineNum">     130 </span>            : .#define BFD_SEND_FMT(bfd, message, arglist) \
+<span class="lineNum">     131 </span>            : .  (((bfd) &amp;&amp; (bfd)-&gt;xvec &amp;&amp; (bfd)-&gt;xvec-&gt;message) ? \
+<span class="lineNum">     132 </span>            : .   (((bfd)-&gt;xvec-&gt;message[(int) ((bfd)-&gt;format)]) arglist) : \
+<span class="lineNum">     133 </span>            : .   (bfd_assert (__FILE__,__LINE__), NULL))
+<span class="lineNum">     134 </span>            : .#endif
+<span class="lineNum">     135 </span>            : .
+<span class="lineNum">     136 </span>            :         This is the structure which defines the type of BFD this is.  The
+<span class="lineNum">     137 </span>            :         &lt;&lt;xvec&gt;&gt; member of the struct &lt;&lt;bfd&gt;&gt; itself points here.  Each
+<span class="lineNum">     138 </span>            :         module that implements access to a different target under BFD,
+<span class="lineNum">     139 </span>            :         defines one of these.
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :         FIXME, these names should be rationalised with the names of
+<span class="lineNum">     142 </span>            :         the entry points which call them. Too bad we can't have one
+<span class="lineNum">     143 </span>            :         macro to define them both!
+<span class="lineNum">     144 </span>            : 
+<span class="lineNum">     145 </span>            : .enum bfd_flavour
+<span class="lineNum">     146 </span>            : .{
+<span class="lineNum">     147 </span>            : .  {* N.B. Update bfd_flavour_name if you change this.  *}
+<span class="lineNum">     148 </span>            : .  bfd_target_unknown_flavour,
+<span class="lineNum">     149 </span>            : .  bfd_target_aout_flavour,
+<span class="lineNum">     150 </span>            : .  bfd_target_coff_flavour,
+<span class="lineNum">     151 </span>            : .  bfd_target_ecoff_flavour,
+<span class="lineNum">     152 </span>            : .  bfd_target_xcoff_flavour,
+<span class="lineNum">     153 </span>            : .  bfd_target_elf_flavour,
+<span class="lineNum">     154 </span>            : .  bfd_target_ieee_flavour,
+<span class="lineNum">     155 </span>            : .  bfd_target_nlm_flavour,
+<span class="lineNum">     156 </span>            : .  bfd_target_oasys_flavour,
+<span class="lineNum">     157 </span>            : .  bfd_target_tekhex_flavour,
+<span class="lineNum">     158 </span>            : .  bfd_target_srec_flavour,
+<span class="lineNum">     159 </span>            : .  bfd_target_verilog_flavour,
+<span class="lineNum">     160 </span>            : .  bfd_target_ihex_flavour,
+<span class="lineNum">     161 </span>            : .  bfd_target_som_flavour,
+<span class="lineNum">     162 </span>            : .  bfd_target_os9k_flavour,
+<span class="lineNum">     163 </span>            : .  bfd_target_versados_flavour,
+<span class="lineNum">     164 </span>            : .  bfd_target_msdos_flavour,
+<span class="lineNum">     165 </span>            : .  bfd_target_ovax_flavour,
+<span class="lineNum">     166 </span>            : .  bfd_target_evax_flavour,
+<span class="lineNum">     167 </span>            : .  bfd_target_mmo_flavour,
+<span class="lineNum">     168 </span>            : .  bfd_target_mach_o_flavour,
+<span class="lineNum">     169 </span>            : .  bfd_target_pef_flavour,
+<span class="lineNum">     170 </span>            : .  bfd_target_pef_xlib_flavour,
+<span class="lineNum">     171 </span>            : .  bfd_target_sym_flavour
+<span class="lineNum">     172 </span>            : .};
+<span class="lineNum">     173 </span>            : .
+<span class="lineNum">     174 </span>            : .enum bfd_endian { BFD_ENDIAN_BIG, BFD_ENDIAN_LITTLE, BFD_ENDIAN_UNKNOWN };
+<span class="lineNum">     175 </span>            : .
+<span class="lineNum">     176 </span>            : .{* Forward declaration.  *}
+<span class="lineNum">     177 </span>            : .typedef struct bfd_link_info _bfd_link_info;
+<span class="lineNum">     178 </span>            : .
+<span class="lineNum">     179 </span>            : .{* Forward declaration.  *}
+<span class="lineNum">     180 </span>            : .typedef struct flag_info flag_info;
+<span class="lineNum">     181 </span>            : .
+<span class="lineNum">     182 </span>            : .typedef struct bfd_target
+<span class="lineNum">     183 </span>            : .{
+<span class="lineNum">     184 </span>            : .  {* Identifies the kind of target, e.g., SunOS4, Ultrix, etc.  *}
+<span class="lineNum">     185 </span>            : .  char *name;
+<span class="lineNum">     186 </span>            : .
+<span class="lineNum">     187 </span>            : . {* The &quot;flavour&quot; of a back end is a general indication about
+<span class="lineNum">     188 </span>            : .    the contents of a file.  *}
+<span class="lineNum">     189 </span>            : .  enum bfd_flavour flavour;
+<span class="lineNum">     190 </span>            : .
+<span class="lineNum">     191 </span>            : .  {* The order of bytes within the data area of a file.  *}
+<span class="lineNum">     192 </span>            : .  enum bfd_endian byteorder;
+<span class="lineNum">     193 </span>            : .
+<span class="lineNum">     194 </span>            : . {* The order of bytes within the header parts of a file.  *}
+<span class="lineNum">     195 </span>            : .  enum bfd_endian header_byteorder;
+<span class="lineNum">     196 </span>            : .
+<span class="lineNum">     197 </span>            : .  {* A mask of all the flags which an executable may have set -
+<span class="lineNum">     198 </span>            : .     from the set &lt;&lt;BFD_NO_FLAGS&gt;&gt;, &lt;&lt;HAS_RELOC&gt;&gt;, ...&lt;&lt;D_PAGED&gt;&gt;.  *}
+<span class="lineNum">     199 </span>            : .  flagword object_flags;
+<span class="lineNum">     200 </span>            : .
+<span class="lineNum">     201 </span>            : . {* A mask of all the flags which a section may have set - from
+<span class="lineNum">     202 </span>            : .    the set &lt;&lt;SEC_NO_FLAGS&gt;&gt;, &lt;&lt;SEC_ALLOC&gt;&gt;, ...&lt;&lt;SET_NEVER_LOAD&gt;&gt;.  *}
+<span class="lineNum">     203 </span>            : .  flagword section_flags;
+<span class="lineNum">     204 </span>            : .
+<span class="lineNum">     205 </span>            : . {* The character normally found at the front of a symbol.
+<span class="lineNum">     206 </span>            : .    (if any), perhaps `_'.  *}
+<span class="lineNum">     207 </span>            : .  char symbol_leading_char;
+<span class="lineNum">     208 </span>            : .
+<span class="lineNum">     209 </span>            : . {* The pad character for file names within an archive header.  *}
+<span class="lineNum">     210 </span>            : .  char ar_pad_char;
+<span class="lineNum">     211 </span>            : .
+<span class="lineNum">     212 </span>            : .  {* The maximum number of characters in an archive header.  *}
+<span class="lineNum">     213 </span>            : .  unsigned char ar_max_namelen;
+<span class="lineNum">     214 </span>            : .
+<span class="lineNum">     215 </span>            : .  {* How well this target matches, used to select between various
+<span class="lineNum">     216 </span>            : .     possible targets when more than one target matches.  *}
+<span class="lineNum">     217 </span>            : .  unsigned char match_priority;
+<span class="lineNum">     218 </span>            : .
+<span class="lineNum">     219 </span>            : .  {* Entries for byte swapping for data. These are different from the
+<span class="lineNum">     220 </span>            : .     other entry points, since they don't take a BFD as the first argument.
+<span class="lineNum">     221 </span>            : .     Certain other handlers could do the same.  *}
+<span class="lineNum">     222 </span>            : .  bfd_uint64_t   (*bfd_getx64) (const void *);
+<span class="lineNum">     223 </span>            : .  bfd_int64_t    (*bfd_getx_signed_64) (const void *);
+<span class="lineNum">     224 </span>            : .  void           (*bfd_putx64) (bfd_uint64_t, void *);
+<span class="lineNum">     225 </span>            : .  bfd_vma        (*bfd_getx32) (const void *);
+<span class="lineNum">     226 </span>            : .  bfd_signed_vma (*bfd_getx_signed_32) (const void *);
+<span class="lineNum">     227 </span>            : .  void           (*bfd_putx32) (bfd_vma, void *);
+<span class="lineNum">     228 </span>            : .  bfd_vma        (*bfd_getx16) (const void *);
+<span class="lineNum">     229 </span>            : .  bfd_signed_vma (*bfd_getx_signed_16) (const void *);
+<span class="lineNum">     230 </span>            : .  void           (*bfd_putx16) (bfd_vma, void *);
+<span class="lineNum">     231 </span>            : .
+<span class="lineNum">     232 </span>            : .  {* Byte swapping for the headers.  *}
+<span class="lineNum">     233 </span>            : .  bfd_uint64_t   (*bfd_h_getx64) (const void *);
+<span class="lineNum">     234 </span>            : .  bfd_int64_t    (*bfd_h_getx_signed_64) (const void *);
+<span class="lineNum">     235 </span>            : .  void           (*bfd_h_putx64) (bfd_uint64_t, void *);
+<span class="lineNum">     236 </span>            : .  bfd_vma        (*bfd_h_getx32) (const void *);
+<span class="lineNum">     237 </span>            : .  bfd_signed_vma (*bfd_h_getx_signed_32) (const void *);
+<span class="lineNum">     238 </span>            : .  void           (*bfd_h_putx32) (bfd_vma, void *);
+<span class="lineNum">     239 </span>            : .  bfd_vma        (*bfd_h_getx16) (const void *);
+<span class="lineNum">     240 </span>            : .  bfd_signed_vma (*bfd_h_getx_signed_16) (const void *);
+<span class="lineNum">     241 </span>            : .  void           (*bfd_h_putx16) (bfd_vma, void *);
+<span class="lineNum">     242 </span>            : .
+<span class="lineNum">     243 </span>            : .  {* Format dependent routines: these are vectors of entry points
+<span class="lineNum">     244 </span>            : .     within the target vector structure, one for each format to check.  *}
+<span class="lineNum">     245 </span>            : .
+<span class="lineNum">     246 </span>            : .  {* Check the format of a file being read.  Return a &lt;&lt;bfd_target *&gt;&gt; or zero.  *}
+<span class="lineNum">     247 </span>            : .  const struct bfd_target *(*_bfd_check_format[bfd_type_end]) (bfd *);
+<span class="lineNum">     248 </span>            : .
+<span class="lineNum">     249 </span>            : .  {* Set the format of a file being written.  *}
+<span class="lineNum">     250 </span>            : .  bfd_boolean (*_bfd_set_format[bfd_type_end]) (bfd *);
+<span class="lineNum">     251 </span>            : .
+<span class="lineNum">     252 </span>            : .  {* Write cached information into a file being written, at &lt;&lt;bfd_close&gt;&gt;.  *}
+<span class="lineNum">     253 </span>            : .  bfd_boolean (*_bfd_write_contents[bfd_type_end]) (bfd *);
+<span class="lineNum">     254 </span>            : .
+<span class="lineNum">     255 </span>            : The general target vector.  These vectors are initialized using the
+<span class="lineNum">     256 </span>            : BFD_JUMP_TABLE macros.
+<span class="lineNum">     257 </span>            : .
+<span class="lineNum">     258 </span>            : .  {* Generic entry points.  *}
+<span class="lineNum">     259 </span>            : .#define BFD_JUMP_TABLE_GENERIC(NAME) \
+<span class="lineNum">     260 </span>            : .  NAME##_close_and_cleanup, \
+<span class="lineNum">     261 </span>            : .  NAME##_bfd_free_cached_info, \
+<span class="lineNum">     262 </span>            : .  NAME##_new_section_hook, \
+<span class="lineNum">     263 </span>            : .  NAME##_get_section_contents, \
+<span class="lineNum">     264 </span>            : .  NAME##_get_section_contents_in_window
+<span class="lineNum">     265 </span>            : .
+<span class="lineNum">     266 </span>            : .  {* Called when the BFD is being closed to do any necessary cleanup.  *}
+<span class="lineNum">     267 </span>            : .  bfd_boolean (*_close_and_cleanup) (bfd *);
+<span class="lineNum">     268 </span>            : .  {* Ask the BFD to free all cached information.  *}
+<span class="lineNum">     269 </span>            : .  bfd_boolean (*_bfd_free_cached_info) (bfd *);
+<span class="lineNum">     270 </span>            : .  {* Called when a new section is created.  *}
+<span class="lineNum">     271 </span>            : .  bfd_boolean (*_new_section_hook) (bfd *, sec_ptr);
+<span class="lineNum">     272 </span>            : .  {* Read the contents of a section.  *}
+<span class="lineNum">     273 </span>            : .  bfd_boolean (*_bfd_get_section_contents)
+<span class="lineNum">     274 </span>            : .    (bfd *, sec_ptr, void *, file_ptr, bfd_size_type);
+<span class="lineNum">     275 </span>            : .  bfd_boolean (*_bfd_get_section_contents_in_window)
+<span class="lineNum">     276 </span>            : .    (bfd *, sec_ptr, bfd_window *, file_ptr, bfd_size_type);
+<span class="lineNum">     277 </span>            : .
+<span class="lineNum">     278 </span>            : .  {* Entry points to copy private data.  *}
+<span class="lineNum">     279 </span>            : .#define BFD_JUMP_TABLE_COPY(NAME) \
+<span class="lineNum">     280 </span>            : .  NAME##_bfd_copy_private_bfd_data, \
+<span class="lineNum">     281 </span>            : .  NAME##_bfd_merge_private_bfd_data, \
+<span class="lineNum">     282 </span>            : .  _bfd_generic_init_private_section_data, \
+<span class="lineNum">     283 </span>            : .  NAME##_bfd_copy_private_section_data, \
+<span class="lineNum">     284 </span>            : .  NAME##_bfd_copy_private_symbol_data, \
+<span class="lineNum">     285 </span>            : .  NAME##_bfd_copy_private_header_data, \
+<span class="lineNum">     286 </span>            : .  NAME##_bfd_set_private_flags, \
+<span class="lineNum">     287 </span>            : .  NAME##_bfd_print_private_bfd_data
+<span class="lineNum">     288 </span>            : .
+<span class="lineNum">     289 </span>            : .  {* Called to copy BFD general private data from one object file
+<span class="lineNum">     290 </span>            : .     to another.  *}
+<span class="lineNum">     291 </span>            : .  bfd_boolean (*_bfd_copy_private_bfd_data) (bfd *, bfd *);
+<span class="lineNum">     292 </span>            : .  {* Called to merge BFD general private data from one object file
+<span class="lineNum">     293 </span>            : .     to a common output file when linking.  *}
+<span class="lineNum">     294 </span>            : .  bfd_boolean (*_bfd_merge_private_bfd_data) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     295 </span>            : .  {* Called to initialize BFD private section data from one object file
+<span class="lineNum">     296 </span>            : .     to another.  *}
+<span class="lineNum">     297 </span>            : .#define bfd_init_private_section_data(ibfd, isec, obfd, osec, link_info) \
+<span class="lineNum">     298 </span>            : .  BFD_SEND (obfd, _bfd_init_private_section_data, (ibfd, isec, obfd, osec, link_info))
+<span class="lineNum">     299 </span>            : .  bfd_boolean (*_bfd_init_private_section_data)
+<span class="lineNum">     300 </span>            : .    (bfd *, sec_ptr, bfd *, sec_ptr, struct bfd_link_info *);
+<span class="lineNum">     301 </span>            : .  {* Called to copy BFD private section data from one object file
+<span class="lineNum">     302 </span>            : .     to another.  *}
+<span class="lineNum">     303 </span>            : .  bfd_boolean (*_bfd_copy_private_section_data)
+<span class="lineNum">     304 </span>            : .    (bfd *, sec_ptr, bfd *, sec_ptr);
+<span class="lineNum">     305 </span>            : .  {* Called to copy BFD private symbol data from one symbol
+<span class="lineNum">     306 </span>            : .     to another.  *}
+<span class="lineNum">     307 </span>            : .  bfd_boolean (*_bfd_copy_private_symbol_data)
+<span class="lineNum">     308 </span>            : .    (bfd *, asymbol *, bfd *, asymbol *);
+<span class="lineNum">     309 </span>            : .  {* Called to copy BFD private header data from one object file
+<span class="lineNum">     310 </span>            : .     to another.  *}
+<span class="lineNum">     311 </span>            : .  bfd_boolean (*_bfd_copy_private_header_data)
+<span class="lineNum">     312 </span>            : .    (bfd *, bfd *);
+<span class="lineNum">     313 </span>            : .  {* Called to set private backend flags.  *}
+<span class="lineNum">     314 </span>            : .  bfd_boolean (*_bfd_set_private_flags) (bfd *, flagword);
+<span class="lineNum">     315 </span>            : .
+<span class="lineNum">     316 </span>            : .  {* Called to print private BFD data.  *}
+<span class="lineNum">     317 </span>            : .  bfd_boolean (*_bfd_print_private_bfd_data) (bfd *, void *);
+<span class="lineNum">     318 </span>            : .
+<span class="lineNum">     319 </span>            : .  {* Core file entry points.  *}
+<span class="lineNum">     320 </span>            : .#define BFD_JUMP_TABLE_CORE(NAME) \
+<span class="lineNum">     321 </span>            : .  NAME##_core_file_failing_command, \
+<span class="lineNum">     322 </span>            : .  NAME##_core_file_failing_signal, \
+<span class="lineNum">     323 </span>            : .  NAME##_core_file_matches_executable_p, \
+<span class="lineNum">     324 </span>            : .  NAME##_core_file_pid
+<span class="lineNum">     325 </span>            : .
+<span class="lineNum">     326 </span>            : .  char *      (*_core_file_failing_command) (bfd *);
+<span class="lineNum">     327 </span>            : .  int         (*_core_file_failing_signal) (bfd *);
+<span class="lineNum">     328 </span>            : .  bfd_boolean (*_core_file_matches_executable_p) (bfd *, bfd *);
+<span class="lineNum">     329 </span>            : .  int         (*_core_file_pid) (bfd *);
+<span class="lineNum">     330 </span>            : .
+<span class="lineNum">     331 </span>            : .  {* Archive entry points.  *}
+<span class="lineNum">     332 </span>            : .#define BFD_JUMP_TABLE_ARCHIVE(NAME) \
+<span class="lineNum">     333 </span>            : .  NAME##_slurp_armap, \
+<span class="lineNum">     334 </span>            : .  NAME##_slurp_extended_name_table, \
+<span class="lineNum">     335 </span>            : .  NAME##_construct_extended_name_table, \
+<span class="lineNum">     336 </span>            : .  NAME##_truncate_arname, \
+<span class="lineNum">     337 </span>            : .  NAME##_write_armap, \
+<span class="lineNum">     338 </span>            : .  NAME##_read_ar_hdr, \
+<span class="lineNum">     339 </span>            : .  NAME##_write_ar_hdr, \
+<span class="lineNum">     340 </span>            : .  NAME##_openr_next_archived_file, \
+<span class="lineNum">     341 </span>            : .  NAME##_get_elt_at_index, \
+<span class="lineNum">     342 </span>            : .  NAME##_generic_stat_arch_elt, \
+<span class="lineNum">     343 </span>            : .  NAME##_update_armap_timestamp
+<span class="lineNum">     344 </span>            : .
+<span class="lineNum">     345 </span>            : .  bfd_boolean (*_bfd_slurp_armap) (bfd *);
+<span class="lineNum">     346 </span>            : .  bfd_boolean (*_bfd_slurp_extended_name_table) (bfd *);
+<span class="lineNum">     347 </span>            : .  bfd_boolean (*_bfd_construct_extended_name_table)
+<span class="lineNum">     348 </span>            : .    (bfd *, char **, bfd_size_type *, const char **);
+<span class="lineNum">     349 </span>            : .  void        (*_bfd_truncate_arname) (bfd *, const char *, char *);
+<span class="lineNum">     350 </span>            : .  bfd_boolean (*write_armap)
+<span class="lineNum">     351 </span>            : .    (bfd *, unsigned int, struct orl *, unsigned int, int);
+<span class="lineNum">     352 </span>            : .  void *      (*_bfd_read_ar_hdr_fn) (bfd *);
+<span class="lineNum">     353 </span>            : .  bfd_boolean (*_bfd_write_ar_hdr_fn) (bfd *, bfd *);
+<span class="lineNum">     354 </span>            : .  bfd *       (*openr_next_archived_file) (bfd *, bfd *);
+<span class="lineNum">     355 </span>            : .#define bfd_get_elt_at_index(b,i) BFD_SEND (b, _bfd_get_elt_at_index, (b,i))
+<span class="lineNum">     356 </span>            : .  bfd *       (*_bfd_get_elt_at_index) (bfd *, symindex);
+<span class="lineNum">     357 </span>            : .  int         (*_bfd_stat_arch_elt) (bfd *, struct stat *);
+<span class="lineNum">     358 </span>            : .  bfd_boolean (*_bfd_update_armap_timestamp) (bfd *);
+<span class="lineNum">     359 </span>            : .
+<span class="lineNum">     360 </span>            : .  {* Entry points used for symbols.  *}
+<span class="lineNum">     361 </span>            : .#define BFD_JUMP_TABLE_SYMBOLS(NAME) \
+<span class="lineNum">     362 </span>            : .  NAME##_get_symtab_upper_bound, \
+<span class="lineNum">     363 </span>            : .  NAME##_canonicalize_symtab, \
+<span class="lineNum">     364 </span>            : .  NAME##_make_empty_symbol, \
+<span class="lineNum">     365 </span>            : .  NAME##_print_symbol, \
+<span class="lineNum">     366 </span>            : .  NAME##_get_symbol_info, \
+<span class="lineNum">     367 </span>            : .  NAME##_get_symbol_version_string, \
+<span class="lineNum">     368 </span>            : .  NAME##_bfd_is_local_label_name, \
+<span class="lineNum">     369 </span>            : .  NAME##_bfd_is_target_special_symbol, \
+<span class="lineNum">     370 </span>            : .  NAME##_get_lineno, \
+<span class="lineNum">     371 </span>            : .  NAME##_find_nearest_line, \
+<span class="lineNum">     372 </span>            : .  NAME##_find_line, \
+<span class="lineNum">     373 </span>            : .  NAME##_find_inliner_info, \
+<span class="lineNum">     374 </span>            : .  NAME##_bfd_make_debug_symbol, \
+<span class="lineNum">     375 </span>            : .  NAME##_read_minisymbols, \
+<span class="lineNum">     376 </span>            : .  NAME##_minisymbol_to_symbol
+<span class="lineNum">     377 </span>            : .
+<span class="lineNum">     378 </span>            : .  long        (*_bfd_get_symtab_upper_bound) (bfd *);
+<span class="lineNum">     379 </span>            : .  long        (*_bfd_canonicalize_symtab)
+<span class="lineNum">     380 </span>            : .    (bfd *, struct bfd_symbol **);
+<span class="lineNum">     381 </span>            : .  struct bfd_symbol *
+<span class="lineNum">     382 </span>            : .              (*_bfd_make_empty_symbol) (bfd *);
+<span class="lineNum">     383 </span>            : .  void        (*_bfd_print_symbol)
+<span class="lineNum">     384 </span>            : .    (bfd *, void *, struct bfd_symbol *, bfd_print_symbol_type);
+<span class="lineNum">     385 </span>            : .#define bfd_print_symbol(b,p,s,e) BFD_SEND (b, _bfd_print_symbol, (b,p,s,e))
+<span class="lineNum">     386 </span>            : .  void        (*_bfd_get_symbol_info)
+<span class="lineNum">     387 </span>            : .    (bfd *, struct bfd_symbol *, symbol_info *);
+<span class="lineNum">     388 </span>            : .#define bfd_get_symbol_info(b,p,e) BFD_SEND (b, _bfd_get_symbol_info, (b,p,e))
+<span class="lineNum">     389 </span>            : .  const char *(*_bfd_get_symbol_version_string)
+<span class="lineNum">     390 </span>            : .    (bfd *, struct bfd_symbol *, bfd_boolean *);
+<span class="lineNum">     391 </span>            : .#define bfd_get_symbol_version_string(b,s,h) BFD_SEND (b, _bfd_get_symbol_version_string, (b,s,h))
+<span class="lineNum">     392 </span>            : .  bfd_boolean (*_bfd_is_local_label_name) (bfd *, const char *);
+<span class="lineNum">     393 </span>            : .  bfd_boolean (*_bfd_is_target_special_symbol) (bfd *, asymbol *);
+<span class="lineNum">     394 </span>            : .  alent *     (*_get_lineno) (bfd *, struct bfd_symbol *);
+<span class="lineNum">     395 </span>            : .  bfd_boolean (*_bfd_find_nearest_line)
+<span class="lineNum">     396 </span>            : .    (bfd *, struct bfd_symbol **, struct bfd_section *, bfd_vma,
+<span class="lineNum">     397 </span>            : .     const char **, const char **, unsigned int *, unsigned int *);
+<span class="lineNum">     398 </span>            : .  bfd_boolean (*_bfd_find_line)
+<span class="lineNum">     399 </span>            : .    (bfd *, struct bfd_symbol **, struct bfd_symbol *,
+<span class="lineNum">     400 </span>            : .     const char **, unsigned int *);
+<span class="lineNum">     401 </span>            : .  bfd_boolean (*_bfd_find_inliner_info)
+<span class="lineNum">     402 </span>            : .    (bfd *, const char **, const char **, unsigned int *);
+<span class="lineNum">     403 </span>            : . {* Back-door to allow format-aware applications to create debug symbols
+<span class="lineNum">     404 </span>            : .    while using BFD for everything else.  Currently used by the assembler
+<span class="lineNum">     405 </span>            : .    when creating COFF files.  *}
+<span class="lineNum">     406 </span>            : .  asymbol *   (*_bfd_make_debug_symbol)
+<span class="lineNum">     407 </span>            : .    (bfd *, void *, unsigned long size);
+<span class="lineNum">     408 </span>            : .#define bfd_read_minisymbols(b, d, m, s) \
+<span class="lineNum">     409 </span>            : .  BFD_SEND (b, _read_minisymbols, (b, d, m, s))
+<span class="lineNum">     410 </span>            : .  long        (*_read_minisymbols)
+<span class="lineNum">     411 </span>            : .    (bfd *, bfd_boolean, void **, unsigned int *);
+<span class="lineNum">     412 </span>            : .#define bfd_minisymbol_to_symbol(b, d, m, f) \
+<span class="lineNum">     413 </span>            : .  BFD_SEND (b, _minisymbol_to_symbol, (b, d, m, f))
+<span class="lineNum">     414 </span>            : .  asymbol *   (*_minisymbol_to_symbol)
+<span class="lineNum">     415 </span>            : .    (bfd *, bfd_boolean, const void *, asymbol *);
+<span class="lineNum">     416 </span>            : .
+<span class="lineNum">     417 </span>            : .  {* Routines for relocs.  *}
+<span class="lineNum">     418 </span>            : .#define BFD_JUMP_TABLE_RELOCS(NAME) \
+<span class="lineNum">     419 </span>            : .  NAME##_get_reloc_upper_bound, \
+<span class="lineNum">     420 </span>            : .  NAME##_canonicalize_reloc, \
+<span class="lineNum">     421 </span>            : .  NAME##_bfd_reloc_type_lookup, \
+<span class="lineNum">     422 </span>            : .  NAME##_bfd_reloc_name_lookup
+<span class="lineNum">     423 </span>            : .
+<span class="lineNum">     424 </span>            : .  long        (*_get_reloc_upper_bound) (bfd *, sec_ptr);
+<span class="lineNum">     425 </span>            : .  long        (*_bfd_canonicalize_reloc)
+<span class="lineNum">     426 </span>            : .    (bfd *, sec_ptr, arelent **, struct bfd_symbol **);
+<span class="lineNum">     427 </span>            : .  {* See documentation on reloc types.  *}
+<span class="lineNum">     428 </span>            : .  reloc_howto_type *
+<span class="lineNum">     429 </span>            : .              (*reloc_type_lookup) (bfd *, bfd_reloc_code_real_type);
+<span class="lineNum">     430 </span>            : .  reloc_howto_type *
+<span class="lineNum">     431 </span>            : .              (*reloc_name_lookup) (bfd *, const char *);
+<span class="lineNum">     432 </span>            : .
+<span class="lineNum">     433 </span>            : .
+<span class="lineNum">     434 </span>            : .  {* Routines used when writing an object file.  *}
+<span class="lineNum">     435 </span>            : .#define BFD_JUMP_TABLE_WRITE(NAME) \
+<span class="lineNum">     436 </span>            : .  NAME##_set_arch_mach, \
+<span class="lineNum">     437 </span>            : .  NAME##_set_section_contents
+<span class="lineNum">     438 </span>            : .
+<span class="lineNum">     439 </span>            : .  bfd_boolean (*_bfd_set_arch_mach)
+<span class="lineNum">     440 </span>            : .    (bfd *, enum bfd_architecture, unsigned long);
+<span class="lineNum">     441 </span>            : .  bfd_boolean (*_bfd_set_section_contents)
+<span class="lineNum">     442 </span>            : .    (bfd *, sec_ptr, const void *, file_ptr, bfd_size_type);
+<span class="lineNum">     443 </span>            : .
+<span class="lineNum">     444 </span>            : .  {* Routines used by the linker.  *}
+<span class="lineNum">     445 </span>            : .#define BFD_JUMP_TABLE_LINK(NAME) \
+<span class="lineNum">     446 </span>            : .  NAME##_sizeof_headers, \
+<span class="lineNum">     447 </span>            : .  NAME##_bfd_get_relocated_section_contents, \
+<span class="lineNum">     448 </span>            : .  NAME##_bfd_relax_section, \
+<span class="lineNum">     449 </span>            : .  NAME##_bfd_link_hash_table_create, \
+<span class="lineNum">     450 </span>            : .  NAME##_bfd_link_add_symbols, \
+<span class="lineNum">     451 </span>            : .  NAME##_bfd_link_just_syms, \
+<span class="lineNum">     452 </span>            : .  NAME##_bfd_copy_link_hash_symbol_type, \
+<span class="lineNum">     453 </span>            : .  NAME##_bfd_final_link, \
+<span class="lineNum">     454 </span>            : .  NAME##_bfd_link_split_section, \
+<span class="lineNum">     455 </span>            : .  NAME##_bfd_link_check_relocs, \
+<span class="lineNum">     456 </span>            : .  NAME##_bfd_gc_sections, \
+<span class="lineNum">     457 </span>            : .  NAME##_bfd_lookup_section_flags, \
+<span class="lineNum">     458 </span>            : .  NAME##_bfd_merge_sections, \
+<span class="lineNum">     459 </span>            : .  NAME##_bfd_is_group_section, \
+<span class="lineNum">     460 </span>            : .  NAME##_bfd_discard_group, \
+<span class="lineNum">     461 </span>            : .  NAME##_section_already_linked, \
+<span class="lineNum">     462 </span>            : .  NAME##_bfd_define_common_symbol
+<span class="lineNum">     463 </span>            : .
+<span class="lineNum">     464 </span>            : .  int         (*_bfd_sizeof_headers) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     465 </span>            : .  bfd_byte *  (*_bfd_get_relocated_section_contents)
+<span class="lineNum">     466 </span>            : .    (bfd *, struct bfd_link_info *, struct bfd_link_order *,
+<span class="lineNum">     467 </span>            : .     bfd_byte *, bfd_boolean, struct bfd_symbol **);
+<span class="lineNum">     468 </span>            : .
+<span class="lineNum">     469 </span>            : .  bfd_boolean (*_bfd_relax_section)
+<span class="lineNum">     470 </span>            : .    (bfd *, struct bfd_section *, struct bfd_link_info *, bfd_boolean *);
+<span class="lineNum">     471 </span>            : .
+<span class="lineNum">     472 </span>            : .  {* Create a hash table for the linker.  Different backends store
+<span class="lineNum">     473 </span>            : .     different information in this table.  *}
+<span class="lineNum">     474 </span>            : .  struct bfd_link_hash_table *
+<span class="lineNum">     475 </span>            : .              (*_bfd_link_hash_table_create) (bfd *);
+<span class="lineNum">     476 </span>            : .
+<span class="lineNum">     477 </span>            : .  {* Add symbols from this object file into the hash table.  *}
+<span class="lineNum">     478 </span>            : .  bfd_boolean (*_bfd_link_add_symbols) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     479 </span>            : .
+<span class="lineNum">     480 </span>            : .  {* Indicate that we are only retrieving symbol values from this section.  *}
+<span class="lineNum">     481 </span>            : .  void        (*_bfd_link_just_syms) (asection *, struct bfd_link_info *);
+<span class="lineNum">     482 </span>            : .
+<span class="lineNum">     483 </span>            : .  {* Copy the symbol type and other attributes for a linker script
+<span class="lineNum">     484 </span>            : .     assignment of one symbol to another.  *}
+<span class="lineNum">     485 </span>            : .#define bfd_copy_link_hash_symbol_type(b, t, f) \
+<span class="lineNum">     486 </span>            : .  BFD_SEND (b, _bfd_copy_link_hash_symbol_type, (b, t, f))
+<span class="lineNum">     487 </span>            : .  void (*_bfd_copy_link_hash_symbol_type)
+<span class="lineNum">     488 </span>            : .    (bfd *, struct bfd_link_hash_entry *, struct bfd_link_hash_entry *);
+<span class="lineNum">     489 </span>            : .
+<span class="lineNum">     490 </span>            : .  {* Do a link based on the link_order structures attached to each
+<span class="lineNum">     491 </span>            : .     section of the BFD.  *}
+<span class="lineNum">     492 </span>            : .  bfd_boolean (*_bfd_final_link) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     493 </span>            : .
+<span class="lineNum">     494 </span>            : .  {* Should this section be split up into smaller pieces during linking.  *}
+<span class="lineNum">     495 </span>            : .  bfd_boolean (*_bfd_link_split_section) (bfd *, struct bfd_section *);
+<span class="lineNum">     496 </span>            : .
+<span class="lineNum">     497 </span>            : .  {* Check the relocations in the bfd for validity.  *}
+<span class="lineNum">     498 </span>            : .  bfd_boolean (* _bfd_link_check_relocs)(bfd *, struct bfd_link_info *);
+<span class="lineNum">     499 </span>            : .
+<span class="lineNum">     500 </span>            : .  {* Remove sections that are not referenced from the output.  *}
+<span class="lineNum">     501 </span>            : .  bfd_boolean (*_bfd_gc_sections) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     502 </span>            : .
+<span class="lineNum">     503 </span>            : .  {* Sets the bitmask of allowed and disallowed section flags.  *}
+<span class="lineNum">     504 </span>            : .  bfd_boolean (*_bfd_lookup_section_flags) (struct bfd_link_info *,
+<span class="lineNum">     505 </span>            : .                                            struct flag_info *,
+<span class="lineNum">     506 </span>            : .                                            asection *);
+<span class="lineNum">     507 </span>            : .
+<span class="lineNum">     508 </span>            : .  {* Attempt to merge SEC_MERGE sections.  *}
+<span class="lineNum">     509 </span>            : .  bfd_boolean (*_bfd_merge_sections) (bfd *, struct bfd_link_info *);
+<span class="lineNum">     510 </span>            : .
+<span class="lineNum">     511 </span>            : .  {* Is this section a member of a group?  *}
+<span class="lineNum">     512 </span>            : .  bfd_boolean (*_bfd_is_group_section) (bfd *, const struct bfd_section *);
+<span class="lineNum">     513 </span>            : .
+<span class="lineNum">     514 </span>            : .  {* Discard members of a group.  *}
+<span class="lineNum">     515 </span>            : .  bfd_boolean (*_bfd_discard_group) (bfd *, struct bfd_section *);
+<span class="lineNum">     516 </span>            : .
+<span class="lineNum">     517 </span>            : .  {* Check if SEC has been already linked during a reloceatable or
+<span class="lineNum">     518 </span>            : .     final link.  *}
+<span class="lineNum">     519 </span>            : .  bfd_boolean (*_section_already_linked) (bfd *, asection *,
+<span class="lineNum">     520 </span>            : .                                          struct bfd_link_info *);
+<span class="lineNum">     521 </span>            : .
+<span class="lineNum">     522 </span>            : .  {* Define a common symbol.  *}
+<span class="lineNum">     523 </span>            : .  bfd_boolean (*_bfd_define_common_symbol) (bfd *, struct bfd_link_info *,
+<span class="lineNum">     524 </span>            : .                                            struct bfd_link_hash_entry *);
+<span class="lineNum">     525 </span>            : .
+<span class="lineNum">     526 </span>            : .  {* Routines to handle dynamic symbols and relocs.  *}
+<span class="lineNum">     527 </span>            : .#define BFD_JUMP_TABLE_DYNAMIC(NAME) \
+<span class="lineNum">     528 </span>            : .  NAME##_get_dynamic_symtab_upper_bound, \
+<span class="lineNum">     529 </span>            : .  NAME##_canonicalize_dynamic_symtab, \
+<span class="lineNum">     530 </span>            : .  NAME##_get_synthetic_symtab, \
+<span class="lineNum">     531 </span>            : .  NAME##_get_dynamic_reloc_upper_bound, \
+<span class="lineNum">     532 </span>            : .  NAME##_canonicalize_dynamic_reloc
+<span class="lineNum">     533 </span>            : .
+<span class="lineNum">     534 </span>            : .  {* Get the amount of memory required to hold the dynamic symbols.  *}
+<span class="lineNum">     535 </span>            : .  long        (*_bfd_get_dynamic_symtab_upper_bound) (bfd *);
+<span class="lineNum">     536 </span>            : .  {* Read in the dynamic symbols.  *}
+<span class="lineNum">     537 </span>            : .  long        (*_bfd_canonicalize_dynamic_symtab)
+<span class="lineNum">     538 </span>            : .    (bfd *, struct bfd_symbol **);
+<span class="lineNum">     539 </span>            : .  {* Create synthetized symbols.  *}
+<span class="lineNum">     540 </span>            : .  long        (*_bfd_get_synthetic_symtab)
+<span class="lineNum">     541 </span>            : .    (bfd *, long, struct bfd_symbol **, long, struct bfd_symbol **,
+<span class="lineNum">     542 </span>            : .     struct bfd_symbol **);
+<span class="lineNum">     543 </span>            : .  {* Get the amount of memory required to hold the dynamic relocs.  *}
+<span class="lineNum">     544 </span>            : .  long        (*_bfd_get_dynamic_reloc_upper_bound) (bfd *);
+<span class="lineNum">     545 </span>            : .  {* Read in the dynamic relocs.  *}
+<span class="lineNum">     546 </span>            : .  long        (*_bfd_canonicalize_dynamic_reloc)
+<span class="lineNum">     547 </span>            : .    (bfd *, arelent **, struct bfd_symbol **);
+<span class="lineNum">     548 </span>            : .
+<span class="lineNum">     549 </span>            : 
+<span class="lineNum">     550 </span>            : A pointer to an alternative bfd_target in case the current one is not
+<span class="lineNum">     551 </span>            : satisfactory.  This can happen when the target cpu supports both big
+<span class="lineNum">     552 </span>            : and little endian code, and target chosen by the linker has the wrong
+<span class="lineNum">     553 </span>            : endianness.  The function open_output() in ld/ldlang.c uses this field
+<span class="lineNum">     554 </span>            : to find an alternative output format that is suitable.
+<span class="lineNum">     555 </span>            : 
+<span class="lineNum">     556 </span>            : .  {* Opposite endian version of this target.  *}
+<span class="lineNum">     557 </span>            : .  const struct bfd_target * alternative_target;
+<span class="lineNum">     558 </span>            : .
+<span class="lineNum">     559 </span>            : 
+<span class="lineNum">     560 </span>            : .  {* Data for use by back-end routines, which isn't
+<span class="lineNum">     561 </span>            : .     generic enough to belong in this structure.  *}
+<span class="lineNum">     562 </span>            : .  const void *backend_data;
+<span class="lineNum">     563 </span>            : .
+<span class="lineNum">     564 </span>            : .} bfd_target;
+<span class="lineNum">     565 </span>            : .
+<span class="lineNum">     566 </span>            : */
+<span class="lineNum">     567 </span>            : 
+<span class="lineNum">     568 </span>            : /* All known xvecs (even those that don't compile on all systems).
+<span class="lineNum">     569 </span>            :    Alphabetized for easy reference.
+<span class="lineNum">     570 </span>            :    They are listed a second time below, since
+<span class="lineNum">     571 </span>            :    we can't intermix extern's and initializers.  */
+<span class="lineNum">     572 </span>            : extern const bfd_target aarch64_elf32_be_vec;
+<span class="lineNum">     573 </span>            : extern const bfd_target aarch64_elf32_le_vec;
+<span class="lineNum">     574 </span>            : extern const bfd_target aarch64_elf64_be_vec;
+<span class="lineNum">     575 </span>            : extern const bfd_target aarch64_elf64_be_cloudabi_vec;
+<span class="lineNum">     576 </span>            : extern const bfd_target aarch64_elf64_le_vec;
+<span class="lineNum">     577 </span>            : extern const bfd_target aarch64_elf64_le_cloudabi_vec;
+<span class="lineNum">     578 </span>            : extern const bfd_target aarch64_mach_o_vec;
+<span class="lineNum">     579 </span>            : extern const bfd_target alpha_ecoff_le_vec;
+<span class="lineNum">     580 </span>            : extern const bfd_target alpha_elf64_vec;
+<span class="lineNum">     581 </span>            : extern const bfd_target alpha_elf64_fbsd_vec;
+<span class="lineNum">     582 </span>            : extern const bfd_target alpha_nlm32_vec;
+<span class="lineNum">     583 </span>            : extern const bfd_target alpha_vms_vec;
+<span class="lineNum">     584 </span>            : extern const bfd_target alpha_vms_lib_txt_vec;
+<span class="lineNum">     585 </span>            : extern const bfd_target am33_elf32_linux_vec;
+<span class="lineNum">     586 </span>            : extern const bfd_target aout0_be_vec;
+<span class="lineNum">     587 </span>            : extern const bfd_target aout64_vec;
+<span class="lineNum">     588 </span>            : extern const bfd_target aout_vec;
+<span class="lineNum">     589 </span>            : extern const bfd_target aout_adobe_vec;
+<span class="lineNum">     590 </span>            : extern const bfd_target arc_elf32_be_vec;
+<span class="lineNum">     591 </span>            : extern const bfd_target arc_elf32_le_vec;
+<span class="lineNum">     592 </span>            : extern const bfd_target arm_aout_be_vec;
+<span class="lineNum">     593 </span>            : extern const bfd_target arm_aout_le_vec;
+<span class="lineNum">     594 </span>            : extern const bfd_target arm_aout_nbsd_vec;
+<span class="lineNum">     595 </span>            : extern const bfd_target arm_aout_riscix_vec;
+<span class="lineNum">     596 </span>            : extern const bfd_target arm_coff_be_vec;
+<span class="lineNum">     597 </span>            : extern const bfd_target arm_coff_le_vec;
+<span class="lineNum">     598 </span>            : extern const bfd_target arm_elf32_be_vec;
+<span class="lineNum">     599 </span>            : extern const bfd_target arm_elf32_le_vec;
+<span class="lineNum">     600 </span>            : extern const bfd_target arm_elf32_nacl_be_vec;
+<span class="lineNum">     601 </span>            : extern const bfd_target arm_elf32_nacl_le_vec;
+<span class="lineNum">     602 </span>            : extern const bfd_target arm_elf32_symbian_be_vec;
+<span class="lineNum">     603 </span>            : extern const bfd_target arm_elf32_symbian_le_vec;
+<span class="lineNum">     604 </span>            : extern const bfd_target arm_elf32_vxworks_be_vec;
+<span class="lineNum">     605 </span>            : extern const bfd_target arm_elf32_vxworks_le_vec;
+<span class="lineNum">     606 </span>            : extern const bfd_target arm_mach_o_vec;
+<span class="lineNum">     607 </span>            : extern const bfd_target arm_pe_be_vec;
+<span class="lineNum">     608 </span>            : extern const bfd_target arm_pe_le_vec;
+<span class="lineNum">     609 </span>            : extern const bfd_target arm_pe_epoc_be_vec;
+<span class="lineNum">     610 </span>            : extern const bfd_target arm_pe_epoc_le_vec;
+<span class="lineNum">     611 </span>            : extern const bfd_target arm_pe_wince_be_vec;
+<span class="lineNum">     612 </span>            : extern const bfd_target arm_pe_wince_le_vec;
+<span class="lineNum">     613 </span>            : extern const bfd_target arm_pei_be_vec;
+<span class="lineNum">     614 </span>            : extern const bfd_target arm_pei_le_vec;
+<span class="lineNum">     615 </span>            : extern const bfd_target arm_pei_epoc_be_vec;
+<span class="lineNum">     616 </span>            : extern const bfd_target arm_pei_epoc_le_vec;
+<span class="lineNum">     617 </span>            : extern const bfd_target arm_pei_wince_be_vec;
+<span class="lineNum">     618 </span>            : extern const bfd_target arm_pei_wince_le_vec;
+<span class="lineNum">     619 </span>            : extern const bfd_target avr_elf32_vec;
+<span class="lineNum">     620 </span>            : extern const bfd_target bfin_elf32_vec;
+<span class="lineNum">     621 </span>            : extern const bfd_target bfin_elf32_fdpic_vec;
+<span class="lineNum">     622 </span>            : extern const bfd_target bout_be_vec;
+<span class="lineNum">     623 </span>            : extern const bfd_target bout_le_vec;
+<span class="lineNum">     624 </span>            : extern const bfd_target cr16_elf32_vec;
+<span class="lineNum">     625 </span>            : extern const bfd_target cr16c_elf32_vec;
+<span class="lineNum">     626 </span>            : extern const bfd_target cris_aout_vec;
+<span class="lineNum">     627 </span>            : extern const bfd_target cris_elf32_vec;
+<span class="lineNum">     628 </span>            : extern const bfd_target cris_elf32_us_vec;
+<span class="lineNum">     629 </span>            : extern const bfd_target crx_elf32_vec;
+<span class="lineNum">     630 </span>            : extern const bfd_target d10v_elf32_vec;
+<span class="lineNum">     631 </span>            : extern const bfd_target d30v_elf32_vec;
+<span class="lineNum">     632 </span>            : extern const bfd_target dlx_elf32_be_vec;
+<span class="lineNum">     633 </span>            : extern const bfd_target elf32_be_vec;
+<span class="lineNum">     634 </span>            : extern const bfd_target elf32_le_vec;
+<span class="lineNum">     635 </span>            : extern const bfd_target elf64_be_vec;
+<span class="lineNum">     636 </span>            : extern const bfd_target elf64_le_vec;
+<span class="lineNum">     637 </span>            : extern const bfd_target epiphany_elf32_vec;
+<span class="lineNum">     638 </span>            : extern const bfd_target fr30_elf32_vec;
+<span class="lineNum">     639 </span>            : extern const bfd_target frv_elf32_vec;
+<span class="lineNum">     640 </span>            : extern const bfd_target frv_elf32_fdpic_vec;
+<span class="lineNum">     641 </span>            : extern const bfd_target h8300_coff_vec;
+<span class="lineNum">     642 </span>            : extern const bfd_target h8300_elf32_vec;
+<span class="lineNum">     643 </span>            : extern const bfd_target h8300_elf32_linux_vec;
+<span class="lineNum">     644 </span>            : extern const bfd_target h8500_coff_vec;
+<span class="lineNum">     645 </span>            : extern const bfd_target hppa_elf32_vec;
+<span class="lineNum">     646 </span>            : extern const bfd_target hppa_elf32_linux_vec;
+<span class="lineNum">     647 </span>            : extern const bfd_target hppa_elf32_nbsd_vec;
+<span class="lineNum">     648 </span>            : extern const bfd_target hppa_elf64_vec;
+<span class="lineNum">     649 </span>            : extern const bfd_target hppa_elf64_linux_vec;
+<span class="lineNum">     650 </span>            : extern const bfd_target hppa_som_vec;
+<span class="lineNum">     651 </span>            : extern const bfd_target i370_elf32_vec;
+<span class="lineNum">     652 </span>            : extern const bfd_target i386_aout_vec;
+<span class="lineNum">     653 </span>            : extern const bfd_target i386_aout_bsd_vec;
+<span class="lineNum">     654 </span>            : extern const bfd_target i386_aout_dynix_vec;
+<span class="lineNum">     655 </span>            : extern const bfd_target i386_aout_fbsd_vec;
+<span class="lineNum">     656 </span>            : extern const bfd_target i386_aout_linux_vec;
+<span class="lineNum">     657 </span>            : extern const bfd_target i386_aout_lynx_vec;
+<span class="lineNum">     658 </span>            : extern const bfd_target i386_aout_mach3_vec;
+<span class="lineNum">     659 </span>            : extern const bfd_target i386_aout_nbsd_vec;
+<span class="lineNum">     660 </span>            : extern const bfd_target i386_aout_os9k_vec;
+<span class="lineNum">     661 </span>            : extern const bfd_target i386_coff_vec;
+<span class="lineNum">     662 </span>            : extern const bfd_target i386_coff_go32_vec;
+<span class="lineNum">     663 </span>            : extern const bfd_target i386_coff_go32stubbed_vec;
+<span class="lineNum">     664 </span>            : extern const bfd_target i386_coff_lynx_vec;
+<span class="lineNum">     665 </span>            : extern const bfd_target i386_elf32_vec;
+<span class="lineNum">     666 </span>            : extern const bfd_target i386_elf32_fbsd_vec;
+<span class="lineNum">     667 </span>            : extern const bfd_target i386_elf32_nacl_vec;
+<span class="lineNum">     668 </span>            : extern const bfd_target i386_elf32_sol2_vec;
+<span class="lineNum">     669 </span>            : extern const bfd_target i386_elf32_vxworks_vec;
+<span class="lineNum">     670 </span>            : extern const bfd_target i386_mach_o_vec;
+<span class="lineNum">     671 </span>            : extern const bfd_target i386_msdos_vec;
+<span class="lineNum">     672 </span>            : extern const bfd_target i386_nlm32_vec;
+<span class="lineNum">     673 </span>            : extern const bfd_target i386_pe_vec;
+<span class="lineNum">     674 </span>            : extern const bfd_target i386_pei_vec;
+<span class="lineNum">     675 </span>            : extern const bfd_target iamcu_elf32_vec;
+<span class="lineNum">     676 </span>            : extern const bfd_target i860_coff_vec;
+<span class="lineNum">     677 </span>            : extern const bfd_target i860_elf32_vec;
+<span class="lineNum">     678 </span>            : extern const bfd_target i860_elf32_le_vec;
+<span class="lineNum">     679 </span>            : extern const bfd_target i960_elf32_vec;
+<span class="lineNum">     680 </span>            : extern const bfd_target ia64_elf32_be_vec;
+<span class="lineNum">     681 </span>            : extern const bfd_target ia64_elf32_hpux_be_vec;
+<span class="lineNum">     682 </span>            : extern const bfd_target ia64_elf64_be_vec;
+<span class="lineNum">     683 </span>            : extern const bfd_target ia64_elf64_le_vec;
+<span class="lineNum">     684 </span>            : extern const bfd_target ia64_elf64_hpux_be_vec;
+<span class="lineNum">     685 </span>            : extern const bfd_target ia64_elf64_vms_vec;
+<span class="lineNum">     686 </span>            : extern const bfd_target ia64_pei_vec;
+<span class="lineNum">     687 </span>            : extern const bfd_target icoff_be_vec;
+<span class="lineNum">     688 </span>            : extern const bfd_target icoff_le_vec;
+<span class="lineNum">     689 </span>            : extern const bfd_target ieee_vec;
+<span class="lineNum">     690 </span>            : extern const bfd_target ip2k_elf32_vec;
+<span class="lineNum">     691 </span>            : extern const bfd_target iq2000_elf32_vec;
+<span class="lineNum">     692 </span>            : extern const bfd_target k1om_elf64_vec;
+<span class="lineNum">     693 </span>            : extern const bfd_target k1om_elf64_fbsd_vec;
+<span class="lineNum">     694 </span>            : extern const bfd_target l1om_elf64_vec;
+<span class="lineNum">     695 </span>            : extern const bfd_target l1om_elf64_fbsd_vec;
+<span class="lineNum">     696 </span>            : extern const bfd_target lm32_elf32_vec;
+<span class="lineNum">     697 </span>            : extern const bfd_target lm32_elf32_fdpic_vec;
+<span class="lineNum">     698 </span>            : extern const bfd_target m32c_elf32_vec;
+<span class="lineNum">     699 </span>            : extern const bfd_target m32r_elf32_vec;
+<span class="lineNum">     700 </span>            : extern const bfd_target m32r_elf32_le_vec;
+<span class="lineNum">     701 </span>            : extern const bfd_target m32r_elf32_linux_vec;
+<span class="lineNum">     702 </span>            : extern const bfd_target m32r_elf32_linux_le_vec;
+<span class="lineNum">     703 </span>            : extern const bfd_target m68hc11_elf32_vec;
+<span class="lineNum">     704 </span>            : extern const bfd_target m68hc12_elf32_vec;
+<span class="lineNum">     705 </span>            : extern const bfd_target m68k_aout_4knbsd_vec;
+<span class="lineNum">     706 </span>            : extern const bfd_target m68k_aout_hp300bsd_vec;
+<span class="lineNum">     707 </span>            : extern const bfd_target m68k_aout_hp300hpux_vec;
+<span class="lineNum">     708 </span>            : extern const bfd_target m68k_aout_linux_vec;
+<span class="lineNum">     709 </span>            : extern const bfd_target m68k_aout_nbsd_vec;
+<span class="lineNum">     710 </span>            : extern const bfd_target m68k_aout_newsos3_vec;
+<span class="lineNum">     711 </span>            : extern const bfd_target m68k_coff_vec;
+<span class="lineNum">     712 </span>            : extern const bfd_target m68k_coff_apollo_vec;
+<span class="lineNum">     713 </span>            : extern const bfd_target m68k_coff_aux_vec;
+<span class="lineNum">     714 </span>            : extern const bfd_target m68k_coff_sysv_vec;
+<span class="lineNum">     715 </span>            : extern const bfd_target m68k_coff_un_vec;
+<span class="lineNum">     716 </span>            : extern const bfd_target m68k_elf32_vec;
+<span class="lineNum">     717 </span>            : extern const bfd_target m68k_versados_vec;
+<span class="lineNum">     718 </span>            : extern const bfd_target m88k_aout_mach3_vec;
+<span class="lineNum">     719 </span>            : extern const bfd_target m88k_aout_obsd_vec;
+<span class="lineNum">     720 </span>            : extern const bfd_target m88k_coff_bcs_vec;
+<span class="lineNum">     721 </span>            : extern const bfd_target m88k_elf32_vec;
+<span class="lineNum">     722 </span>            : extern const bfd_target mach_o_be_vec;
+<span class="lineNum">     723 </span>            : extern const bfd_target mach_o_le_vec;
+<span class="lineNum">     724 </span>            : extern const bfd_target mach_o_fat_vec;
+<span class="lineNum">     725 </span>            : extern const bfd_target mcore_elf32_be_vec;
+<span class="lineNum">     726 </span>            : extern const bfd_target mcore_elf32_le_vec;
+<span class="lineNum">     727 </span>            : extern const bfd_target mcore_pe_be_vec;
+<span class="lineNum">     728 </span>            : extern const bfd_target mcore_pe_le_vec;
+<span class="lineNum">     729 </span>            : extern const bfd_target mcore_pei_be_vec;
+<span class="lineNum">     730 </span>            : extern const bfd_target mcore_pei_le_vec;
+<span class="lineNum">     731 </span>            : extern const bfd_target mep_elf32_vec;
+<span class="lineNum">     732 </span>            : extern const bfd_target mep_elf32_le_vec;
+<span class="lineNum">     733 </span>            : extern const bfd_target metag_elf32_vec;
+<span class="lineNum">     734 </span>            : extern const bfd_target microblaze_elf32_vec;
+<span class="lineNum">     735 </span>            : extern const bfd_target microblaze_elf32_le_vec;
+<span class="lineNum">     736 </span>            : extern const bfd_target mips_aout_be_vec;
+<span class="lineNum">     737 </span>            : extern const bfd_target mips_aout_le_vec;
+<span class="lineNum">     738 </span>            : extern const bfd_target mips_ecoff_be_vec;
+<span class="lineNum">     739 </span>            : extern const bfd_target mips_ecoff_le_vec;
+<span class="lineNum">     740 </span>            : extern const bfd_target mips_ecoff_bele_vec;
+<span class="lineNum">     741 </span>            : extern const bfd_target mips_elf32_be_vec;
+<span class="lineNum">     742 </span>            : extern const bfd_target mips_elf32_le_vec;
+<span class="lineNum">     743 </span>            : extern const bfd_target mips_elf32_n_be_vec;
+<span class="lineNum">     744 </span>            : extern const bfd_target mips_elf32_n_le_vec;
+<span class="lineNum">     745 </span>            : extern const bfd_target mips_elf32_ntrad_be_vec;
+<span class="lineNum">     746 </span>            : extern const bfd_target mips_elf32_ntrad_le_vec;
+<span class="lineNum">     747 </span>            : extern const bfd_target mips_elf32_ntradfbsd_be_vec;
+<span class="lineNum">     748 </span>            : extern const bfd_target mips_elf32_ntradfbsd_le_vec;
+<span class="lineNum">     749 </span>            : extern const bfd_target mips_elf32_trad_be_vec;
+<span class="lineNum">     750 </span>            : extern const bfd_target mips_elf32_trad_le_vec;
+<span class="lineNum">     751 </span>            : extern const bfd_target mips_elf32_tradfbsd_be_vec;
+<span class="lineNum">     752 </span>            : extern const bfd_target mips_elf32_tradfbsd_le_vec;
+<span class="lineNum">     753 </span>            : extern const bfd_target mips_elf32_vxworks_be_vec;
+<span class="lineNum">     754 </span>            : extern const bfd_target mips_elf32_vxworks_le_vec;
+<span class="lineNum">     755 </span>            : extern const bfd_target mips_elf64_be_vec;
+<span class="lineNum">     756 </span>            : extern const bfd_target mips_elf64_le_vec;
+<span class="lineNum">     757 </span>            : extern const bfd_target mips_elf64_trad_be_vec;
+<span class="lineNum">     758 </span>            : extern const bfd_target mips_elf64_trad_le_vec;
+<span class="lineNum">     759 </span>            : extern const bfd_target mips_elf64_tradfbsd_be_vec;
+<span class="lineNum">     760 </span>            : extern const bfd_target mips_elf64_tradfbsd_le_vec;
+<span class="lineNum">     761 </span>            : extern const bfd_target mips_pe_le_vec;
+<span class="lineNum">     762 </span>            : extern const bfd_target mips_pei_le_vec;
+<span class="lineNum">     763 </span>            : extern const bfd_target mmix_elf64_vec;
+<span class="lineNum">     764 </span>            : extern const bfd_target mmix_mmo_vec;
+<span class="lineNum">     765 </span>            : extern const bfd_target mn10200_elf32_vec;
+<span class="lineNum">     766 </span>            : extern const bfd_target mn10300_elf32_vec;
+<span class="lineNum">     767 </span>            : extern const bfd_target moxie_elf32_be_vec;
+<span class="lineNum">     768 </span>            : extern const bfd_target moxie_elf32_le_vec;
+<span class="lineNum">     769 </span>            : extern const bfd_target msp430_elf32_vec;
+<span class="lineNum">     770 </span>            : extern const bfd_target msp430_elf32_ti_vec;
+<span class="lineNum">     771 </span>            : extern const bfd_target mt_elf32_vec;
+<span class="lineNum">     772 </span>            : extern const bfd_target nds32_elf32_be_vec;
+<span class="lineNum">     773 </span>            : extern const bfd_target nds32_elf32_le_vec;
+<span class="lineNum">     774 </span>            : extern const bfd_target nds32_elf32_linux_be_vec;
+<span class="lineNum">     775 </span>            : extern const bfd_target nds32_elf32_linux_le_vec;
+<span class="lineNum">     776 </span>            : extern const bfd_target nios2_elf32_be_vec;
+<span class="lineNum">     777 </span>            : extern const bfd_target nios2_elf32_le_vec;
+<span class="lineNum">     778 </span>            : extern const bfd_target ns32k_aout_pc532mach_vec;
+<span class="lineNum">     779 </span>            : extern const bfd_target ns32k_aout_pc532nbsd_vec;
+<span class="lineNum">     780 </span>            : extern const bfd_target oasys_vec;
+<span class="lineNum">     781 </span>            : extern const bfd_target or1k_elf32_vec;
+<span class="lineNum">     782 </span>            : extern const bfd_target pdp11_aout_vec;
+<span class="lineNum">     783 </span>            : extern const bfd_target pef_vec;
+<span class="lineNum">     784 </span>            : extern const bfd_target pef_xlib_vec;
+<span class="lineNum">     785 </span>            : extern const bfd_target pj_elf32_vec;
+<span class="lineNum">     786 </span>            : extern const bfd_target pj_elf32_le_vec;
+<span class="lineNum">     787 </span>            : extern const bfd_target plugin_vec;
+<span class="lineNum">     788 </span>            : extern const bfd_target powerpc_boot_vec;
+<span class="lineNum">     789 </span>            : extern const bfd_target powerpc_elf32_vec;
+<span class="lineNum">     790 </span>            : extern const bfd_target powerpc_elf32_le_vec;
+<span class="lineNum">     791 </span>            : extern const bfd_target powerpc_elf32_fbsd_vec;
+<span class="lineNum">     792 </span>            : extern const bfd_target powerpc_elf32_vxworks_vec;
+<span class="lineNum">     793 </span>            : extern const bfd_target powerpc_elf64_vec;
+<span class="lineNum">     794 </span>            : extern const bfd_target powerpc_elf64_le_vec;
+<span class="lineNum">     795 </span>            : extern const bfd_target powerpc_elf64_fbsd_vec;
+<span class="lineNum">     796 </span>            : extern const bfd_target powerpc_nlm32_vec;
+<span class="lineNum">     797 </span>            : extern const bfd_target powerpc_pe_vec;
+<span class="lineNum">     798 </span>            : extern const bfd_target powerpc_pe_le_vec;
+<span class="lineNum">     799 </span>            : extern const bfd_target powerpc_pei_vec;
+<span class="lineNum">     800 </span>            : extern const bfd_target powerpc_pei_le_vec;
+<span class="lineNum">     801 </span>            : extern const bfd_target powerpc_xcoff_vec;
+<span class="lineNum">     802 </span>            : extern const bfd_target riscv_elf32_vec;
+<span class="lineNum">     803 </span>            : extern const bfd_target riscv_elf64_vec;
+<span class="lineNum">     804 </span>            : extern const bfd_target rl78_elf32_vec;
+<span class="lineNum">     805 </span>            : extern const bfd_target rs6000_xcoff64_vec;
+<span class="lineNum">     806 </span>            : extern const bfd_target rs6000_xcoff64_aix_vec;
+<span class="lineNum">     807 </span>            : extern const bfd_target rs6000_xcoff_vec;
+<span class="lineNum">     808 </span>            : extern const bfd_target rx_elf32_be_vec;
+<span class="lineNum">     809 </span>            : extern const bfd_target rx_elf32_be_ns_vec;
+<span class="lineNum">     810 </span>            : extern const bfd_target rx_elf32_le_vec;
+<span class="lineNum">     811 </span>            : extern const bfd_target s390_elf32_vec;
+<span class="lineNum">     812 </span>            : extern const bfd_target s390_elf64_vec;
+<span class="lineNum">     813 </span>            : extern const bfd_target score_elf32_be_vec;
+<span class="lineNum">     814 </span>            : extern const bfd_target score_elf32_le_vec;
+<span class="lineNum">     815 </span>            : extern const bfd_target sh64_elf32_vec;
+<span class="lineNum">     816 </span>            : extern const bfd_target sh64_elf32_le_vec;
+<span class="lineNum">     817 </span>            : extern const bfd_target sh64_elf32_linux_vec;
+<span class="lineNum">     818 </span>            : extern const bfd_target sh64_elf32_linux_be_vec;
+<span class="lineNum">     819 </span>            : extern const bfd_target sh64_elf32_nbsd_vec;
+<span class="lineNum">     820 </span>            : extern const bfd_target sh64_elf32_nbsd_le_vec;
+<span class="lineNum">     821 </span>            : extern const bfd_target sh64_elf64_vec;
+<span class="lineNum">     822 </span>            : extern const bfd_target sh64_elf64_le_vec;
+<span class="lineNum">     823 </span>            : extern const bfd_target sh64_elf64_linux_vec;
+<span class="lineNum">     824 </span>            : extern const bfd_target sh64_elf64_linux_be_vec;
+<span class="lineNum">     825 </span>            : extern const bfd_target sh64_elf64_nbsd_vec;
+<span class="lineNum">     826 </span>            : extern const bfd_target sh64_elf64_nbsd_le_vec;
+<span class="lineNum">     827 </span>            : extern const bfd_target sh_coff_vec;
+<span class="lineNum">     828 </span>            : extern const bfd_target sh_coff_le_vec;
+<span class="lineNum">     829 </span>            : extern const bfd_target sh_coff_small_vec;
+<span class="lineNum">     830 </span>            : extern const bfd_target sh_coff_small_le_vec;
+<span class="lineNum">     831 </span>            : extern const bfd_target sh_elf32_vec;
+<span class="lineNum">     832 </span>            : extern const bfd_target sh_elf32_le_vec;
+<span class="lineNum">     833 </span>            : extern const bfd_target sh_elf32_fdpic_be_vec;
+<span class="lineNum">     834 </span>            : extern const bfd_target sh_elf32_fdpic_le_vec;
+<span class="lineNum">     835 </span>            : extern const bfd_target sh_elf32_linux_vec;
+<span class="lineNum">     836 </span>            : extern const bfd_target sh_elf32_linux_be_vec;
+<span class="lineNum">     837 </span>            : extern const bfd_target sh_elf32_nbsd_vec;
+<span class="lineNum">     838 </span>            : extern const bfd_target sh_elf32_nbsd_le_vec;
+<span class="lineNum">     839 </span>            : extern const bfd_target sh_elf32_symbian_le_vec;
+<span class="lineNum">     840 </span>            : extern const bfd_target sh_elf32_vxworks_vec;
+<span class="lineNum">     841 </span>            : extern const bfd_target sh_elf32_vxworks_le_vec;
+<span class="lineNum">     842 </span>            : extern const bfd_target sh_pe_le_vec;
+<span class="lineNum">     843 </span>            : extern const bfd_target sh_pei_le_vec;
+<span class="lineNum">     844 </span>            : extern const bfd_target sparc_aout_le_vec;
+<span class="lineNum">     845 </span>            : extern const bfd_target sparc_aout_linux_vec;
+<span class="lineNum">     846 </span>            : extern const bfd_target sparc_aout_lynx_vec;
+<span class="lineNum">     847 </span>            : extern const bfd_target sparc_aout_nbsd_vec;
+<span class="lineNum">     848 </span>            : extern const bfd_target sparc_aout_sunos_be_vec;
+<span class="lineNum">     849 </span>            : extern const bfd_target sparc_coff_vec;
+<span class="lineNum">     850 </span>            : extern const bfd_target sparc_coff_lynx_vec;
+<span class="lineNum">     851 </span>            : extern const bfd_target sparc_elf32_vec;
+<span class="lineNum">     852 </span>            : extern const bfd_target sparc_elf32_sol2_vec;
+<span class="lineNum">     853 </span>            : extern const bfd_target sparc_elf32_vxworks_vec;
+<span class="lineNum">     854 </span>            : extern const bfd_target sparc_elf64_vec;
+<span class="lineNum">     855 </span>            : extern const bfd_target sparc_elf64_fbsd_vec;
+<span class="lineNum">     856 </span>            : extern const bfd_target sparc_elf64_sol2_vec;
+<span class="lineNum">     857 </span>            : extern const bfd_target sparc_nlm32_vec;
+<span class="lineNum">     858 </span>            : extern const bfd_target spu_elf32_vec;
+<span class="lineNum">     859 </span>            : extern const bfd_target sym_vec;
+<span class="lineNum">     860 </span>            : extern const bfd_target tic30_aout_vec;
+<span class="lineNum">     861 </span>            : extern const bfd_target tic30_coff_vec;
+<span class="lineNum">     862 </span>            : extern const bfd_target tic4x_coff0_vec;
+<span class="lineNum">     863 </span>            : extern const bfd_target tic4x_coff0_beh_vec;
+<span class="lineNum">     864 </span>            : extern const bfd_target tic4x_coff1_vec;
+<span class="lineNum">     865 </span>            : extern const bfd_target tic4x_coff1_beh_vec;
+<span class="lineNum">     866 </span>            : extern const bfd_target tic4x_coff2_vec;
+<span class="lineNum">     867 </span>            : extern const bfd_target tic4x_coff2_beh_vec;
+<span class="lineNum">     868 </span>            : extern const bfd_target tic54x_coff0_vec;
+<span class="lineNum">     869 </span>            : extern const bfd_target tic54x_coff0_beh_vec;
+<span class="lineNum">     870 </span>            : extern const bfd_target tic54x_coff1_vec;
+<span class="lineNum">     871 </span>            : extern const bfd_target tic54x_coff1_beh_vec;
+<span class="lineNum">     872 </span>            : extern const bfd_target tic54x_coff2_vec;
+<span class="lineNum">     873 </span>            : extern const bfd_target tic54x_coff2_beh_vec;
+<span class="lineNum">     874 </span>            : extern const bfd_target tic6x_elf32_be_vec;
+<span class="lineNum">     875 </span>            : extern const bfd_target tic6x_elf32_le_vec;
+<span class="lineNum">     876 </span>            : extern const bfd_target tic6x_elf32_c6000_be_vec;
+<span class="lineNum">     877 </span>            : extern const bfd_target tic6x_elf32_c6000_le_vec;
+<span class="lineNum">     878 </span>            : extern const bfd_target tic6x_elf32_linux_be_vec;
+<span class="lineNum">     879 </span>            : extern const bfd_target tic6x_elf32_linux_le_vec;
+<span class="lineNum">     880 </span>            : extern const bfd_target tic80_coff_vec;
+<span class="lineNum">     881 </span>            : extern const bfd_target tilegx_elf32_be_vec;
+<span class="lineNum">     882 </span>            : extern const bfd_target tilegx_elf32_le_vec;
+<span class="lineNum">     883 </span>            : extern const bfd_target tilegx_elf64_be_vec;
+<span class="lineNum">     884 </span>            : extern const bfd_target tilegx_elf64_le_vec;
+<span class="lineNum">     885 </span>            : extern const bfd_target tilepro_elf32_vec;
+<span class="lineNum">     886 </span>            : extern const bfd_target v800_elf32_vec;
+<span class="lineNum">     887 </span>            : extern const bfd_target v850_elf32_vec;
+<span class="lineNum">     888 </span>            : extern const bfd_target ft32_elf32_vec;
+<span class="lineNum">     889 </span>            : extern const bfd_target vax_aout_1knbsd_vec;
+<span class="lineNum">     890 </span>            : extern const bfd_target vax_aout_bsd_vec;
+<span class="lineNum">     891 </span>            : extern const bfd_target vax_aout_nbsd_vec;
+<span class="lineNum">     892 </span>            : extern const bfd_target vax_elf32_vec;
+<span class="lineNum">     893 </span>            : extern const bfd_target visium_elf32_vec;
+<span class="lineNum">     894 </span>            : extern const bfd_target w65_coff_vec;
+<span class="lineNum">     895 </span>            : extern const bfd_target we32k_coff_vec;
+<span class="lineNum">     896 </span>            : extern const bfd_target x86_64_coff_vec;
+<span class="lineNum">     897 </span>            : extern const bfd_target x86_64_elf32_vec;
+<span class="lineNum">     898 </span>            : extern const bfd_target x86_64_elf32_nacl_vec;
+<span class="lineNum">     899 </span>            : extern const bfd_target x86_64_elf64_vec;
+<span class="lineNum">     900 </span>            : extern const bfd_target x86_64_elf64_cloudabi_vec;
+<span class="lineNum">     901 </span>            : extern const bfd_target x86_64_elf64_fbsd_vec;
+<span class="lineNum">     902 </span>            : extern const bfd_target x86_64_elf64_nacl_vec;
+<span class="lineNum">     903 </span>            : extern const bfd_target x86_64_elf64_sol2_vec;
+<span class="lineNum">     904 </span>            : extern const bfd_target x86_64_mach_o_vec;
+<span class="lineNum">     905 </span>            : extern const bfd_target x86_64_pe_vec;
+<span class="lineNum">     906 </span>            : extern const bfd_target x86_64_pe_be_vec;
+<span class="lineNum">     907 </span>            : extern const bfd_target x86_64_pei_vec;
+<span class="lineNum">     908 </span>            : extern const bfd_target xc16x_elf32_vec;
+<span class="lineNum">     909 </span>            : extern const bfd_target xgate_elf32_vec;
+<span class="lineNum">     910 </span>            : extern const bfd_target xstormy16_elf32_vec;
+<span class="lineNum">     911 </span>            : extern const bfd_target xtensa_elf32_be_vec;
+<span class="lineNum">     912 </span>            : extern const bfd_target xtensa_elf32_le_vec;
+<span class="lineNum">     913 </span>            : extern const bfd_target z80_coff_vec;
+<span class="lineNum">     914 </span>            : extern const bfd_target z8k_coff_vec;
+<span class="lineNum">     915 </span>            : 
+<span class="lineNum">     916 </span>            : /* These are always included.  */
+<span class="lineNum">     917 </span>            : extern const bfd_target srec_vec;
+<span class="lineNum">     918 </span>            : extern const bfd_target symbolsrec_vec;
+<span class="lineNum">     919 </span>            : extern const bfd_target verilog_vec;
+<span class="lineNum">     920 </span>            : extern const bfd_target tekhex_vec;
+<span class="lineNum">     921 </span>            : extern const bfd_target binary_vec;
+<span class="lineNum">     922 </span>            : extern const bfd_target ihex_vec;
+<span class="lineNum">     923 </span>            : 
+<span class="lineNum">     924 </span>            : /* All of the xvecs for core files.  */
+<span class="lineNum">     925 </span>            : extern const bfd_target core_aix386_vec;
+<span class="lineNum">     926 </span>            : extern const bfd_target core_cisco_be_vec;
+<span class="lineNum">     927 </span>            : extern const bfd_target core_cisco_le_vec;
+<span class="lineNum">     928 </span>            : extern const bfd_target core_hppabsd_vec;
+<span class="lineNum">     929 </span>            : extern const bfd_target core_hpux_vec;
+<span class="lineNum">     930 </span>            : extern const bfd_target core_irix_vec;
+<span class="lineNum">     931 </span>            : extern const bfd_target core_netbsd_vec;
+<span class="lineNum">     932 </span>            : extern const bfd_target core_osf_vec;
+<span class="lineNum">     933 </span>            : extern const bfd_target core_ptrace_vec;
+<span class="lineNum">     934 </span>            : extern const bfd_target core_sco5_vec;
+<span class="lineNum">     935 </span>            : extern const bfd_target core_trad_vec;
+<span class="lineNum">     936 </span>            : 
+<span class="lineNum">     937 </span>            : static const bfd_target * const _bfd_target_vector[] =
+<span class="lineNum">     938 </span>            : {
+<span class="lineNum">     939 </span>            : #ifdef SELECT_VECS
+<span class="lineNum">     940 </span>            : 
+<span class="lineNum">     941 </span>            :         SELECT_VECS,
+<span class="lineNum">     942 </span>            : 
+<span class="lineNum">     943 </span>            : #else /* not SELECT_VECS */
+<span class="lineNum">     944 </span>            : 
+<span class="lineNum">     945 </span>            : #ifdef DEFAULT_VECTOR
+<span class="lineNum">     946 </span>            :         &amp;DEFAULT_VECTOR,
+<span class="lineNum">     947 </span>            : #endif
+<span class="lineNum">     948 </span>            :         /* This list is alphabetized to make it easy to compare
+<span class="lineNum">     949 </span>            :            with other vector lists -- the decls above and
+<span class="lineNum">     950 </span>            :            the case statement in configure.ac.
+<span class="lineNum">     951 </span>            :            Try to keep it in order when adding new targets, and
+<span class="lineNum">     952 </span>            :            use a name of the form &lt;cpu&gt;_&lt;format&gt;_&lt;other&gt;_&lt;endian&gt;_vec.
+<span class="lineNum">     953 </span>            :            Note that sorting is done as if _&lt;endian&gt;_vec wasn't present.
+<span class="lineNum">     954 </span>            :            Vectors that don't compile on all systems, or aren't finished,
+<span class="lineNum">     955 </span>            :            should have an entry here with #if 0 around it, to show that
+<span class="lineNum">     956 </span>            :            it wasn't omitted by mistake.  */
+<span class="lineNum">     957 </span>            : #ifdef BFD64
+<span class="lineNum">     958 </span>            :         &amp;aarch64_elf32_be_vec,
+<span class="lineNum">     959 </span>            :         &amp;aarch64_elf32_le_vec,
+<span class="lineNum">     960 </span>            :         &amp;aarch64_elf64_be_vec,
+<span class="lineNum">     961 </span>            :         &amp;aarch64_elf64_be_cloudabi_vec,
+<span class="lineNum">     962 </span>            :         &amp;aarch64_elf64_le_vec,
+<span class="lineNum">     963 </span>            :         &amp;aarch64_elf64_le_cloudabi_vec,
+<span class="lineNum">     964 </span>            :         &amp;aarch64_mach_o_vec,
+<span class="lineNum">     965 </span>            : #endif
+<span class="lineNum">     966 </span>            : 
+<span class="lineNum">     967 </span>            : #ifdef BFD64
+<span class="lineNum">     968 </span>            :         &amp;alpha_ecoff_le_vec,
+<span class="lineNum">     969 </span>            :         &amp;alpha_elf64_vec,
+<span class="lineNum">     970 </span>            :         &amp;alpha_elf64_fbsd_vec,
+<span class="lineNum">     971 </span>            :         &amp;alpha_nlm32_vec,
+<span class="lineNum">     972 </span>            :         &amp;alpha_vms_vec,
+<span class="lineNum">     973 </span>            : #endif
+<span class="lineNum">     974 </span>            :         &amp;alpha_vms_lib_txt_vec,
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span>            :         &amp;am33_elf32_linux_vec,
+<span class="lineNum">     977 </span>            : 
+<span class="lineNum">     978 </span>            :         &amp;aout0_be_vec,
+<span class="lineNum">     979 </span>            : #ifdef BFD64
+<span class="lineNum">     980 </span>            :         &amp;aout64_vec,        /* Only compiled if host has long-long support.  */
+<span class="lineNum">     981 </span>            : #endif
+<span class="lineNum">     982 </span>            : #if 0
+<span class="lineNum">     983 </span>            :         /* Since a.out files lack decent magic numbers, no way to recognize
+<span class="lineNum">     984 </span>            :            which kind of a.out file it is.  */
+<span class="lineNum">     985 </span>            :         &amp;aout_vec,
+<span class="lineNum">     986 </span>            : #endif
+<span class="lineNum">     987 </span>            :         &amp;aout_adobe_vec,
+<span class="lineNum">     988 </span>            : 
+<span class="lineNum">     989 </span>            :         &amp;arc_elf32_be_vec,
+<span class="lineNum">     990 </span>            :         &amp;arc_elf32_le_vec,
+<span class="lineNum">     991 </span>            : 
+<span class="lineNum">     992 </span>            : #if 0
+<span class="lineNum">     993 </span>            :         /* We have no way of distinguishing these from other a.out variants.  */
+<span class="lineNum">     994 </span>            :         &amp;arm_aout_be_vec,
+<span class="lineNum">     995 </span>            :         &amp;arm_aout_le_vec,
+<span class="lineNum">     996 </span>            : #endif
+<span class="lineNum">     997 </span>            :         &amp;arm_aout_nbsd_vec,
+<span class="lineNum">     998 </span>            : #if 0
+<span class="lineNum">     999 </span>            :         /* We have no way of distinguishing these from other a.out variants.  */
+<span class="lineNum">    1000 </span>            :         &amp;arm_aout_riscix_vec,
+<span class="lineNum">    1001 </span>            : #endif
+<span class="lineNum">    1002 </span>            :         &amp;arm_coff_be_vec,
+<span class="lineNum">    1003 </span>            :         &amp;arm_coff_le_vec,
+<span class="lineNum">    1004 </span>            :         &amp;arm_elf32_be_vec,
+<span class="lineNum">    1005 </span>            :         &amp;arm_elf32_le_vec,
+<span class="lineNum">    1006 </span>            :         &amp;arm_elf32_symbian_be_vec,
+<span class="lineNum">    1007 </span>            :         &amp;arm_elf32_symbian_le_vec,
+<span class="lineNum">    1008 </span>            :         &amp;arm_elf32_vxworks_be_vec,
+<span class="lineNum">    1009 </span>            :         &amp;arm_elf32_vxworks_le_vec,
+<span class="lineNum">    1010 </span>            :         &amp;arm_mach_o_vec,
+<span class="lineNum">    1011 </span>            :         &amp;arm_pe_be_vec,
+<span class="lineNum">    1012 </span>            :         &amp;arm_pe_le_vec,
+<span class="lineNum">    1013 </span>            :         &amp;arm_pe_epoc_be_vec,
+<span class="lineNum">    1014 </span>            :         &amp;arm_pe_epoc_le_vec,
+<span class="lineNum">    1015 </span>            :         &amp;arm_pe_wince_be_vec,
+<span class="lineNum">    1016 </span>            :         &amp;arm_pe_wince_le_vec,
+<span class="lineNum">    1017 </span>            :         &amp;arm_pei_be_vec,
+<span class="lineNum">    1018 </span>            :         &amp;arm_pei_le_vec,
+<span class="lineNum">    1019 </span>            :         &amp;arm_pei_epoc_be_vec,
+<span class="lineNum">    1020 </span>            :         &amp;arm_pei_epoc_le_vec,
+<span class="lineNum">    1021 </span>            :         &amp;arm_pei_wince_be_vec,
+<span class="lineNum">    1022 </span>            :         &amp;arm_pei_wince_le_vec,
+<span class="lineNum">    1023 </span>            : 
+<span class="lineNum">    1024 </span>            :         &amp;avr_elf32_vec,
+<span class="lineNum">    1025 </span>            : 
+<span class="lineNum">    1026 </span>            :         &amp;bfin_elf32_vec,
+<span class="lineNum">    1027 </span>            :         &amp;bfin_elf32_fdpic_vec,
+<span class="lineNum">    1028 </span>            : 
+<span class="lineNum">    1029 </span>            :         &amp;bout_be_vec,
+<span class="lineNum">    1030 </span>            :         &amp;bout_le_vec,
+<span class="lineNum">    1031 </span>            : 
+<span class="lineNum">    1032 </span>            :         &amp;cr16_elf32_vec,
+<span class="lineNum">    1033 </span>            :         &amp;cr16c_elf32_vec,
+<span class="lineNum">    1034 </span>            : 
+<span class="lineNum">    1035 </span>            :         &amp;cris_aout_vec,
+<span class="lineNum">    1036 </span>            :         &amp;cris_elf32_vec,
+<span class="lineNum">    1037 </span>            :         &amp;cris_elf32_us_vec,
+<span class="lineNum">    1038 </span>            : 
+<span class="lineNum">    1039 </span>            :         &amp;crx_elf32_vec,
+<span class="lineNum">    1040 </span>            : 
+<span class="lineNum">    1041 </span>            :         &amp;d10v_elf32_vec,
+<span class="lineNum">    1042 </span>            :         &amp;d30v_elf32_vec,
+<span class="lineNum">    1043 </span>            : 
+<span class="lineNum">    1044 </span>            :         &amp;dlx_elf32_be_vec,
+<span class="lineNum">    1045 </span>            : 
+<span class="lineNum">    1046 </span>            :         /* This, and other vectors, may not be used in any *.mt configuration.
+<span class="lineNum">    1047 </span>            :            But that does not mean they are unnecessary.  If configured with
+<span class="lineNum">    1048 </span>            :            --enable-targets=all, objdump or gdb should be able to examine
+<span class="lineNum">    1049 </span>            :            the file even if we don't recognize the machine type.  */
+<span class="lineNum">    1050 </span>            :         &amp;elf32_be_vec,
+<span class="lineNum">    1051 </span>            :         &amp;elf32_le_vec,
+<span class="lineNum">    1052 </span>            : #ifdef BFD64
+<span class="lineNum">    1053 </span>            :         &amp;elf64_be_vec,
+<span class="lineNum">    1054 </span>            :         &amp;elf64_le_vec,
+<span class="lineNum">    1055 </span>            : #endif
+<span class="lineNum">    1056 </span>            : 
+<span class="lineNum">    1057 </span>            :         &amp;epiphany_elf32_vec,
+<span class="lineNum">    1058 </span>            : 
+<span class="lineNum">    1059 </span>            :         &amp;fr30_elf32_vec,
+<span class="lineNum">    1060 </span>            : 
+<span class="lineNum">    1061 </span>            :         &amp;frv_elf32_vec,
+<span class="lineNum">    1062 </span>            :         &amp;frv_elf32_fdpic_vec,
+<span class="lineNum">    1063 </span>            : 
+<span class="lineNum">    1064 </span>            :         &amp;h8300_coff_vec,
+<span class="lineNum">    1065 </span>            :         &amp;h8300_elf32_vec,
+<span class="lineNum">    1066 </span>            :         &amp;h8300_elf32_linux_vec,
+<span class="lineNum">    1067 </span>            :         &amp;h8500_coff_vec,
+<span class="lineNum">    1068 </span>            : 
+<span class="lineNum">    1069 </span>            :         &amp;hppa_elf32_vec,
+<span class="lineNum">    1070 </span>            :         &amp;hppa_elf32_linux_vec,
+<span class="lineNum">    1071 </span>            :         &amp;hppa_elf32_nbsd_vec,
+<span class="lineNum">    1072 </span>            : #ifdef BFD64
+<span class="lineNum">    1073 </span>            :         &amp;hppa_elf64_vec,
+<span class="lineNum">    1074 </span>            :         &amp;hppa_elf64_linux_vec,
+<span class="lineNum">    1075 </span>            : #endif
+<span class="lineNum">    1076 </span>            :         &amp;hppa_som_vec,
+<span class="lineNum">    1077 </span>            : 
+<span class="lineNum">    1078 </span>            :         &amp;i370_elf32_vec,
+<span class="lineNum">    1079 </span>            : 
+<span class="lineNum">    1080 </span>            :         &amp;i386_aout_vec,
+<span class="lineNum">    1081 </span>            :         &amp;i386_aout_bsd_vec,
+<span class="lineNum">    1082 </span>            : #if 0
+<span class="lineNum">    1083 </span>            :         &amp;i386_aout_dynix_vec,
+<span class="lineNum">    1084 </span>            : #endif
+<span class="lineNum">    1085 </span>            :         &amp;i386_aout_fbsd_vec,
+<span class="lineNum">    1086 </span>            : #if 0
+<span class="lineNum">    1087 </span>            :         /* Since a.out files lack decent magic numbers, no way to recognize
+<span class="lineNum">    1088 </span>            :            which kind of a.out file it is.  */
+<span class="lineNum">    1089 </span>            :         &amp;i386_aout_linux_vec,
+<span class="lineNum">    1090 </span>            : #endif
+<span class="lineNum">    1091 </span>            :         &amp;i386_aout_lynx_vec,
+<span class="lineNum">    1092 </span>            : #if 0
+<span class="lineNum">    1093 </span>            :         /* No distinguishing features for Mach 3 executables.  */
+<span class="lineNum">    1094 </span>            :         &amp;i386_aout_mach3_vec,
+<span class="lineNum">    1095 </span>            : #endif
+<span class="lineNum">    1096 </span>            :         &amp;i386_aout_nbsd_vec,
+<span class="lineNum">    1097 </span>            :         &amp;i386_aout_os9k_vec,
+<span class="lineNum">    1098 </span>            :         &amp;i386_coff_vec,
+<span class="lineNum">    1099 </span>            :         &amp;i386_coff_go32_vec,
+<span class="lineNum">    1100 </span>            :         &amp;i386_coff_go32stubbed_vec,
+<span class="lineNum">    1101 </span>            :         &amp;i386_coff_lynx_vec,
+<span class="lineNum">    1102 </span>            :         &amp;i386_elf32_vec,
+<span class="lineNum">    1103 </span>            :         &amp;i386_elf32_fbsd_vec,
+<span class="lineNum">    1104 </span>            :         &amp;i386_elf32_nacl_vec,
+<span class="lineNum">    1105 </span>            :         &amp;i386_elf32_sol2_vec,
+<span class="lineNum">    1106 </span>            :         &amp;i386_elf32_vxworks_vec,
+<span class="lineNum">    1107 </span>            :         &amp;i386_mach_o_vec,
+<span class="lineNum">    1108 </span>            :         &amp;i386_msdos_vec,
+<span class="lineNum">    1109 </span>            :         &amp;i386_nlm32_vec,
+<span class="lineNum">    1110 </span>            :         &amp;i386_pe_vec,
+<span class="lineNum">    1111 </span>            :         &amp;i386_pei_vec,
+<span class="lineNum">    1112 </span>            : 
+<span class="lineNum">    1113 </span>            :         &amp;iamcu_elf32_vec,
+<span class="lineNum">    1114 </span>            : 
+<span class="lineNum">    1115 </span>            :         &amp;i860_coff_vec,
+<span class="lineNum">    1116 </span>            :         &amp;i860_elf32_vec,
+<span class="lineNum">    1117 </span>            :         &amp;i860_elf32_le_vec,
+<span class="lineNum">    1118 </span>            : 
+<span class="lineNum">    1119 </span>            :         &amp;i960_elf32_vec,
+<span class="lineNum">    1120 </span>            : 
+<span class="lineNum">    1121 </span>            : #ifdef BFD64
+<span class="lineNum">    1122 </span>            : #if 0
+<span class="lineNum">    1123 </span>            :         &amp;ia64_elf32_be_vec,
+<span class="lineNum">    1124 </span>            : #endif
+<span class="lineNum">    1125 </span>            :         &amp;ia64_elf32_hpux_be_vec,
+<span class="lineNum">    1126 </span>            :         &amp;ia64_elf64_be_vec,
+<span class="lineNum">    1127 </span>            :         &amp;ia64_elf64_le_vec,
+<span class="lineNum">    1128 </span>            :         &amp;ia64_elf64_hpux_be_vec,
+<span class="lineNum">    1129 </span>            :         &amp;ia64_elf64_vms_vec,
+<span class="lineNum">    1130 </span>            :         &amp;ia64_pei_vec,
+<span class="lineNum">    1131 </span>            : #endif
+<span class="lineNum">    1132 </span>            : 
+<span class="lineNum">    1133 </span>            :         &amp;icoff_be_vec,
+<span class="lineNum">    1134 </span>            :         &amp;icoff_le_vec,
+<span class="lineNum">    1135 </span>            : 
+<span class="lineNum">    1136 </span>            :         &amp;ieee_vec,
+<span class="lineNum">    1137 </span>            : 
+<span class="lineNum">    1138 </span>            :         &amp;ip2k_elf32_vec,
+<span class="lineNum">    1139 </span>            :         &amp;iq2000_elf32_vec,
+<span class="lineNum">    1140 </span>            : 
+<span class="lineNum">    1141 </span>            : #ifdef BFD64
+<span class="lineNum">    1142 </span>            :         &amp;k1om_elf64_vec,
+<span class="lineNum">    1143 </span>            :         &amp;k1om_elf64_fbsd_vec,
+<span class="lineNum">    1144 </span>            :         &amp;l1om_elf64_vec,
+<span class="lineNum">    1145 </span>            :         &amp;l1om_elf64_fbsd_vec,
+<span class="lineNum">    1146 </span>            : #endif
+<span class="lineNum">    1147 </span>            : 
+<span class="lineNum">    1148 </span>            :         &amp;lm32_elf32_vec,
+<span class="lineNum">    1149 </span>            : 
+<span class="lineNum">    1150 </span>            :         &amp;m32c_elf32_vec,
+<span class="lineNum">    1151 </span>            : 
+<span class="lineNum">    1152 </span>            :         &amp;m32r_elf32_vec,
+<span class="lineNum">    1153 </span>            :         &amp;m32r_elf32_le_vec,
+<span class="lineNum">    1154 </span>            :         &amp;m32r_elf32_linux_vec,
+<span class="lineNum">    1155 </span>            :         &amp;m32r_elf32_linux_le_vec,
+<span class="lineNum">    1156 </span>            : 
+<span class="lineNum">    1157 </span>            :         &amp;m68hc11_elf32_vec,
+<span class="lineNum">    1158 </span>            :         &amp;m68hc12_elf32_vec,
+<span class="lineNum">    1159 </span>            : 
+<span class="lineNum">    1160 </span>            : #if 0
+<span class="lineNum">    1161 </span>            :         &amp;m68k_aout_4knbsd_vec,
+<span class="lineNum">    1162 </span>            :         /* Clashes with sparc_aout_sunos_be_vec magic no.  */
+<span class="lineNum">    1163 </span>            :         &amp;m68k_aout_hp300bsd_vec,
+<span class="lineNum">    1164 </span>            : #endif
+<span class="lineNum">    1165 </span>            :         &amp;m68k_aout_hp300hpux_vec,
+<span class="lineNum">    1166 </span>            : #if 0
+<span class="lineNum">    1167 </span>            :         /* Since a.out files lack decent magic numbers, no way to recognize
+<span class="lineNum">    1168 </span>            :            which kind of a.out file it is.  */
+<span class="lineNum">    1169 </span>            :         &amp;m68k_aout_linux_vec,
+<span class="lineNum">    1170 </span>            : #endif
+<span class="lineNum">    1171 </span>            :         &amp;m68k_aout_nbsd_vec,
+<span class="lineNum">    1172 </span>            :         &amp;m68k_aout_newsos3_vec,
+<span class="lineNum">    1173 </span>            :         &amp;m68k_coff_vec,
+<span class="lineNum">    1174 </span>            : #if 0
+<span class="lineNum">    1175 </span>            :         &amp;m68k_coff_apollo_vec,
+<span class="lineNum">    1176 </span>            :         &amp;m68k_coff_aux_vec,
+<span class="lineNum">    1177 </span>            : #endif
+<span class="lineNum">    1178 </span>            :         &amp;m68k_coff_sysv_vec,
+<span class="lineNum">    1179 </span>            :         &amp;m68k_coff_un_vec,
+<span class="lineNum">    1180 </span>            :         &amp;m68k_elf32_vec,
+<span class="lineNum">    1181 </span>            :         &amp;m68k_versados_vec,
+<span class="lineNum">    1182 </span>            : 
+<span class="lineNum">    1183 </span>            :         &amp;m88k_aout_mach3_vec,
+<span class="lineNum">    1184 </span>            :         &amp;m88k_aout_obsd_vec,
+<span class="lineNum">    1185 </span>            :         &amp;m88k_coff_bcs_vec,
+<span class="lineNum">    1186 </span>            :         &amp;m88k_elf32_vec,
+<span class="lineNum">    1187 </span>            : 
+<span class="lineNum">    1188 </span>            :         &amp;mach_o_be_vec,
+<span class="lineNum">    1189 </span>            :         &amp;mach_o_le_vec,
+<span class="lineNum">    1190 </span>            :         &amp;mach_o_fat_vec,
+<span class="lineNum">    1191 </span>            : 
+<span class="lineNum">    1192 </span>            :         &amp;mcore_elf32_be_vec,
+<span class="lineNum">    1193 </span>            :         &amp;mcore_elf32_le_vec,
+<span class="lineNum">    1194 </span>            :         &amp;mcore_pe_be_vec,
+<span class="lineNum">    1195 </span>            :         &amp;mcore_pe_le_vec,
+<span class="lineNum">    1196 </span>            :         &amp;mcore_pei_be_vec,
+<span class="lineNum">    1197 </span>            :         &amp;mcore_pei_le_vec,
+<span class="lineNum">    1198 </span>            : 
+<span class="lineNum">    1199 </span>            :         &amp;mep_elf32_vec,
+<span class="lineNum">    1200 </span>            : 
+<span class="lineNum">    1201 </span>            :         &amp;metag_elf32_vec,
+<span class="lineNum">    1202 </span>            : 
+<span class="lineNum">    1203 </span>            :         &amp;microblaze_elf32_vec,
+<span class="lineNum">    1204 </span>            : 
+<span class="lineNum">    1205 </span>            : #if 0
+<span class="lineNum">    1206 </span>            :         /* No one seems to use this.  */
+<span class="lineNum">    1207 </span>            :         &amp;mips_aout_be_vec,
+<span class="lineNum">    1208 </span>            : #endif
+<span class="lineNum">    1209 </span>            :         &amp;mips_aout_le_vec,
+<span class="lineNum">    1210 </span>            :         &amp;mips_ecoff_be_vec,
+<span class="lineNum">    1211 </span>            :         &amp;mips_ecoff_le_vec,
+<span class="lineNum">    1212 </span>            :         &amp;mips_ecoff_bele_vec,
+<span class="lineNum">    1213 </span>            : #ifdef BFD64
+<span class="lineNum">    1214 </span>            :         &amp;mips_elf32_be_vec,
+<span class="lineNum">    1215 </span>            :         &amp;mips_elf32_le_vec,
+<span class="lineNum">    1216 </span>            :         &amp;mips_elf32_n_be_vec,
+<span class="lineNum">    1217 </span>            :         &amp;mips_elf32_n_le_vec,
+<span class="lineNum">    1218 </span>            :         &amp;mips_elf32_ntrad_be_vec,
+<span class="lineNum">    1219 </span>            :         &amp;mips_elf32_ntrad_le_vec,
+<span class="lineNum">    1220 </span>            :         &amp;mips_elf32_ntradfbsd_be_vec,
+<span class="lineNum">    1221 </span>            :         &amp;mips_elf32_ntradfbsd_le_vec,
+<span class="lineNum">    1222 </span>            :         &amp;mips_elf32_trad_be_vec,
+<span class="lineNum">    1223 </span>            :         &amp;mips_elf32_trad_le_vec,
+<span class="lineNum">    1224 </span>            :         &amp;mips_elf32_tradfbsd_be_vec,
+<span class="lineNum">    1225 </span>            :         &amp;mips_elf32_tradfbsd_le_vec,
+<span class="lineNum">    1226 </span>            :         &amp;mips_elf32_vxworks_be_vec,
+<span class="lineNum">    1227 </span>            :         &amp;mips_elf32_vxworks_le_vec,
+<span class="lineNum">    1228 </span>            :         &amp;mips_elf64_be_vec,
+<span class="lineNum">    1229 </span>            :         &amp;mips_elf64_le_vec,
+<span class="lineNum">    1230 </span>            :         &amp;mips_elf64_trad_be_vec,
+<span class="lineNum">    1231 </span>            :         &amp;mips_elf64_trad_le_vec,
+<span class="lineNum">    1232 </span>            :         &amp;mips_elf64_tradfbsd_be_vec,
+<span class="lineNum">    1233 </span>            :         &amp;mips_elf64_tradfbsd_le_vec,
+<span class="lineNum">    1234 </span>            : #endif
+<span class="lineNum">    1235 </span>            :         &amp;mips_pe_le_vec,
+<span class="lineNum">    1236 </span>            :         &amp;mips_pei_le_vec,
+<span class="lineNum">    1237 </span>            : 
+<span class="lineNum">    1238 </span>            : #ifdef BFD64
+<span class="lineNum">    1239 </span>            :         &amp;mmix_elf64_vec,
+<span class="lineNum">    1240 </span>            :         &amp;mmix_mmo_vec,
+<span class="lineNum">    1241 </span>            : #endif
+<span class="lineNum">    1242 </span>            : 
+<span class="lineNum">    1243 </span>            :         &amp;mn10200_elf32_vec,
+<span class="lineNum">    1244 </span>            :         &amp;mn10300_elf32_vec,
+<span class="lineNum">    1245 </span>            : 
+<span class="lineNum">    1246 </span>            :         &amp;moxie_elf32_be_vec,
+<span class="lineNum">    1247 </span>            :         &amp;moxie_elf32_le_vec,
+<span class="lineNum">    1248 </span>            : 
+<span class="lineNum">    1249 </span>            :         &amp;msp430_elf32_vec,
+<span class="lineNum">    1250 </span>            :         &amp;msp430_elf32_ti_vec,
+<span class="lineNum">    1251 </span>            : 
+<span class="lineNum">    1252 </span>            :         &amp;mt_elf32_vec,
+<span class="lineNum">    1253 </span>            : 
+<span class="lineNum">    1254 </span>            :         &amp;nds32_elf32_be_vec,
+<span class="lineNum">    1255 </span>            :         &amp;nds32_elf32_le_vec,
+<span class="lineNum">    1256 </span>            :         &amp;nds32_elf32_linux_be_vec,
+<span class="lineNum">    1257 </span>            :         &amp;nds32_elf32_linux_le_vec,
+<span class="lineNum">    1258 </span>            : 
+<span class="lineNum">    1259 </span>            :         &amp;nios2_elf32_be_vec,
+<span class="lineNum">    1260 </span>            :         &amp;nios2_elf32_le_vec,
+<span class="lineNum">    1261 </span>            : 
+<span class="lineNum">    1262 </span>            :         &amp;ns32k_aout_pc532mach_vec,
+<span class="lineNum">    1263 </span>            :         &amp;ns32k_aout_pc532nbsd_vec,
+<span class="lineNum">    1264 </span>            : 
+<span class="lineNum">    1265 </span>            : #if 0
+<span class="lineNum">    1266 </span>            :         /* We have no oasys tools anymore, so we can't test any of this
+<span class="lineNum">    1267 </span>            :            anymore. If you want to test the stuff yourself, go ahead...
+<span class="lineNum">    1268 </span>            :            steve@cygnus.com
+<span class="lineNum">    1269 </span>            :            Worse, since there is no magic number for archives, there
+<span class="lineNum">    1270 </span>            :            can be annoying target mis-matches.  */
+<span class="lineNum">    1271 </span>            :         &amp;oasys_vec,
+<span class="lineNum">    1272 </span>            : #endif
+<span class="lineNum">    1273 </span>            : 
+<span class="lineNum">    1274 </span>            :         &amp;or1k_elf32_vec,
+<span class="lineNum">    1275 </span>            : 
+<span class="lineNum">    1276 </span>            :         &amp;pdp11_aout_vec,
+<span class="lineNum">    1277 </span>            : 
+<span class="lineNum">    1278 </span>            :         &amp;pef_vec,
+<span class="lineNum">    1279 </span>            :         &amp;pef_xlib_vec,
+<span class="lineNum">    1280 </span>            : 
+<span class="lineNum">    1281 </span>            :         &amp;pj_elf32_vec,
+<span class="lineNum">    1282 </span>            :         &amp;pj_elf32_le_vec,
+<span class="lineNum">    1283 </span>            : 
+<span class="lineNum">    1284 </span>            : #if BFD_SUPPORTS_PLUGINS
+<span class="lineNum">    1285 </span>            :         &amp;plugin_vec,
+<span class="lineNum">    1286 </span>            : #endif
+<span class="lineNum">    1287 </span>            : 
+<span class="lineNum">    1288 </span>            :         &amp;powerpc_boot_vec,
+<span class="lineNum">    1289 </span>            :         &amp;powerpc_elf32_vec,
+<span class="lineNum">    1290 </span>            :         &amp;powerpc_elf32_le_vec,
+<span class="lineNum">    1291 </span>            :         &amp;powerpc_elf32_fbsd_vec,
+<span class="lineNum">    1292 </span>            :         &amp;powerpc_elf32_vxworks_vec,
+<span class="lineNum">    1293 </span>            : #ifdef BFD64
+<span class="lineNum">    1294 </span>            :         &amp;powerpc_elf64_vec,
+<span class="lineNum">    1295 </span>            :         &amp;powerpc_elf64_le_vec,
+<span class="lineNum">    1296 </span>            :         &amp;powerpc_elf64_fbsd_vec,
+<span class="lineNum">    1297 </span>            : #endif
+<span class="lineNum">    1298 </span>            :         &amp;powerpc_nlm32_vec,
+<span class="lineNum">    1299 </span>            :         &amp;powerpc_pe_vec,
+<span class="lineNum">    1300 </span>            :         &amp;powerpc_pe_le_vec,
+<span class="lineNum">    1301 </span>            :         &amp;powerpc_pei_vec,
+<span class="lineNum">    1302 </span>            :         &amp;powerpc_pei_le_vec,
+<span class="lineNum">    1303 </span>            : #if 0
+<span class="lineNum">    1304 </span>            :         /* This has the same magic number as RS/6000.  */
+<span class="lineNum">    1305 </span>            :         &amp;powerpc_xcoff_vec,
+<span class="lineNum">    1306 </span>            : #endif
+<span class="lineNum">    1307 </span>            : 
+<span class="lineNum">    1308 </span>            : #ifdef BFD64
+<span class="lineNum">    1309 </span>            :         &amp;riscv_elf32_vec,
+<span class="lineNum">    1310 </span>            :         &amp;riscv_elf64_vec,
+<span class="lineNum">    1311 </span>            : #endif
+<span class="lineNum">    1312 </span>            :         &amp;rl78_elf32_vec,
+<span class="lineNum">    1313 </span>            : 
+<span class="lineNum">    1314 </span>            : #ifdef BFD64
+<span class="lineNum">    1315 </span>            :         &amp;rs6000_xcoff64_vec,
+<span class="lineNum">    1316 </span>            :         &amp;rs6000_xcoff64_aix_vec,
+<span class="lineNum">    1317 </span>            : #endif
+<span class="lineNum">    1318 </span>            :         &amp;rs6000_xcoff_vec,
+<span class="lineNum">    1319 </span>            : 
+<span class="lineNum">    1320 </span>            :         &amp;rx_elf32_be_vec,
+<span class="lineNum">    1321 </span>            :         &amp;rx_elf32_be_ns_vec,
+<span class="lineNum">    1322 </span>            :         &amp;rx_elf32_le_vec,
+<span class="lineNum">    1323 </span>            : 
+<span class="lineNum">    1324 </span>            :         &amp;s390_elf32_vec,
+<span class="lineNum">    1325 </span>            : #ifdef BFD64
+<span class="lineNum">    1326 </span>            :         &amp;s390_elf64_vec,
+<span class="lineNum">    1327 </span>            : #endif
+<span class="lineNum">    1328 </span>            : 
+<span class="lineNum">    1329 </span>            : #ifdef BFD64
+<span class="lineNum">    1330 </span>            :         &amp;score_elf32_be_vec,
+<span class="lineNum">    1331 </span>            :         &amp;score_elf32_le_vec,
+<span class="lineNum">    1332 </span>            : #endif
+<span class="lineNum">    1333 </span>            : 
+<span class="lineNum">    1334 </span>            : #ifdef BFD64
+<span class="lineNum">    1335 </span>            :         &amp;sh64_elf32_vec,
+<span class="lineNum">    1336 </span>            :         &amp;sh64_elf32_le_vec,
+<span class="lineNum">    1337 </span>            :         &amp;sh64_elf32_linux_vec,
+<span class="lineNum">    1338 </span>            :         &amp;sh64_elf32_linux_be_vec,
+<span class="lineNum">    1339 </span>            :         &amp;sh64_elf32_nbsd_vec,
+<span class="lineNum">    1340 </span>            :         &amp;sh64_elf32_nbsd_le_vec,
+<span class="lineNum">    1341 </span>            :         &amp;sh64_elf64_vec,
+<span class="lineNum">    1342 </span>            :         &amp;sh64_elf64_le_vec,
+<span class="lineNum">    1343 </span>            :         &amp;sh64_elf64_linux_vec,
+<span class="lineNum">    1344 </span>            :         &amp;sh64_elf64_linux_be_vec,
+<span class="lineNum">    1345 </span>            :         &amp;sh64_elf64_nbsd_vec,
+<span class="lineNum">    1346 </span>            :         &amp;sh64_elf64_nbsd_le_vec,
+<span class="lineNum">    1347 </span>            : #endif
+<span class="lineNum">    1348 </span>            :         &amp;sh_coff_vec,
+<span class="lineNum">    1349 </span>            :         &amp;sh_coff_le_vec,
+<span class="lineNum">    1350 </span>            :         &amp;sh_coff_small_vec,
+<span class="lineNum">    1351 </span>            :         &amp;sh_coff_small_le_vec,
+<span class="lineNum">    1352 </span>            :         &amp;sh_elf32_vec,
+<span class="lineNum">    1353 </span>            :         &amp;sh_elf32_le_vec,
+<span class="lineNum">    1354 </span>            :         &amp;sh_elf32_fdpic_be_vec,
+<span class="lineNum">    1355 </span>            :         &amp;sh_elf32_fdpic_le_vec,
+<span class="lineNum">    1356 </span>            :         &amp;sh_elf32_linux_vec,
+<span class="lineNum">    1357 </span>            :         &amp;sh_elf32_linux_be_vec,
+<span class="lineNum">    1358 </span>            :         &amp;sh_elf32_nbsd_vec,
+<span class="lineNum">    1359 </span>            :         &amp;sh_elf32_nbsd_le_vec,
+<span class="lineNum">    1360 </span>            :         &amp;sh_elf32_symbian_le_vec,
+<span class="lineNum">    1361 </span>            :         &amp;sh_elf32_vxworks_vec,
+<span class="lineNum">    1362 </span>            :         &amp;sh_elf32_vxworks_le_vec,
+<span class="lineNum">    1363 </span>            :         &amp;sh_pe_le_vec,
+<span class="lineNum">    1364 </span>            :         &amp;sh_pei_le_vec,
+<span class="lineNum">    1365 </span>            : 
+<span class="lineNum">    1366 </span>            :         &amp;sparc_aout_le_vec,
+<span class="lineNum">    1367 </span>            :         &amp;sparc_aout_linux_vec,
+<span class="lineNum">    1368 </span>            :         &amp;sparc_aout_lynx_vec,
+<span class="lineNum">    1369 </span>            :         &amp;sparc_aout_nbsd_vec,
+<span class="lineNum">    1370 </span>            :         &amp;sparc_aout_sunos_be_vec,
+<span class="lineNum">    1371 </span>            :         &amp;sparc_coff_vec,
+<span class="lineNum">    1372 </span>            :         &amp;sparc_coff_lynx_vec,
+<span class="lineNum">    1373 </span>            :         &amp;sparc_elf32_vec,
+<span class="lineNum">    1374 </span>            :         &amp;sparc_elf32_sol2_vec,
+<span class="lineNum">    1375 </span>            :         &amp;sparc_elf32_vxworks_vec,
+<span class="lineNum">    1376 </span>            : #ifdef BFD64
+<span class="lineNum">    1377 </span>            :         &amp;sparc_elf64_vec,
+<span class="lineNum">    1378 </span>            :         &amp;sparc_elf64_fbsd_vec,
+<span class="lineNum">    1379 </span>            :         &amp;sparc_elf64_sol2_vec,
+<span class="lineNum">    1380 </span>            : #endif
+<span class="lineNum">    1381 </span>            :         &amp;sparc_nlm32_vec,
+<span class="lineNum">    1382 </span>            : 
+<span class="lineNum">    1383 </span>            :         &amp;spu_elf32_vec,
+<span class="lineNum">    1384 </span>            : 
+<span class="lineNum">    1385 </span>            :         &amp;sym_vec,
+<span class="lineNum">    1386 </span>            : 
+<span class="lineNum">    1387 </span>            :         &amp;tic30_aout_vec,
+<span class="lineNum">    1388 </span>            :         &amp;tic30_coff_vec,
+<span class="lineNum">    1389 </span>            :         &amp;tic54x_coff0_beh_vec,
+<span class="lineNum">    1390 </span>            :         &amp;tic54x_coff0_vec,
+<span class="lineNum">    1391 </span>            :         &amp;tic54x_coff1_beh_vec,
+<span class="lineNum">    1392 </span>            :         &amp;tic54x_coff1_vec,
+<span class="lineNum">    1393 </span>            :         &amp;tic54x_coff2_beh_vec,
+<span class="lineNum">    1394 </span>            :         &amp;tic54x_coff2_vec,
+<span class="lineNum">    1395 </span>            :         &amp;tic6x_elf32_be_vec,
+<span class="lineNum">    1396 </span>            :         &amp;tic6x_elf32_le_vec,
+<span class="lineNum">    1397 </span>            :         &amp;tic80_coff_vec,
+<span class="lineNum">    1398 </span>            : 
+<span class="lineNum">    1399 </span>            :         &amp;tilegx_elf32_be_vec,
+<span class="lineNum">    1400 </span>            :         &amp;tilegx_elf32_le_vec,
+<span class="lineNum">    1401 </span>            : #ifdef BFD64
+<span class="lineNum">    1402 </span>            :         &amp;tilegx_elf64_be_vec,
+<span class="lineNum">    1403 </span>            :         &amp;tilegx_elf64_le_vec,
+<span class="lineNum">    1404 </span>            : #endif
+<span class="lineNum">    1405 </span>            :         &amp;tilepro_elf32_vec,
+<span class="lineNum">    1406 </span>            : 
+<span class="lineNum">    1407 </span>            :         &amp;ft32_elf32_vec,
+<span class="lineNum">    1408 </span>            : 
+<span class="lineNum">    1409 </span>            :         &amp;v800_elf32_vec,
+<span class="lineNum">    1410 </span>            :         &amp;v850_elf32_vec,
+<span class="lineNum">    1411 </span>            : 
+<span class="lineNum">    1412 </span>            :         &amp;vax_aout_1knbsd_vec,
+<span class="lineNum">    1413 </span>            :         &amp;vax_aout_bsd_vec,
+<span class="lineNum">    1414 </span>            :         &amp;vax_aout_nbsd_vec,
+<span class="lineNum">    1415 </span>            :         &amp;vax_elf32_vec,
+<span class="lineNum">    1416 </span>            : 
+<span class="lineNum">    1417 </span>            :         &amp;visium_elf32_vec,
+<span class="lineNum">    1418 </span>            : 
+<span class="lineNum">    1419 </span>            :         &amp;w65_coff_vec,
+<span class="lineNum">    1420 </span>            : 
+<span class="lineNum">    1421 </span>            :         &amp;we32k_coff_vec,
+<span class="lineNum">    1422 </span>            : 
+<span class="lineNum">    1423 </span>            : #ifdef BFD64
+<span class="lineNum">    1424 </span>            :         &amp;x86_64_coff_vec,
+<span class="lineNum">    1425 </span>            :         &amp;x86_64_elf32_vec,
+<span class="lineNum">    1426 </span>            :         &amp;x86_64_elf32_nacl_vec,
+<span class="lineNum">    1427 </span>            :         &amp;x86_64_elf64_vec,
+<span class="lineNum">    1428 </span>            :         &amp;x86_64_elf64_cloudabi_vec,
+<span class="lineNum">    1429 </span>            :         &amp;x86_64_elf64_fbsd_vec,
+<span class="lineNum">    1430 </span>            :         &amp;x86_64_elf64_nacl_vec,
+<span class="lineNum">    1431 </span>            :         &amp;x86_64_elf64_sol2_vec,
+<span class="lineNum">    1432 </span>            :         &amp;x86_64_mach_o_vec,
+<span class="lineNum">    1433 </span>            :         &amp;x86_64_pe_vec,
+<span class="lineNum">    1434 </span>            :         &amp;x86_64_pe_be_vec,
+<span class="lineNum">    1435 </span>            :         &amp;x86_64_pei_vec,
+<span class="lineNum">    1436 </span>            : #endif
+<span class="lineNum">    1437 </span>            : 
+<span class="lineNum">    1438 </span>            :         &amp;xc16x_elf32_vec,
+<span class="lineNum">    1439 </span>            : 
+<span class="lineNum">    1440 </span>            :         &amp;xgate_elf32_vec,
+<span class="lineNum">    1441 </span>            : 
+<span class="lineNum">    1442 </span>            :         &amp;xstormy16_elf32_vec,
+<span class="lineNum">    1443 </span>            : 
+<span class="lineNum">    1444 </span>            :         &amp;xtensa_elf32_be_vec,
+<span class="lineNum">    1445 </span>            :         &amp;xtensa_elf32_le_vec,
+<span class="lineNum">    1446 </span>            : 
+<span class="lineNum">    1447 </span>            :         &amp;z80_coff_vec,
+<span class="lineNum">    1448 </span>            : 
+<span class="lineNum">    1449 </span>            :         &amp;z8k_coff_vec,
+<span class="lineNum">    1450 </span>            : #endif /* not SELECT_VECS */
+<span class="lineNum">    1451 </span>            : 
+<span class="lineNum">    1452 </span>            : /* Always support S-records, for convenience.  */
+<span class="lineNum">    1453 </span>            :         &amp;srec_vec,
+<span class="lineNum">    1454 </span>            :         &amp;symbolsrec_vec,
+<span class="lineNum">    1455 </span>            : /* And verilog.  */
+<span class="lineNum">    1456 </span>            :         &amp;verilog_vec,
+<span class="lineNum">    1457 </span>            : /* And tekhex */
+<span class="lineNum">    1458 </span>            :         &amp;tekhex_vec,
+<span class="lineNum">    1459 </span>            : /* Likewise for binary output.  */
+<span class="lineNum">    1460 </span>            :         &amp;binary_vec,
+<span class="lineNum">    1461 </span>            : /* Likewise for ihex.  */
+<span class="lineNum">    1462 </span>            :         &amp;ihex_vec,
+<span class="lineNum">    1463 </span>            : 
+<span class="lineNum">    1464 </span>            : /* Add any required traditional-core-file-handler.  */
+<span class="lineNum">    1465 </span>            : 
+<span class="lineNum">    1466 </span>            : #ifdef AIX386_CORE
+<span class="lineNum">    1467 </span>            :         &amp;core_aix386_vec,
+<span class="lineNum">    1468 </span>            : #endif
+<span class="lineNum">    1469 </span>            : #if 0
+<span class="lineNum">    1470 </span>            :         /* We don't include cisco_core_*_vec.  Although it has a magic number,
+<span class="lineNum">    1471 </span>            :            the magic number isn't at the beginning of the file, and thus
+<span class="lineNum">    1472 </span>            :            might spuriously match other kinds of files.  */
+<span class="lineNum">    1473 </span>            :         &amp;core_cisco_be_vec,
+<span class="lineNum">    1474 </span>            :         &amp;core_cisco_le_vec,
+<span class="lineNum">    1475 </span>            : #endif
+<span class="lineNum">    1476 </span>            : #ifdef HPPABSD_CORE
+<span class="lineNum">    1477 </span>            :         &amp;core_hppabsd_vec,
+<span class="lineNum">    1478 </span>            : #endif
+<span class="lineNum">    1479 </span>            : #ifdef HPUX_CORE
+<span class="lineNum">    1480 </span>            :         &amp;core_hpux_vec,
+<span class="lineNum">    1481 </span>            : #endif
+<span class="lineNum">    1482 </span>            : #ifdef IRIX_CORE
+<span class="lineNum">    1483 </span>            :         &amp;core_irix_vec,
+<span class="lineNum">    1484 </span>            : #endif
+<span class="lineNum">    1485 </span>            : #ifdef NETBSD_CORE
+<span class="lineNum">    1486 </span>            :         &amp;core_netbsd_vec,
+<span class="lineNum">    1487 </span>            : #endif
+<span class="lineNum">    1488 </span>            : #ifdef OSF_CORE
+<span class="lineNum">    1489 </span>            :         &amp;core_osf_vec,
+<span class="lineNum">    1490 </span>            : #endif
+<span class="lineNum">    1491 </span>            : #ifdef PTRACE_CORE
+<span class="lineNum">    1492 </span>            :         &amp;core_ptrace_vec,
+<span class="lineNum">    1493 </span>            : #endif
+<span class="lineNum">    1494 </span>            : #ifdef SCO5_CORE
+<span class="lineNum">    1495 </span>            :         &amp;core_sco5_vec,
+<span class="lineNum">    1496 </span>            : #endif
+<span class="lineNum">    1497 </span>            : #ifdef TRAD_CORE
+<span class="lineNum">    1498 </span>            :         &amp;core_trad_vec,
+<span class="lineNum">    1499 </span>            : #endif
+<span class="lineNum">    1500 </span>            : 
+<span class="lineNum">    1501 </span>            :         NULL /* end of list marker */
+<span class="lineNum">    1502 </span>            : };
+<span class="lineNum">    1503 </span>            : const bfd_target * const *bfd_target_vector = _bfd_target_vector;
+<span class="lineNum">    1504 </span>            : 
+<span class="lineNum">    1505 </span>            : /* bfd_default_vector[0] contains either the address of the default vector,
+<span class="lineNum">    1506 </span>            :    if there is one, or zero if there isn't.  */
+<span class="lineNum">    1507 </span>            : 
+<span class="lineNum">    1508 </span>            : const bfd_target *bfd_default_vector[] = {
+<span class="lineNum">    1509 </span>            : #ifdef DEFAULT_VECTOR
+<span class="lineNum">    1510 </span>            :         &amp;DEFAULT_VECTOR,
+<span class="lineNum">    1511 </span>            : #endif
+<span class="lineNum">    1512 </span>            :         NULL
+<span class="lineNum">    1513 </span>            : };
+<span class="lineNum">    1514 </span>            : 
+<span class="lineNum">    1515 </span>            : /* bfd_associated_vector[] contains the associated target vectors used
+<span class="lineNum">    1516 </span>            :    to reduce the ambiguity in bfd_check_format_matches.  */
+<span class="lineNum">    1517 </span>            : 
+<span class="lineNum">    1518 </span>            : static const bfd_target *_bfd_associated_vector[] = {
+<span class="lineNum">    1519 </span>            : #ifdef ASSOCIATED_VECS
+<span class="lineNum">    1520 </span>            :         ASSOCIATED_VECS,
+<span class="lineNum">    1521 </span>            : #endif
+<span class="lineNum">    1522 </span>            :         NULL
+<span class="lineNum">    1523 </span>            : };
+<span class="lineNum">    1524 </span>            : const bfd_target * const *bfd_associated_vector = _bfd_associated_vector;
+<span class="lineNum">    1525 </span>            : 
+<span class="lineNum">    1526 </span>            : /* When there is an ambiguous match, bfd_check_format_matches puts the
+<span class="lineNum">    1527 </span>            :    names of the matching targets in an array.  This variable is the maximum
+<span class="lineNum">    1528 </span>            :    number of entries that the array could possibly need.  */
+<span class="lineNum">    1529 </span>            : const size_t _bfd_target_vector_entries = sizeof (_bfd_target_vector)/sizeof (*_bfd_target_vector);
+<span class="lineNum">    1530 </span>            : 
+<span class="lineNum">    1531 </span>            : /* This array maps configuration triplets onto BFD vectors.  */
+<span class="lineNum">    1532 </span>            : 
+<span class="lineNum">    1533 </span>            : struct targmatch
+<span class="lineNum">    1534 </span>            : {
+<span class="lineNum">    1535 </span>            :   /* The configuration triplet.  */
+<span class="lineNum">    1536 </span>            :   const char *triplet;
+<span class="lineNum">    1537 </span>            :   /* The BFD vector.  If this is NULL, then the vector is found by
+<span class="lineNum">    1538 </span>            :      searching forward for the next structure with a non NULL vector
+<span class="lineNum">    1539 </span>            :      field.  */
+<span class="lineNum">    1540 </span>            :   const bfd_target *vector;
+<span class="lineNum">    1541 </span>            : };
+<span class="lineNum">    1542 </span>            : 
+<span class="lineNum">    1543 </span>            : /* targmatch.h is built by Makefile out of config.bfd.  */
+<span class="lineNum">    1544 </span>            : static const struct targmatch bfd_target_match[] = {
+<span class="lineNum">    1545 </span>            : #include &quot;targmatch.h&quot;
+<span class="lineNum">    1546 </span>            :   { NULL, NULL }
+<span class="lineNum">    1547 </span>            : };
+<span class="lineNum">    1548 </span>            : 
+<span class="lineNum">    1549 </span>            : /* Find a target vector, given a name or configuration triplet.  */
+<a name="1550"><span class="lineNum">    1550 </span>            : </a>
+<span class="lineNum">    1551 </span>            : static const bfd_target *
+<span class="lineNum">    1552 </span><span class="lineCov">         71 : find_target (const char *name)</span>
+<span class="lineNum">    1553 </span>            : {
+<span class="lineNum">    1554 </span>            :   const bfd_target * const *target;
+<span class="lineNum">    1555 </span>            :   const struct targmatch *match;
+<span class="lineNum">    1556 </span>            : 
+<span class="lineNum">    1557 </span><span class="lineCov">       1491 :   for (target = &amp;bfd_target_vector[0]; *target != NULL; target++)</span>
+<span class="lineNum">    1558 </span><span class="lineCov">       1420 :     if (strcmp (name, (*target)-&gt;name) == 0)</span>
+<span class="lineNum">    1559 </span><span class="lineNoCov">          0 :       return *target;</span>
+<span class="lineNum">    1560 </span>            : 
+<span class="lineNum">    1561 </span>            :   /* If we couldn't match on the exact name, try matching on the
+<span class="lineNum">    1562 </span>            :      configuration triplet.  FIXME: We should run the triplet through
+<span class="lineNum">    1563 </span>            :      config.sub first, but that is hard.  */
+<span class="lineNum">    1564 </span><span class="lineCov">       1988 :   for (match = &amp;bfd_target_match[0]; match-&gt;triplet != NULL; match++)</span>
+<span class="lineNum">    1565 </span>            :     {
+<span class="lineNum">    1566 </span><span class="lineCov">       1988 :       if (fnmatch (match-&gt;triplet, name, 0) == 0)</span>
+<span class="lineNum">    1567 </span>            :         {
+<span class="lineNum">    1568 </span><span class="lineCov">        142 :           while (match-&gt;vector == NULL)</span>
+<span class="lineNum">    1569 </span><span class="lineNoCov">          0 :             ++match;</span>
+<span class="lineNum">    1570 </span><span class="lineCov">         71 :           return match-&gt;vector;</span>
+<span class="lineNum">    1571 </span>            :         }
+<span class="lineNum">    1572 </span>            :     }
+<span class="lineNum">    1573 </span>            : 
+<span class="lineNum">    1574 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_target);</span>
+<span class="lineNum">    1575 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">    1576 </span>            : }
+<span class="lineNum">    1577 </span>            : 
+<span class="lineNum">    1578 </span>            : /*
+<span class="lineNum">    1579 </span>            : FUNCTION
+<span class="lineNum">    1580 </span>            :         bfd_set_default_target
+<span class="lineNum">    1581 </span>            : 
+<span class="lineNum">    1582 </span>            : SYNOPSIS
+<span class="lineNum">    1583 </span>            :         bfd_boolean bfd_set_default_target (const char *name);
+<span class="lineNum">    1584 </span>            : 
+<span class="lineNum">    1585 </span>            : DESCRIPTION
+<span class="lineNum">    1586 </span>            :         Set the default target vector to use when recognizing a BFD.
+<span class="lineNum">    1587 </span>            :         This takes the name of the target, which may be a BFD target
+<span class="lineNum">    1588 </span>            :         name or a configuration triplet.
+<span class="lineNum">    1589 </span>            : */
+<a name="1590"><span class="lineNum">    1590 </span>            : </a>
+<span class="lineNum">    1591 </span>            : bfd_boolean
+<span class="lineNum">    1592 </span><span class="lineCov">         71 : bfd_set_default_target (const char *name)</span>
+<span class="lineNum">    1593 </span>            : {
+<span class="lineNum">    1594 </span>            :   const bfd_target *target;
+<span class="lineNum">    1595 </span>            : 
+<span class="lineNum">    1596 </span><span class="lineCov">         71 :   if (bfd_default_vector[0] != NULL</span>
+<span class="lineNum">    1597 </span><span class="lineCov">         71 :       &amp;&amp; strcmp (name, bfd_default_vector[0]-&gt;name) == 0)</span>
+<span class="lineNum">    1598 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">    1599 </span>            : 
+<span class="lineNum">    1600 </span><span class="lineCov">         71 :   target = find_target (name);</span>
+<span class="lineNum">    1601 </span><span class="lineCov">         71 :   if (target == NULL)</span>
+<span class="lineNum">    1602 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">    1603 </span>            : 
+<span class="lineNum">    1604 </span><span class="lineCov">         71 :   bfd_default_vector[0] = target;</span>
+<span class="lineNum">    1605 </span><span class="lineCov">         71 :   return TRUE;</span>
+<span class="lineNum">    1606 </span>            : }
+<span class="lineNum">    1607 </span>            : 
+<span class="lineNum">    1608 </span>            : /*
+<span class="lineNum">    1609 </span>            : FUNCTION
+<span class="lineNum">    1610 </span>            :         bfd_find_target
+<span class="lineNum">    1611 </span>            : 
+<span class="lineNum">    1612 </span>            : SYNOPSIS
+<span class="lineNum">    1613 </span>            :         const bfd_target *bfd_find_target (const char *target_name, bfd *abfd);
+<span class="lineNum">    1614 </span>            : 
+<span class="lineNum">    1615 </span>            : DESCRIPTION
+<span class="lineNum">    1616 </span>            :         Return a pointer to the transfer vector for the object target
+<span class="lineNum">    1617 </span>            :         named @var{target_name}.  If @var{target_name} is &lt;&lt;NULL&gt;&gt;,
+<span class="lineNum">    1618 </span>            :         choose the one in the environment variable &lt;&lt;GNUTARGET&gt;&gt;; if
+<span class="lineNum">    1619 </span>            :         that is null or not defined, then choose the first entry in the
+<span class="lineNum">    1620 </span>            :         target list.  Passing in the string &quot;default&quot; or setting the
+<span class="lineNum">    1621 </span>            :         environment variable to &quot;default&quot; will cause the first entry in
+<span class="lineNum">    1622 </span>            :         the target list to be returned, and &quot;target_defaulted&quot; will be
+<span class="lineNum">    1623 </span>            :         set in the BFD if @var{abfd} isn't &lt;&lt;NULL&gt;&gt;.  This causes
+<span class="lineNum">    1624 </span>            :         &lt;&lt;bfd_check_format&gt;&gt; to loop over all the targets to find the
+<span class="lineNum">    1625 </span>            :         one that matches the file being read.
+<span class="lineNum">    1626 </span>            : */
+<a name="1627"><span class="lineNum">    1627 </span>            : </a>
+<span class="lineNum">    1628 </span>            : const bfd_target *
+<span class="lineNum">    1629 </span><span class="lineCov">         66 : bfd_find_target (const char *target_name, bfd *abfd)</span>
+<span class="lineNum">    1630 </span>            : {
+<span class="lineNum">    1631 </span>            :   const char *targname;
+<span class="lineNum">    1632 </span>            :   const bfd_target *target;
+<span class="lineNum">    1633 </span>            : 
+<span class="lineNum">    1634 </span><span class="lineCov">         66 :   if (target_name != NULL)</span>
+<span class="lineNum">    1635 </span><span class="lineNoCov">          0 :     targname = target_name;</span>
+<span class="lineNum">    1636 </span>            :   else
+<span class="lineNum">    1637 </span><span class="lineCov">         66 :     targname = getenv (&quot;GNUTARGET&quot;);</span>
+<span class="lineNum">    1638 </span>            : 
+<span class="lineNum">    1639 </span>            :   /* This is safe; the vector cannot be null.  */
+<span class="lineNum">    1640 </span><span class="lineCov">         66 :   if (targname == NULL || strcmp (targname, &quot;default&quot;) == 0)</span>
+<span class="lineNum">    1641 </span>            :     {
+<span class="lineNum">    1642 </span><span class="lineCov">         66 :       if (bfd_default_vector[0] != NULL)</span>
+<span class="lineNum">    1643 </span><span class="lineCov">         66 :         target = bfd_default_vector[0];</span>
+<span class="lineNum">    1644 </span>            :       else
+<span class="lineNum">    1645 </span><span class="lineNoCov">          0 :         target = bfd_target_vector[0];</span>
+<span class="lineNum">    1646 </span><span class="lineCov">         66 :       if (abfd)</span>
+<span class="lineNum">    1647 </span>            :         {
+<span class="lineNum">    1648 </span><span class="lineCov">         66 :           abfd-&gt;xvec = target;</span>
+<span class="lineNum">    1649 </span><span class="lineCov">         66 :           abfd-&gt;target_defaulted = TRUE;</span>
+<span class="lineNum">    1650 </span>            :         }
+<span class="lineNum">    1651 </span><span class="lineCov">         66 :       return target;</span>
+<span class="lineNum">    1652 </span>            :     }
+<span class="lineNum">    1653 </span>            : 
+<span class="lineNum">    1654 </span><span class="lineNoCov">          0 :   if (abfd)</span>
+<span class="lineNum">    1655 </span><span class="lineNoCov">          0 :     abfd-&gt;target_defaulted = FALSE;</span>
+<span class="lineNum">    1656 </span>            : 
+<span class="lineNum">    1657 </span><span class="lineNoCov">          0 :   target = find_target (targname);</span>
+<span class="lineNum">    1658 </span><span class="lineNoCov">          0 :   if (target == NULL)</span>
+<span class="lineNum">    1659 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">    1660 </span>            : 
+<span class="lineNum">    1661 </span><span class="lineNoCov">          0 :   if (abfd)</span>
+<span class="lineNum">    1662 </span><span class="lineNoCov">          0 :     abfd-&gt;xvec = target;</span>
+<span class="lineNum">    1663 </span><span class="lineNoCov">          0 :   return target;</span>
+<span class="lineNum">    1664 </span>            : }
+<span class="lineNum">    1665 </span>            : 
+<span class="lineNum">    1666 </span>            : /* Helper function for bfd_get_target_info to determine the target's
+<span class="lineNum">    1667 </span>            :    architecture.  This method handles bfd internal target names as
+<a name="1668"><span class="lineNum">    1668 </span>            :    tuples and triplets.  */</a>
+<span class="lineNum">    1669 </span>            : static bfd_boolean
+<span class="lineNum">    1670 </span><span class="lineNoCov">          0 : _bfd_find_arch_match (const char *tname, const char **arch,</span>
+<span class="lineNum">    1671 </span>            :                       const char **def_target_arch)
+<span class="lineNum">    1672 </span>            : {
+<span class="lineNum">    1673 </span><span class="lineNoCov">          0 :   if (!arch)</span>
+<span class="lineNum">    1674 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">    1675 </span>            : 
+<span class="lineNum">    1676 </span><span class="lineNoCov">          0 :   while (*arch != NULL)</span>
+<span class="lineNum">    1677 </span>            :     {
+<span class="lineNum">    1678 </span><span class="lineNoCov">          0 :       const char *in_a = strstr (*arch, tname);</span>
+<span class="lineNum">    1679 </span><span class="lineNoCov">          0 :       char end_ch = (in_a ? in_a[strlen (tname)] : 0);</span>
+<span class="lineNum">    1680 </span>            : 
+<span class="lineNum">    1681 </span><span class="lineNoCov">          0 :       if (in_a &amp;&amp; (in_a == *arch || in_a[-1] == ':')</span>
+<span class="lineNum">    1682 </span><span class="lineNoCov">          0 :           &amp;&amp; end_ch == 0)</span>
+<span class="lineNum">    1683 </span>            :         {
+<span class="lineNum">    1684 </span><span class="lineNoCov">          0 :           *def_target_arch = *arch;</span>
+<span class="lineNum">    1685 </span><span class="lineNoCov">          0 :           return TRUE;</span>
+<span class="lineNum">    1686 </span>            :         }
+<span class="lineNum">    1687 </span><span class="lineNoCov">          0 :       arch++;</span>
+<span class="lineNum">    1688 </span>            :     }
+<span class="lineNum">    1689 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">    1690 </span>            : }
+<span class="lineNum">    1691 </span>            : 
+<span class="lineNum">    1692 </span>            : /*
+<span class="lineNum">    1693 </span>            : FUNCTION
+<span class="lineNum">    1694 </span>            :         bfd_get_target_info
+<span class="lineNum">    1695 </span>            : SYNOPSIS
+<span class="lineNum">    1696 </span>            :         const bfd_target *bfd_get_target_info (const char *target_name,
+<span class="lineNum">    1697 </span>            :                                                bfd *abfd,
+<span class="lineNum">    1698 </span>            :                                                bfd_boolean *is_bigendian,
+<span class="lineNum">    1699 </span>            :                                                int *underscoring,
+<span class="lineNum">    1700 </span>            :                                                const char **def_target_arch);
+<span class="lineNum">    1701 </span>            : DESCRIPTION
+<span class="lineNum">    1702 </span>            :         Return a pointer to the transfer vector for the object target
+<span class="lineNum">    1703 </span>            :         named @var{target_name}.  If @var{target_name} is &lt;&lt;NULL&gt;&gt;,
+<span class="lineNum">    1704 </span>            :         choose the one in the environment variable &lt;&lt;GNUTARGET&gt;&gt;; if
+<span class="lineNum">    1705 </span>            :         that is null or not defined, then choose the first entry in the
+<span class="lineNum">    1706 </span>            :         target list.  Passing in the string &quot;default&quot; or setting the
+<span class="lineNum">    1707 </span>            :         environment variable to &quot;default&quot; will cause the first entry in
+<span class="lineNum">    1708 </span>            :         the target list to be returned, and &quot;target_defaulted&quot; will be
+<span class="lineNum">    1709 </span>            :         set in the BFD if @var{abfd} isn't &lt;&lt;NULL&gt;&gt;.  This causes
+<span class="lineNum">    1710 </span>            :         &lt;&lt;bfd_check_format&gt;&gt; to loop over all the targets to find the
+<span class="lineNum">    1711 </span>            :         one that matches the file being read.
+<span class="lineNum">    1712 </span>            :         If @var{is_bigendian} is not &lt;&lt;NULL&gt;&gt;, then set this value to target's
+<span class="lineNum">    1713 </span>            :         endian mode. True for big-endian, FALSE for little-endian or for
+<span class="lineNum">    1714 </span>            :         invalid target.
+<span class="lineNum">    1715 </span>            :         If @var{underscoring} is not &lt;&lt;NULL&gt;&gt;, then set this value to target's
+<span class="lineNum">    1716 </span>            :         underscoring mode. Zero for none-underscoring, -1 for invalid target,
+<span class="lineNum">    1717 </span>            :         else the value of target vector's symbol underscoring.
+<span class="lineNum">    1718 </span>            :         If @var{def_target_arch} is not &lt;&lt;NULL&gt;&gt;, then set it to the architecture
+<span class="lineNum">    1719 </span>            :         string specified by the target_name.
+<a name="1720"><span class="lineNum">    1720 </span>            : */</a>
+<span class="lineNum">    1721 </span>            : const bfd_target *
+<span class="lineNum">    1722 </span><span class="lineNoCov">          0 : bfd_get_target_info (const char *target_name, bfd *abfd,</span>
+<span class="lineNum">    1723 </span>            :                      bfd_boolean *is_bigendian,
+<span class="lineNum">    1724 </span>            :                      int *underscoring, const char **def_target_arch)
+<span class="lineNum">    1725 </span>            : {
+<span class="lineNum">    1726 </span>            :   const bfd_target *target_vec;
+<span class="lineNum">    1727 </span>            : 
+<span class="lineNum">    1728 </span><span class="lineNoCov">          0 :   if (is_bigendian)</span>
+<span class="lineNum">    1729 </span><span class="lineNoCov">          0 :     *is_bigendian = FALSE;</span>
+<span class="lineNum">    1730 </span><span class="lineNoCov">          0 :   if (underscoring)</span>
+<span class="lineNum">    1731 </span><span class="lineNoCov">          0 :     *underscoring = -1;</span>
+<span class="lineNum">    1732 </span><span class="lineNoCov">          0 :   if (def_target_arch)</span>
+<span class="lineNum">    1733 </span><span class="lineNoCov">          0 :     *def_target_arch = NULL;</span>
+<span class="lineNum">    1734 </span><span class="lineNoCov">          0 :   target_vec = bfd_find_target (target_name, abfd);</span>
+<span class="lineNum">    1735 </span><span class="lineNoCov">          0 :   if (! target_vec)</span>
+<span class="lineNum">    1736 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">    1737 </span><span class="lineNoCov">          0 :   if (is_bigendian)</span>
+<span class="lineNum">    1738 </span><span class="lineNoCov">          0 :     *is_bigendian = ((target_vec-&gt;byteorder == BFD_ENDIAN_BIG) ? TRUE</span>
+<span class="lineNum">    1739 </span><span class="lineNoCov">          0 :                                                                : FALSE);</span>
+<span class="lineNum">    1740 </span><span class="lineNoCov">          0 :   if (underscoring)</span>
+<span class="lineNum">    1741 </span><span class="lineNoCov">          0 :     *underscoring = ((int) target_vec-&gt;symbol_leading_char) &amp; 0xff;</span>
+<span class="lineNum">    1742 </span>            : 
+<span class="lineNum">    1743 </span><span class="lineNoCov">          0 :   if (def_target_arch)</span>
+<span class="lineNum">    1744 </span>            :     {
+<span class="lineNum">    1745 </span><span class="lineNoCov">          0 :       const char *tname = target_vec-&gt;name;</span>
+<span class="lineNum">    1746 </span><span class="lineNoCov">          0 :       const char **arches = bfd_arch_list ();</span>
+<span class="lineNum">    1747 </span>            : 
+<span class="lineNum">    1748 </span><span class="lineNoCov">          0 :       if (arches &amp;&amp; tname)</span>
+<span class="lineNum">    1749 </span>            :         {
+<span class="lineNum">    1750 </span><span class="lineNoCov">          0 :           char *hyp = strchr (tname, '-');</span>
+<span class="lineNum">    1751 </span>            : 
+<span class="lineNum">    1752 </span><span class="lineNoCov">          0 :           if (hyp != NULL)</span>
+<span class="lineNum">    1753 </span>            :             {
+<span class="lineNum">    1754 </span><span class="lineNoCov">          0 :               tname = ++hyp;</span>
+<span class="lineNum">    1755 </span>            : 
+<span class="lineNum">    1756 </span>            :               /* Make sure we detect architecture names
+<span class="lineNum">    1757 </span>            :                  for triplets like &quot;pe-arm-wince-little&quot;.  */
+<span class="lineNum">    1758 </span><span class="lineNoCov">          0 :               if (!_bfd_find_arch_match (tname, arches, def_target_arch))</span>
+<span class="lineNum">    1759 </span>            :                 {
+<span class="lineNum">    1760 </span>            :                   char new_tname[50];
+<span class="lineNum">    1761 </span>            : 
+<span class="lineNum">    1762 </span><span class="lineNoCov">          0 :                   strcpy (new_tname, hyp);</span>
+<span class="lineNum">    1763 </span><span class="lineNoCov">          0 :                   while ((hyp = strrchr (new_tname, '-')) != NULL)</span>
+<span class="lineNum">    1764 </span>            :                     {
+<span class="lineNum">    1765 </span><span class="lineNoCov">          0 :                       *hyp = 0;</span>
+<span class="lineNum">    1766 </span><span class="lineNoCov">          0 :                       if (_bfd_find_arch_match (new_tname, arches,</span>
+<span class="lineNum">    1767 </span>            :                                                 def_target_arch))
+<span class="lineNum">    1768 </span><span class="lineNoCov">          0 :                         break;</span>
+<span class="lineNum">    1769 </span>            :                     }
+<span class="lineNum">    1770 </span>            :                 }
+<span class="lineNum">    1771 </span>            :             }
+<span class="lineNum">    1772 </span>            :           else
+<span class="lineNum">    1773 </span><span class="lineNoCov">          0 :             _bfd_find_arch_match (tname, arches, def_target_arch);</span>
+<span class="lineNum">    1774 </span>            :         }
+<span class="lineNum">    1775 </span>            : 
+<span class="lineNum">    1776 </span><span class="lineNoCov">          0 :       if (arches)</span>
+<span class="lineNum">    1777 </span><span class="lineNoCov">          0 :         free (arches);</span>
+<span class="lineNum">    1778 </span>            :     }
+<span class="lineNum">    1779 </span><span class="lineNoCov">          0 :   return target_vec;</span>
+<span class="lineNum">    1780 </span>            : }
+<span class="lineNum">    1781 </span>            : 
+<span class="lineNum">    1782 </span>            : /*
+<span class="lineNum">    1783 </span>            : FUNCTION
+<span class="lineNum">    1784 </span>            :         bfd_target_list
+<span class="lineNum">    1785 </span>            : 
+<span class="lineNum">    1786 </span>            : SYNOPSIS
+<span class="lineNum">    1787 </span>            :         const char ** bfd_target_list (void);
+<span class="lineNum">    1788 </span>            : 
+<span class="lineNum">    1789 </span>            : DESCRIPTION
+<span class="lineNum">    1790 </span>            :         Return a freshly malloced NULL-terminated
+<span class="lineNum">    1791 </span>            :         vector of the names of all the valid BFD targets. Do not
+<span class="lineNum">    1792 </span>            :         modify the names.
+<span class="lineNum">    1793 </span>            : 
+<span class="lineNum">    1794 </span>            : */
+<a name="1795"><span class="lineNum">    1795 </span>            : </a>
+<span class="lineNum">    1796 </span>            : const char **
+<span class="lineNum">    1797 </span><span class="lineNoCov">          0 : bfd_target_list (void)</span>
+<span class="lineNum">    1798 </span>            : {
+<span class="lineNum">    1799 </span><span class="lineNoCov">          0 :   int vec_length = 0;</span>
+<span class="lineNum">    1800 </span>            :   bfd_size_type amt;
+<span class="lineNum">    1801 </span>            :   const bfd_target * const *target;
+<span class="lineNum">    1802 </span>            :   const  char **name_list, **name_ptr;
+<span class="lineNum">    1803 </span>            : 
+<span class="lineNum">    1804 </span><span class="lineNoCov">          0 :   for (target = &amp;bfd_target_vector[0]; *target != NULL; target++)</span>
+<span class="lineNum">    1805 </span><span class="lineNoCov">          0 :     vec_length++;</span>
+<span class="lineNum">    1806 </span>            : 
+<span class="lineNum">    1807 </span><span class="lineNoCov">          0 :   amt = (vec_length + 1) * sizeof (char **);</span>
+<span class="lineNum">    1808 </span><span class="lineNoCov">          0 :   name_ptr = name_list = (const  char **) bfd_malloc (amt);</span>
+<span class="lineNum">    1809 </span>            : 
+<span class="lineNum">    1810 </span><span class="lineNoCov">          0 :   if (name_list == NULL)</span>
+<span class="lineNum">    1811 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">    1812 </span>            : 
+<span class="lineNum">    1813 </span><span class="lineNoCov">          0 :   for (target = &amp;bfd_target_vector[0]; *target != NULL; target++)</span>
+<span class="lineNum">    1814 </span><span class="lineNoCov">          0 :     if (target == &amp;bfd_target_vector[0]</span>
+<span class="lineNum">    1815 </span><span class="lineNoCov">          0 :         || *target != bfd_target_vector[0])</span>
+<span class="lineNum">    1816 </span><span class="lineNoCov">          0 :       *name_ptr++ = (*target)-&gt;name;</span>
+<span class="lineNum">    1817 </span>            : 
+<span class="lineNum">    1818 </span><span class="lineNoCov">          0 :   *name_ptr = NULL;</span>
+<span class="lineNum">    1819 </span><span class="lineNoCov">          0 :   return name_list;</span>
+<span class="lineNum">    1820 </span>            : }
+<span class="lineNum">    1821 </span>            : 
+<span class="lineNum">    1822 </span>            : /*
+<span class="lineNum">    1823 </span>            : FUNCTION
+<span class="lineNum">    1824 </span>            :         bfd_iterate_over_targets
+<span class="lineNum">    1825 </span>            : 
+<span class="lineNum">    1826 </span>            : SYNOPSIS
+<span class="lineNum">    1827 </span>            :         const bfd_target *bfd_iterate_over_targets
+<span class="lineNum">    1828 </span>            :           (int (*func) (const bfd_target *, void *),
+<span class="lineNum">    1829 </span>            :            void *data);
+<span class="lineNum">    1830 </span>            : 
+<span class="lineNum">    1831 </span>            : DESCRIPTION
+<span class="lineNum">    1832 </span>            :         Call @var{func} for each target in the list of BFD target
+<span class="lineNum">    1833 </span>            :         vectors, passing @var{data} to @var{func}.  Stop iterating if
+<span class="lineNum">    1834 </span>            :         @var{func} returns a non-zero result, and return that target
+<span class="lineNum">    1835 </span>            :         vector.  Return NULL if @var{func} always returns zero.
+<span class="lineNum">    1836 </span>            : */
+<a name="1837"><span class="lineNum">    1837 </span>            : </a>
+<span class="lineNum">    1838 </span>            : const bfd_target *
+<span class="lineNum">    1839 </span><span class="lineNoCov">          0 : bfd_iterate_over_targets (int (*func) (const bfd_target *, void *),</span>
+<span class="lineNum">    1840 </span>            :                           void *data)
+<span class="lineNum">    1841 </span>            : {
+<span class="lineNum">    1842 </span>            :   const bfd_target *const *target;
+<span class="lineNum">    1843 </span>            : 
+<span class="lineNum">    1844 </span><span class="lineNoCov">          0 :   for (target = bfd_target_vector; *target != NULL; ++target)</span>
+<span class="lineNum">    1845 </span><span class="lineNoCov">          0 :     if (func (*target, data))</span>
+<span class="lineNum">    1846 </span><span class="lineNoCov">          0 :       return *target;</span>
+<span class="lineNum">    1847 </span>            : 
+<span class="lineNum">    1848 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">    1849 </span>            : }
+<span class="lineNum">    1850 </span>            : 
+<span class="lineNum">    1851 </span>            : /*
+<span class="lineNum">    1852 </span>            : FUNCTION
+<span class="lineNum">    1853 </span>            :         bfd_flavour_name
+<span class="lineNum">    1854 </span>            : 
+<span class="lineNum">    1855 </span>            : SYNOPSIS
+<span class="lineNum">    1856 </span>            :         const char *bfd_flavour_name (enum bfd_flavour flavour);
+<span class="lineNum">    1857 </span>            : 
+<span class="lineNum">    1858 </span>            : DESCRIPTION
+<span class="lineNum">    1859 </span>            :         Return the string form of @var{flavour}.
+<span class="lineNum">    1860 </span>            : */
+<a name="1861"><span class="lineNum">    1861 </span>            : </a>
+<span class="lineNum">    1862 </span>            : const char *
+<span class="lineNum">    1863 </span><span class="lineNoCov">          0 : bfd_flavour_name (enum bfd_flavour flavour)</span>
+<span class="lineNum">    1864 </span>            : {
+<span class="lineNum">    1865 </span><span class="lineNoCov">          0 :   switch (flavour)</span>
+<span class="lineNum">    1866 </span>            :     {
+<span class="lineNum">    1867 </span><span class="lineNoCov">          0 :     case bfd_target_unknown_flavour: return &quot;unknown file format&quot;;</span>
+<span class="lineNum">    1868 </span><span class="lineNoCov">          0 :     case bfd_target_aout_flavour: return &quot;a.out&quot;;</span>
+<span class="lineNum">    1869 </span><span class="lineNoCov">          0 :     case bfd_target_coff_flavour: return &quot;COFF&quot;;</span>
+<span class="lineNum">    1870 </span><span class="lineNoCov">          0 :     case bfd_target_ecoff_flavour: return &quot;ECOFF&quot;;</span>
+<span class="lineNum">    1871 </span><span class="lineNoCov">          0 :     case bfd_target_xcoff_flavour: return &quot;XCOFF&quot;;</span>
+<span class="lineNum">    1872 </span><span class="lineNoCov">          0 :     case bfd_target_elf_flavour: return &quot;ELF&quot;;</span>
+<span class="lineNum">    1873 </span><span class="lineNoCov">          0 :     case bfd_target_ieee_flavour: return &quot;IEEE&quot;;</span>
+<span class="lineNum">    1874 </span><span class="lineNoCov">          0 :     case bfd_target_nlm_flavour: return &quot;NLM&quot;;</span>
+<span class="lineNum">    1875 </span><span class="lineNoCov">          0 :     case bfd_target_oasys_flavour: return &quot;Oasys&quot;;</span>
+<span class="lineNum">    1876 </span><span class="lineNoCov">          0 :     case bfd_target_tekhex_flavour: return &quot;Tekhex&quot;;</span>
+<span class="lineNum">    1877 </span><span class="lineNoCov">          0 :     case bfd_target_srec_flavour: return &quot;Srec&quot;;</span>
+<span class="lineNum">    1878 </span><span class="lineNoCov">          0 :     case bfd_target_verilog_flavour: return &quot;Verilog&quot;;</span>
+<span class="lineNum">    1879 </span><span class="lineNoCov">          0 :     case bfd_target_ihex_flavour: return &quot;Ihex&quot;;</span>
+<span class="lineNum">    1880 </span><span class="lineNoCov">          0 :     case bfd_target_som_flavour: return &quot;SOM&quot;;</span>
+<span class="lineNum">    1881 </span><span class="lineNoCov">          0 :     case bfd_target_os9k_flavour: return &quot;OS9K&quot;;</span>
+<span class="lineNum">    1882 </span><span class="lineNoCov">          0 :     case bfd_target_versados_flavour: return &quot;Versados&quot;;</span>
+<span class="lineNum">    1883 </span><span class="lineNoCov">          0 :     case bfd_target_msdos_flavour: return &quot;MSDOS&quot;;</span>
+<span class="lineNum">    1884 </span><span class="lineNoCov">          0 :     case bfd_target_ovax_flavour: return &quot;Ovax&quot;;</span>
+<span class="lineNum">    1885 </span><span class="lineNoCov">          0 :     case bfd_target_evax_flavour: return &quot;Evax&quot;;</span>
+<span class="lineNum">    1886 </span><span class="lineNoCov">          0 :     case bfd_target_mmo_flavour: return &quot;mmo&quot;;</span>
+<span class="lineNum">    1887 </span><span class="lineNoCov">          0 :     case bfd_target_mach_o_flavour: return &quot;MACH_O&quot;;</span>
+<span class="lineNum">    1888 </span><span class="lineNoCov">          0 :     case bfd_target_pef_flavour: return &quot;PEF&quot;;</span>
+<span class="lineNum">    1889 </span><span class="lineNoCov">          0 :     case bfd_target_pef_xlib_flavour: return &quot;PEF_XLIB&quot;;</span>
+<span class="lineNum">    1890 </span><span class="lineNoCov">          0 :     case bfd_target_sym_flavour: return &quot;SYM&quot;;</span>
+<span class="lineNum">    1891 </span>            :     /* There is no &quot;default&quot; case here so that -Wswitch (part of -Wall)
+<span class="lineNum">    1892 </span>            :        catches missing entries.  */
+<span class="lineNum">    1893 </span>            :     }
+<span class="lineNum">    1894 </span>            : 
+<span class="lineNum">    1895 </span><span class="lineNoCov">          0 :   abort ();</span>
+<span class="lineNum">    1896 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

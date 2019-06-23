@@ -1,0 +1,702 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/plugin.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - plugin.c<span style="font-size: 80%;"> (source / <a href="plugin.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">209</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">28</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Plugin support for BFD.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2009-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : #if BFD_SUPPORTS_PLUGINS
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : #include &lt;assert.h&gt;
+<span class="lineNum">      27 </span>            : #ifdef HAVE_DLFCN_H
+<span class="lineNum">      28 </span>            : #include &lt;dlfcn.h&gt;
+<span class="lineNum">      29 </span>            : #elif defined (HAVE_WINDOWS_H)
+<span class="lineNum">      30 </span>            : #include &lt;windows.h&gt;
+<span class="lineNum">      31 </span>            : #else
+<span class="lineNum">      32 </span>            : #error Unknown how to handle dynamic-load-libraries.
+<span class="lineNum">      33 </span>            : #endif
+<span class="lineNum">      34 </span>            : #include &lt;stdarg.h&gt;
+<span class="lineNum">      35 </span>            : #include &quot;plugin-api.h&quot;
+<span class="lineNum">      36 </span>            : #include &quot;plugin.h&quot;
+<span class="lineNum">      37 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      38 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      39 </span>            : #include &lt;dirent.h&gt;
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #if !defined (HAVE_DLFCN_H) &amp;&amp; defined (HAVE_WINDOWS_H)
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #define RTLD_NOW 0      /* Dummy value.  */
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : static void *
+<span class="lineNum">      46 </span>            : dlopen (const char *file, int mode ATTRIBUTE_UNUSED)
+<span class="lineNum">      47 </span>            : {
+<span class="lineNum">      48 </span>            :   return LoadLibrary (file);
+<span class="lineNum">      49 </span>            : }
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : static void *
+<span class="lineNum">      52 </span>            : dlsym (void *handle, const char *name)
+<span class="lineNum">      53 </span>            : {
+<span class="lineNum">      54 </span>            :   return GetProcAddress (handle, name);
+<span class="lineNum">      55 </span>            : }
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            : static int ATTRIBUTE_UNUSED
+<span class="lineNum">      58 </span>            : dlclose (void *handle)
+<span class="lineNum">      59 </span>            : {
+<span class="lineNum">      60 </span>            :   FreeLibrary (handle);
+<span class="lineNum">      61 </span>            :   return 0;
+<span class="lineNum">      62 </span>            : }
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : static const char *
+<span class="lineNum">      65 </span>            : dlerror (void)
+<span class="lineNum">      66 </span>            : {
+<span class="lineNum">      67 </span>            :   return &quot;Unable to load DLL.&quot;;
+<span class="lineNum">      68 </span>            : }
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : #endif /* !defined (HAVE_DLFCN_H) &amp;&amp; defined (HAVE_WINDOWS_H)  */
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            : #define bfd_plugin_close_and_cleanup                  _bfd_generic_close_and_cleanup
+<span class="lineNum">      73 </span>            : #define bfd_plugin_bfd_free_cached_info               _bfd_generic_bfd_free_cached_info
+<span class="lineNum">      74 </span>            : #define bfd_plugin_new_section_hook                   _bfd_generic_new_section_hook
+<span class="lineNum">      75 </span>            : #define bfd_plugin_get_section_contents               _bfd_generic_get_section_contents
+<span class="lineNum">      76 </span>            : #define bfd_plugin_get_section_contents_in_window     _bfd_generic_get_section_contents_in_window
+<span class="lineNum">      77 </span>            : #define bfd_plugin_bfd_copy_private_header_data       _bfd_generic_bfd_copy_private_header_data
+<span class="lineNum">      78 </span>            : #define bfd_plugin_bfd_merge_private_bfd_data         _bfd_generic_bfd_merge_private_bfd_data
+<span class="lineNum">      79 </span>            : #define bfd_plugin_bfd_copy_private_header_data       _bfd_generic_bfd_copy_private_header_data
+<span class="lineNum">      80 </span>            : #define bfd_plugin_bfd_set_private_flags              _bfd_generic_bfd_set_private_flags
+<span class="lineNum">      81 </span>            : #define bfd_plugin_core_file_matches_executable_p     generic_core_file_matches_executable_p
+<span class="lineNum">      82 </span>            : #define bfd_plugin_bfd_is_local_label_name            _bfd_nosymbols_bfd_is_local_label_name
+<span class="lineNum">      83 </span>            : #define bfd_plugin_bfd_is_target_special_symbol       ((bfd_boolean (*) (bfd *, asymbol *)) bfd_false)
+<span class="lineNum">      84 </span>            : #define bfd_plugin_get_lineno                         _bfd_nosymbols_get_lineno
+<span class="lineNum">      85 </span>            : #define bfd_plugin_find_nearest_line                  _bfd_nosymbols_find_nearest_line
+<span class="lineNum">      86 </span>            : #define bfd_plugin_find_line                          _bfd_nosymbols_find_line
+<span class="lineNum">      87 </span>            : #define bfd_plugin_find_inliner_info                  _bfd_nosymbols_find_inliner_info
+<span class="lineNum">      88 </span>            : #define bfd_plugin_get_symbol_version_string          _bfd_nosymbols_get_symbol_version_string
+<span class="lineNum">      89 </span>            : #define bfd_plugin_bfd_make_debug_symbol              _bfd_nosymbols_bfd_make_debug_symbol
+<span class="lineNum">      90 </span>            : #define bfd_plugin_read_minisymbols                   _bfd_generic_read_minisymbols
+<span class="lineNum">      91 </span>            : #define bfd_plugin_minisymbol_to_symbol               _bfd_generic_minisymbol_to_symbol
+<span class="lineNum">      92 </span>            : #define bfd_plugin_set_arch_mach                      bfd_default_set_arch_mach
+<span class="lineNum">      93 </span>            : #define bfd_plugin_set_section_contents               _bfd_generic_set_section_contents
+<span class="lineNum">      94 </span>            : #define bfd_plugin_bfd_get_relocated_section_contents bfd_generic_get_relocated_section_contents
+<span class="lineNum">      95 </span>            : #define bfd_plugin_bfd_relax_section                  bfd_generic_relax_section
+<span class="lineNum">      96 </span>            : #define bfd_plugin_bfd_link_hash_table_create         _bfd_generic_link_hash_table_create
+<span class="lineNum">      97 </span>            : #define bfd_plugin_bfd_link_add_symbols               _bfd_generic_link_add_symbols
+<span class="lineNum">      98 </span>            : #define bfd_plugin_bfd_link_just_syms                 _bfd_generic_link_just_syms
+<span class="lineNum">      99 </span>            : #define bfd_plugin_bfd_final_link                     _bfd_generic_final_link
+<span class="lineNum">     100 </span>            : #define bfd_plugin_bfd_link_split_section             _bfd_generic_link_split_section
+<span class="lineNum">     101 </span>            : #define bfd_plugin_bfd_gc_sections                    bfd_generic_gc_sections
+<span class="lineNum">     102 </span>            : #define bfd_plugin_bfd_lookup_section_flags           bfd_generic_lookup_section_flags
+<span class="lineNum">     103 </span>            : #define bfd_plugin_bfd_merge_sections                 bfd_generic_merge_sections
+<span class="lineNum">     104 </span>            : #define bfd_plugin_bfd_is_group_section               bfd_generic_is_group_section
+<span class="lineNum">     105 </span>            : #define bfd_plugin_bfd_discard_group                  bfd_generic_discard_group
+<span class="lineNum">     106 </span>            : #define bfd_plugin_section_already_linked             _bfd_generic_section_already_linked
+<span class="lineNum">     107 </span>            : #define bfd_plugin_bfd_define_common_symbol           bfd_generic_define_common_symbol
+<span class="lineNum">     108 </span>            : #define bfd_plugin_bfd_copy_link_hash_symbol_type     _bfd_generic_copy_link_hash_symbol_type
+<span class="lineNum">     109 </span>            : #define bfd_plugin_bfd_link_check_relocs              _bfd_generic_link_check_relocs
+<a name="110"><span class="lineNum">     110 </span>            : </a>
+<span class="lineNum">     111 </span>            : static enum ld_plugin_status
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 : message (int level ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     113 </span>            :          const char * format, ...)
+<span class="lineNum">     114 </span>            : {
+<span class="lineNum">     115 </span>            :   va_list args;
+<span class="lineNum">     116 </span><span class="lineNoCov">          0 :   va_start (args, format);</span>
+<span class="lineNum">     117 </span><span class="lineNoCov">          0 :   printf (&quot;bfd plugin: &quot;);</span>
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :   vprintf (format, args);</span>
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :   putchar ('\n');</span>
+<span class="lineNum">     120 </span><span class="lineNoCov">          0 :   va_end (args);</span>
+<span class="lineNum">     121 </span><span class="lineNoCov">          0 :   return LDPS_OK;</span>
+<span class="lineNum">     122 </span>            : }
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            : /* Register a claim-file handler. */
+<span class="lineNum">     125 </span>            : static ld_plugin_claim_file_handler claim_file;
+<a name="126"><span class="lineNum">     126 </span>            : </a>
+<span class="lineNum">     127 </span>            : static enum ld_plugin_status
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 : register_claim_file (ld_plugin_claim_file_handler handler)</span>
+<span class="lineNum">     129 </span>            : {
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :   claim_file = handler;</span>
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :   return LDPS_OK;</span>
+<span class="lineNum">     132 </span>            : }
+<a name="133"><span class="lineNum">     133 </span>            : </a>
+<span class="lineNum">     134 </span>            : static enum ld_plugin_status
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 : add_symbols (void * handle,</span>
+<span class="lineNum">     136 </span>            :              int nsyms,
+<span class="lineNum">     137 </span>            :              const struct ld_plugin_symbol * syms)
+<span class="lineNum">     138 </span>            : {
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :   bfd *abfd = handle;</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :   struct plugin_data_struct *plugin_data =</span>
+<span class="lineNum">     141 </span>            :     bfd_alloc (abfd, sizeof (plugin_data_struct));
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :   plugin_data-&gt;nsyms = nsyms;</span>
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 :   plugin_data-&gt;syms = syms;</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :   if (nsyms != 0)</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :     abfd-&gt;flags |= HAS_SYMS;</span>
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :   abfd-&gt;tdata.plugin_data = plugin_data;</span>
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :   return LDPS_OK;</span>
+<span class="lineNum">     151 </span>            : }
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span>            : static const char *plugin_program_name;
+<a name="154"><span class="lineNum">     154 </span>            : </a>
+<span class="lineNum">     155 </span>            : void
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 : bfd_plugin_set_program_name (const char *program_name)</span>
+<span class="lineNum">     157 </span>            : {
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :   plugin_program_name = program_name;</span>
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 : }</span>
+<a name="160"><span class="lineNum">     160 </span>            : </a>
+<span class="lineNum">     161 </span>            : int
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 : bfd_plugin_open_input (bfd *ibfd, struct ld_plugin_input_file *file)</span>
+<span class="lineNum">     163 </span>            : {
+<span class="lineNum">     164 </span>            :   bfd *iobfd;
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :   iobfd = ibfd;</span>
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :   if (ibfd-&gt;my_archive &amp;&amp; !bfd_is_thin_archive (ibfd-&gt;my_archive))</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :     iobfd = ibfd-&gt;my_archive;</span>
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :   file-&gt;name = iobfd-&gt;filename;</span>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 :   if (!iobfd-&gt;iostream &amp;&amp; !bfd_open_file (iobfd))</span>
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :   file-&gt;fd = fileno ((FILE *) iobfd-&gt;iostream);</span>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :   if (iobfd == ibfd)</span>
+<span class="lineNum">     177 </span>            :     {
+<span class="lineNum">     178 </span>            :       struct stat stat_buf;
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :       if (fstat (file-&gt;fd, &amp;stat_buf))</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :       file-&gt;offset = 0;</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :       file-&gt;filesize = stat_buf.st_size;</span>
+<span class="lineNum">     183 </span>            :     }
+<span class="lineNum">     184 </span>            :   else
+<span class="lineNum">     185 </span>            :     {
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :       file-&gt;offset = ibfd-&gt;origin;</span>
+<span class="lineNum">     187 </span><span class="lineNoCov">          0 :       file-&gt;filesize = arelt_size (ibfd);</span>
+<span class="lineNum">     188 </span>            :     }
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :   return 1;</span>
+<span class="lineNum">     190 </span>            : }
+<a name="191"><span class="lineNum">     191 </span>            : </a>
+<span class="lineNum">     192 </span>            : static int
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 : try_claim (bfd *abfd)</span>
+<span class="lineNum">     194 </span>            : {
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :   int claimed = 0;</span>
+<span class="lineNum">     196 </span>            :   struct ld_plugin_input_file file;
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :   if (!bfd_plugin_open_input (abfd, &amp;file))</span>
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :   file.handle = abfd;</span>
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :   off_t cur_offset = lseek (file.fd, 0, SEEK_CUR);</span>
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :   claim_file (&amp;file, &amp;claimed);</span>
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :   lseek (file.fd, cur_offset, SEEK_SET);</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :   return claimed;</span>
+<span class="lineNum">     205 </span>            : }
+<a name="206"><span class="lineNum">     206 </span>            : </a>
+<span class="lineNum">     207 </span>            : static int
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 : try_load_plugin (const char *pname, bfd *abfd, int *has_plugin_p)</span>
+<span class="lineNum">     209 </span>            : {
+<span class="lineNum">     210 </span>            :   void *plugin_handle;
+<span class="lineNum">     211 </span>            :   struct ld_plugin_tv tv[4];
+<span class="lineNum">     212 </span>            :   int i;
+<span class="lineNum">     213 </span>            :   ld_plugin_onload onload;
+<span class="lineNum">     214 </span>            :   enum ld_plugin_status status;
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :   *has_plugin_p = 0;</span>
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :   plugin_handle = dlopen (pname, RTLD_NOW);</span>
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :   if (!plugin_handle)</span>
+<span class="lineNum">     220 </span>            :     {
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :       _bfd_error_handler (&quot;%s\n&quot;, dlerror ());</span>
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :       return 0;</span>
+<span class="lineNum">     223 </span>            :     }
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span><span class="lineNoCov">          0 :   onload = dlsym (plugin_handle, &quot;onload&quot;);</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :   if (!onload)</span>
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :     goto err;</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :   i = 0;</span>
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 :   tv[i].tv_tag = LDPT_MESSAGE;</span>
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :   tv[i].tv_u.tv_message = message;</span>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span><span class="lineNoCov">          0 :   ++i;</span>
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :   tv[i].tv_tag = LDPT_REGISTER_CLAIM_FILE_HOOK;</span>
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :   tv[i].tv_u.tv_register_claim_file = register_claim_file;</span>
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span><span class="lineNoCov">          0 :   ++i;</span>
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :   tv[i].tv_tag = LDPT_ADD_SYMBOLS;</span>
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :   tv[i].tv_u.tv_add_symbols = add_symbols;</span>
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :   ++i;</span>
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 :   tv[i].tv_tag = LDPT_NULL;</span>
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   tv[i].tv_u.tv_val = 0;</span>
+<span class="lineNum">     244 </span>            : 
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :   status = (*onload)(tv);</span>
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :   if (status != LDPS_OK)</span>
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :     goto err;</span>
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :   *has_plugin_p = 1;</span>
+<span class="lineNum">     251 </span>            : 
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :   abfd-&gt;plugin_format = bfd_plugin_no;</span>
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :   if (!claim_file)</span>
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :     goto err;</span>
+<span class="lineNum">     256 </span>            : 
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :   if (!try_claim (abfd))</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :     goto err;</span>
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :   abfd-&gt;plugin_format = bfd_plugin_yes;</span>
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 :   return 1;</span>
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :  err:</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     266 </span>            : }
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : /* There may be plugin libraries in lib/bfd-plugins.  */
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span>            : static int has_plugin = -1;
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            : static const bfd_target *(*ld_plugin_object_p) (bfd *);
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            : static const char *plugin_name;
+<a name="275"><span class="lineNum">     275 </span>            : </a>
+<span class="lineNum">     276 </span>            : void
+<span class="lineNum">     277 </span><span class="lineNoCov">          0 : bfd_plugin_set_plugin (const char *p)</span>
+<span class="lineNum">     278 </span>            : {
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :   plugin_name = p;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :   has_plugin = p != NULL;</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     282 </span>            : 
+<span class="lineNum">     283 </span>            : /* Return TRUE if a plugin library is used.  */
+<a name="284"><span class="lineNum">     284 </span>            : </a>
+<span class="lineNum">     285 </span>            : bfd_boolean
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 : bfd_plugin_specified_p (void)</span>
+<span class="lineNum">     287 </span>            : {
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :   return has_plugin &gt; 0;</span>
+<span class="lineNum">     289 </span>            : }
+<span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span>            : /* Return TRUE if ABFD can be claimed by linker LTO plugin.  */
+<a name="292"><span class="lineNum">     292 </span>            : </a>
+<span class="lineNum">     293 </span>            : bfd_boolean
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 : bfd_link_plugin_object_p (bfd *abfd)</span>
+<span class="lineNum">     295 </span>            : {
+<span class="lineNum">     296 </span><span class="lineNoCov">          0 :   if (ld_plugin_object_p)</span>
+<span class="lineNum">     297 </span><span class="lineNoCov">          0 :     return ld_plugin_object_p (abfd) != NULL;</span>
+<span class="lineNum">     298 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">     299 </span>            : }
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            : extern const bfd_target plugin_vec;
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span>            : /* Return TRUE if TARGET is a pointer to plugin_vec.  */
+<a name="304"><span class="lineNum">     304 </span>            : </a>
+<span class="lineNum">     305 </span>            : bfd_boolean
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 : bfd_plugin_target_p (const bfd_target *target)</span>
+<span class="lineNum">     307 </span>            : {
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :   return target == &amp;plugin_vec;</span>
+<span class="lineNum">     309 </span>            : }
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span>            : /* Register OBJECT_P to be used by bfd_plugin_object_p.  */
+<a name="312"><span class="lineNum">     312 </span>            : </a>
+<span class="lineNum">     313 </span>            : void
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 : register_ld_plugin_object_p (const bfd_target *(*object_p) (bfd *))</span>
+<span class="lineNum">     315 </span>            : {
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :   ld_plugin_object_p = object_p;</span>
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 : }</span>
+<a name="318"><span class="lineNum">     318 </span>            : </a>
+<span class="lineNum">     319 </span>            : static int
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 : load_plugin (bfd *abfd)</span>
+<span class="lineNum">     321 </span>            : {
+<span class="lineNum">     322 </span>            :   char *plugin_dir;
+<span class="lineNum">     323 </span>            :   char *p;
+<span class="lineNum">     324 </span>            :   DIR *d;
+<span class="lineNum">     325 </span>            :   struct dirent *ent;
+<span class="lineNum">     326 </span><span class="lineNoCov">          0 :   int found = 0;</span>
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :   if (!has_plugin)</span>
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :     return found;</span>
+<span class="lineNum">     330 </span>            : 
+<span class="lineNum">     331 </span><span class="lineNoCov">          0 :   if (plugin_name)</span>
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :     return try_load_plugin (plugin_name, abfd, &amp;has_plugin);</span>
+<span class="lineNum">     333 </span>            : 
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :   if (plugin_program_name == NULL)</span>
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :     return found;</span>
+<span class="lineNum">     336 </span>            : 
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :   plugin_dir = concat (BINDIR, &quot;/../lib/bfd-plugins&quot;, NULL);</span>
+<span class="lineNum">     338 </span><span class="lineNoCov">          0 :   p = make_relative_prefix (plugin_program_name,</span>
+<span class="lineNum">     339 </span>            :                             BINDIR,
+<span class="lineNum">     340 </span>            :                             plugin_dir);
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :   free (plugin_dir);</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :   plugin_dir = NULL;</span>
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span><span class="lineNoCov">          0 :   d = opendir (p);</span>
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :   if (!d)</span>
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :     goto out;</span>
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :   while ((ent = readdir (d)))</span>
+<span class="lineNum">     349 </span>            :     {
+<span class="lineNum">     350 </span>            :       char *full_name;
+<span class="lineNum">     351 </span>            :       struct stat s;
+<span class="lineNum">     352 </span>            :       int valid_plugin;
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span><span class="lineNoCov">          0 :       full_name = concat (p, &quot;/&quot;, ent-&gt;d_name, NULL);</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :       if (stat(full_name, &amp;s) == 0 &amp;&amp; S_ISREG (s.st_mode))</span>
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :         found = try_load_plugin (full_name, abfd, &amp;valid_plugin);</span>
+<span class="lineNum">     357 </span><span class="lineNoCov">          0 :       if (has_plugin &lt;= 0)</span>
+<span class="lineNum">     358 </span><span class="lineNoCov">          0 :         has_plugin = valid_plugin;</span>
+<span class="lineNum">     359 </span><span class="lineNoCov">          0 :       free (full_name);</span>
+<span class="lineNum">     360 </span><span class="lineNoCov">          0 :       if (found)</span>
+<span class="lineNum">     361 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">     362 </span>            :     }
+<span class="lineNum">     363 </span>            : 
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :  out:</span>
+<span class="lineNum">     365 </span><span class="lineNoCov">          0 :   free (p);</span>
+<span class="lineNum">     366 </span><span class="lineNoCov">          0 :   if (d)</span>
+<span class="lineNum">     367 </span><span class="lineNoCov">          0 :     closedir (d);</span>
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :   return found;</span>
+<span class="lineNum">     370 </span>            : }
+<span class="lineNum">     371 </span>            : 
+<a name="372"><span class="lineNum">     372 </span>            : </a>
+<span class="lineNum">     373 </span>            : static const bfd_target *
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 : bfd_plugin_object_p (bfd *abfd)</span>
+<span class="lineNum">     375 </span>            : {
+<span class="lineNum">     376 </span><span class="lineNoCov">          0 :   if (ld_plugin_object_p)</span>
+<span class="lineNum">     377 </span><span class="lineNoCov">          0 :     return ld_plugin_object_p (abfd);</span>
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span><span class="lineNoCov">          0 :   if (abfd-&gt;plugin_format == bfd_plugin_unknown &amp;&amp; !load_plugin (abfd))</span>
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :   return abfd-&gt;plugin_format == bfd_plugin_yes ? abfd-&gt;xvec : NULL;</span>
+<span class="lineNum">     383 </span>            : }
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span>            : /* Copy any private info we understand from the input bfd
+<span class="lineNum">     386 </span>            :    to the output bfd.  */
+<a name="387"><span class="lineNum">     387 </span>            : </a>
+<span class="lineNum">     388 </span>            : static bfd_boolean
+<span class="lineNum">     389 </span><span class="lineNoCov">          0 : bfd_plugin_bfd_copy_private_bfd_data (bfd *ibfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     390 </span>            :                                       bfd *obfd ATTRIBUTE_UNUSED)
+<span class="lineNum">     391 </span>            : {
+<span class="lineNum">     392 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     393 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     394 </span>            : }
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            : /* Copy any private info we understand from the input section
+<span class="lineNum">     397 </span>            :    to the output section.  */
+<a name="398"><span class="lineNum">     398 </span>            : </a>
+<span class="lineNum">     399 </span>            : static bfd_boolean
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 : bfd_plugin_bfd_copy_private_section_data (bfd *ibfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     401 </span>            :                                           asection *isection ATTRIBUTE_UNUSED,
+<span class="lineNum">     402 </span>            :                                           bfd *obfd ATTRIBUTE_UNUSED,
+<span class="lineNum">     403 </span>            :                                           asection *osection ATTRIBUTE_UNUSED)
+<span class="lineNum">     404 </span>            : {
+<span class="lineNum">     405 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     406 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     407 </span>            : }
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            : /* Copy any private info we understand from the input symbol
+<span class="lineNum">     410 </span>            :    to the output symbol.  */
+<a name="411"><span class="lineNum">     411 </span>            : </a>
+<span class="lineNum">     412 </span>            : static bfd_boolean
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 : bfd_plugin_bfd_copy_private_symbol_data (bfd *ibfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     414 </span>            :                                          asymbol *isymbol ATTRIBUTE_UNUSED,
+<span class="lineNum">     415 </span>            :                                          bfd *obfd ATTRIBUTE_UNUSED,
+<span class="lineNum">     416 </span>            :                                          asymbol *osymbol ATTRIBUTE_UNUSED)
+<span class="lineNum">     417 </span>            : {
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     419 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     420 </span>            : }
+<a name="421"><span class="lineNum">     421 </span>            : </a>
+<span class="lineNum">     422 </span>            : static bfd_boolean
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 : bfd_plugin_bfd_print_private_bfd_data (bfd *abfd ATTRIBUTE_UNUSED, PTR ptr ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     424 </span>            : {
+<span class="lineNum">     425 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     427 </span>            : }
+<a name="428"><span class="lineNum">     428 </span>            : </a>
+<span class="lineNum">     429 </span>            : static char *
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 : bfd_plugin_core_file_failing_command (bfd *abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     431 </span>            : {
+<span class="lineNum">     432 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">     434 </span>            : }
+<a name="435"><span class="lineNum">     435 </span>            : </a>
+<span class="lineNum">     436 </span>            : static int
+<span class="lineNum">     437 </span><span class="lineNoCov">          0 : bfd_plugin_core_file_failing_signal (bfd *abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     438 </span>            : {
+<span class="lineNum">     439 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     440 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     441 </span>            : }
+<a name="442"><span class="lineNum">     442 </span>            : </a>
+<span class="lineNum">     443 </span>            : static int
+<span class="lineNum">     444 </span><span class="lineNoCov">          0 : bfd_plugin_core_file_pid (bfd *abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     445 </span>            : {
+<span class="lineNum">     446 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     447 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     448 </span>            : }
+<a name="449"><span class="lineNum">     449 </span>            : </a>
+<span class="lineNum">     450 </span>            : static long
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 : bfd_plugin_get_symtab_upper_bound (bfd *abfd)</span>
+<span class="lineNum">     452 </span>            : {
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :   struct plugin_data_struct *plugin_data = abfd-&gt;tdata.plugin_data;</span>
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :   long nsyms = plugin_data-&gt;nsyms;</span>
+<span class="lineNum">     455 </span>            : 
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :   BFD_ASSERT (nsyms &gt;= 0);</span>
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :   return ((nsyms + 1) * sizeof (asymbol *));</span>
+<span class="lineNum">     459 </span>            : }
+<a name="460"><span class="lineNum">     460 </span>            : </a>
+<span class="lineNum">     461 </span>            : static flagword
+<span class="lineNum">     462 </span><span class="lineNoCov">          0 : convert_flags (const struct ld_plugin_symbol *sym)</span>
+<span class="lineNum">     463 </span>            : {
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :  switch (sym-&gt;def)</span>
+<span class="lineNum">     465 </span>            :    {
+<span class="lineNum">     466 </span><span class="lineNoCov">          0 :    case LDPK_DEF:</span>
+<span class="lineNum">     467 </span>            :    case LDPK_COMMON:
+<span class="lineNum">     468 </span>            :    case LDPK_UNDEF:
+<span class="lineNum">     469 </span><span class="lineNoCov">          0 :      return BSF_GLOBAL;</span>
+<span class="lineNum">     470 </span>            : 
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :    case LDPK_WEAKUNDEF:</span>
+<span class="lineNum">     472 </span>            :    case LDPK_WEAKDEF:
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 :      return BSF_GLOBAL | BSF_WEAK;</span>
+<span class="lineNum">     474 </span>            : 
+<span class="lineNum">     475 </span><span class="lineNoCov">          0 :    default:</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :      BFD_ASSERT (0);</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :      return 0;</span>
+<span class="lineNum">     478 </span>            :    }
+<span class="lineNum">     479 </span>            : }
+<a name="480"><span class="lineNum">     480 </span>            : </a>
+<span class="lineNum">     481 </span>            : static long
+<span class="lineNum">     482 </span><span class="lineNoCov">          0 : bfd_plugin_canonicalize_symtab (bfd *abfd,</span>
+<span class="lineNum">     483 </span>            :                                 asymbol **alocation)
+<span class="lineNum">     484 </span>            : {
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :   struct plugin_data_struct *plugin_data = abfd-&gt;tdata.plugin_data;</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :   long nsyms = plugin_data-&gt;nsyms;</span>
+<span class="lineNum">     487 </span><span class="lineNoCov">          0 :   const struct ld_plugin_symbol *syms = plugin_data-&gt;syms;</span>
+<span class="lineNum">     488 </span>            :   static asection fake_section;
+<span class="lineNum">     489 </span>            :   static asection fake_common_section;
+<span class="lineNum">     490 </span>            :   int i;
+<span class="lineNum">     491 </span>            : 
+<span class="lineNum">     492 </span><span class="lineNoCov">          0 :   fake_section.name = &quot;.text&quot;;</span>
+<span class="lineNum">     493 </span><span class="lineNoCov">          0 :   fake_common_section.flags = SEC_IS_COMMON;</span>
+<span class="lineNum">     494 </span>            : 
+<span class="lineNum">     495 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; nsyms; i++)</span>
+<span class="lineNum">     496 </span>            :     {
+<span class="lineNum">     497 </span><span class="lineNoCov">          0 :       asymbol *s = bfd_alloc (abfd, sizeof (asymbol));</span>
+<span class="lineNum">     498 </span>            : 
+<span class="lineNum">     499 </span><span class="lineNoCov">          0 :       BFD_ASSERT (s);</span>
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 :       alocation[i] = s;</span>
+<span class="lineNum">     501 </span>            : 
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :       s-&gt;the_bfd = abfd;</span>
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :       s-&gt;name = syms[i].name;</span>
+<span class="lineNum">     504 </span><span class="lineNoCov">          0 :       s-&gt;value = 0;</span>
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :       s-&gt;flags = convert_flags (&amp;syms[i]);</span>
+<span class="lineNum">     506 </span><span class="lineNoCov">          0 :       switch (syms[i].def)</span>
+<span class="lineNum">     507 </span>            :         {
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :         case LDPK_COMMON:</span>
+<span class="lineNum">     509 </span><span class="lineNoCov">          0 :           s-&gt;section = &amp;fake_common_section;</span>
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     511 </span><span class="lineNoCov">          0 :         case LDPK_UNDEF:</span>
+<span class="lineNum">     512 </span>            :         case LDPK_WEAKUNDEF:
+<span class="lineNum">     513 </span><span class="lineNoCov">          0 :           s-&gt;section = bfd_und_section_ptr;</span>
+<span class="lineNum">     514 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :         case LDPK_DEF:</span>
+<span class="lineNum">     516 </span>            :         case LDPK_WEAKDEF:
+<span class="lineNum">     517 </span><span class="lineNoCov">          0 :           s-&gt;section = &amp;fake_section;</span>
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     519 </span><span class="lineNoCov">          0 :         default:</span>
+<span class="lineNum">     520 </span><span class="lineNoCov">          0 :           BFD_ASSERT (0);</span>
+<span class="lineNum">     521 </span>            :         }
+<span class="lineNum">     522 </span>            : 
+<span class="lineNum">     523 </span><span class="lineNoCov">          0 :       s-&gt;udata.p = (void *) &amp;syms[i];</span>
+<span class="lineNum">     524 </span>            :     }
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span><span class="lineNoCov">          0 :   return nsyms;</span>
+<span class="lineNum">     527 </span>            : }
+<a name="528"><span class="lineNum">     528 </span>            : </a>
+<span class="lineNum">     529 </span>            : static void
+<span class="lineNum">     530 </span><span class="lineNoCov">          0 : bfd_plugin_print_symbol (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     531 </span>            :                          PTR afile ATTRIBUTE_UNUSED,
+<span class="lineNum">     532 </span>            :                          asymbol *symbol ATTRIBUTE_UNUSED,
+<span class="lineNum">     533 </span>            :                          bfd_print_symbol_type how ATTRIBUTE_UNUSED)
+<span class="lineNum">     534 </span>            : {
+<span class="lineNum">     535 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     536 </span><span class="lineNoCov">          0 : }</span>
+<a name="537"><span class="lineNum">     537 </span>            : </a>
+<span class="lineNum">     538 </span>            : static void
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 : bfd_plugin_get_symbol_info (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     540 </span>            :                             asymbol *symbol,
+<span class="lineNum">     541 </span>            :                             symbol_info *ret)
+<span class="lineNum">     542 </span>            : {
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :   bfd_symbol_info (symbol, ret);</span>
+<span class="lineNum">     544 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     545 </span>            : 
+<span class="lineNum">     546 </span>            : /* Make an empty symbol. */
+<a name="547"><span class="lineNum">     547 </span>            : </a>
+<span class="lineNum">     548 </span>            : static asymbol *
+<span class="lineNum">     549 </span><span class="lineNoCov">          0 : bfd_plugin_make_empty_symbol (bfd *abfd)</span>
+<span class="lineNum">     550 </span>            : {
+<span class="lineNum">     551 </span><span class="lineNoCov">          0 :   asymbol *new_symbol = bfd_zalloc (abfd, sizeof (asymbol));</span>
+<span class="lineNum">     552 </span><span class="lineNoCov">          0 :   if (new_symbol == NULL)</span>
+<span class="lineNum">     553 </span><span class="lineNoCov">          0 :     return new_symbol;</span>
+<span class="lineNum">     554 </span><span class="lineNoCov">          0 :   new_symbol-&gt;the_bfd = abfd;</span>
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :   return new_symbol;</span>
+<span class="lineNum">     556 </span>            : }
+<a name="557"><span class="lineNum">     557 </span>            : </a>
+<span class="lineNum">     558 </span>            : static int
+<span class="lineNum">     559 </span><span class="lineNoCov">          0 : bfd_plugin_sizeof_headers (bfd *a ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     560 </span>            :                            struct bfd_link_info *info ATTRIBUTE_UNUSED)
+<span class="lineNum">     561 </span>            : {
+<span class="lineNum">     562 </span><span class="lineNoCov">          0 :   BFD_ASSERT (0);</span>
+<span class="lineNum">     563 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     564 </span>            : }
+<span class="lineNum">     565 </span>            : 
+<span class="lineNum">     566 </span>            : const bfd_target plugin_vec =
+<span class="lineNum">     567 </span>            : {
+<span class="lineNum">     568 </span>            :   &quot;plugin&quot;,                   /* Name.  */
+<span class="lineNum">     569 </span>            :   bfd_target_unknown_flavour,
+<span class="lineNum">     570 </span>            :   BFD_ENDIAN_LITTLE,            /* Target byte order.  */
+<span class="lineNum">     571 </span>            :   BFD_ENDIAN_LITTLE,            /* Target headers byte order.  */
+<span class="lineNum">     572 </span>            :   (HAS_RELOC | EXEC_P |         /* Object flags.  */
+<span class="lineNum">     573 </span>            :    HAS_LINENO | HAS_DEBUG |
+<span class="lineNum">     574 </span>            :    HAS_SYMS | HAS_LOCALS | DYNAMIC | WP_TEXT | D_PAGED),
+<span class="lineNum">     575 </span>            :   (SEC_CODE | SEC_DATA | SEC_ROM | SEC_HAS_CONTENTS
+<span class="lineNum">     576 </span>            :    | SEC_ALLOC | SEC_LOAD | SEC_RELOC), /* Section flags.  */
+<span class="lineNum">     577 </span>            :   0,                            /* symbol_leading_char.  */
+<span class="lineNum">     578 </span>            :   '/',                          /* ar_pad_char.  */
+<span class="lineNum">     579 </span>            :   15,                           /* ar_max_namelen.  */
+<span class="lineNum">     580 </span>            :   255,                          /* match priority.  */
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            :   bfd_getl64, bfd_getl_signed_64, bfd_putl64,
+<span class="lineNum">     583 </span>            :   bfd_getl32, bfd_getl_signed_32, bfd_putl32,
+<span class="lineNum">     584 </span>            :   bfd_getl16, bfd_getl_signed_16, bfd_putl16,   /* data */
+<span class="lineNum">     585 </span>            :   bfd_getl64, bfd_getl_signed_64, bfd_putl64,
+<span class="lineNum">     586 </span>            :   bfd_getl32, bfd_getl_signed_32, bfd_putl32,
+<span class="lineNum">     587 </span>            :   bfd_getl16, bfd_getl_signed_16, bfd_putl16,   /* hdrs */
+<span class="lineNum">     588 </span>            : 
+<span class="lineNum">     589 </span>            :   {                             /* bfd_check_format.  */
+<span class="lineNum">     590 </span>            :     _bfd_dummy_target,
+<span class="lineNum">     591 </span>            :     bfd_plugin_object_p,
+<span class="lineNum">     592 </span>            :     bfd_generic_archive_p,
+<span class="lineNum">     593 </span>            :     _bfd_dummy_target
+<span class="lineNum">     594 </span>            :   },
+<span class="lineNum">     595 </span>            :   {                             /* bfd_set_format.  */
+<span class="lineNum">     596 </span>            :     bfd_false,
+<span class="lineNum">     597 </span>            :     bfd_false,
+<span class="lineNum">     598 </span>            :     _bfd_generic_mkarchive,
+<span class="lineNum">     599 </span>            :     bfd_false,
+<span class="lineNum">     600 </span>            :   },
+<span class="lineNum">     601 </span>            :   {                             /* bfd_write_contents.  */
+<span class="lineNum">     602 </span>            :     bfd_false,
+<span class="lineNum">     603 </span>            :     bfd_false,
+<span class="lineNum">     604 </span>            :     _bfd_write_archive_contents,
+<span class="lineNum">     605 </span>            :     bfd_false,
+<span class="lineNum">     606 </span>            :   },
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span>            :   BFD_JUMP_TABLE_GENERIC (bfd_plugin),
+<span class="lineNum">     609 </span>            :   BFD_JUMP_TABLE_COPY (bfd_plugin),
+<span class="lineNum">     610 </span>            :   BFD_JUMP_TABLE_CORE (bfd_plugin),
+<span class="lineNum">     611 </span>            : #ifdef USE_64_BIT_ARCHIVE
+<span class="lineNum">     612 </span>            :   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_64_bit),
+<span class="lineNum">     613 </span>            : #else
+<span class="lineNum">     614 </span>            :   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
+<span class="lineNum">     615 </span>            : #endif
+<span class="lineNum">     616 </span>            :   BFD_JUMP_TABLE_SYMBOLS (bfd_plugin),
+<span class="lineNum">     617 </span>            :   BFD_JUMP_TABLE_RELOCS (_bfd_norelocs),
+<span class="lineNum">     618 </span>            :   BFD_JUMP_TABLE_WRITE (bfd_plugin),
+<span class="lineNum">     619 </span>            :   BFD_JUMP_TABLE_LINK (bfd_plugin),
+<span class="lineNum">     620 </span>            :   BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),
+<span class="lineNum">     621 </span>            : 
+<span class="lineNum">     622 </span>            :   NULL,
+<span class="lineNum">     623 </span>            : 
+<span class="lineNum">     624 </span>            :   NULL                          /* backend_data.  */
+<span class="lineNum">     625 </span>            : };
+<span class="lineNum">     626 </span>            : #endif /* BFD_SUPPORTS_PLUGIN */
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

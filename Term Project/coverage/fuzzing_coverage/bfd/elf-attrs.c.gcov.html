@@ -1,0 +1,802 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/elf-attrs.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - elf-attrs.c<span style="font-size: 80%;"> (source / <a href="elf-attrs.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">329</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* ELF attributes support (based on ARM EABI attributes).</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2005-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;elf-bfd.h&quot;
+<span class="lineNum">      26 </span>            : 
+<a name="27"><span class="lineNum">      27 </span>            : /* Return the number of bytes needed by I in uleb128 format.  */</a>
+<span class="lineNum">      28 </span>            : static int
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 : uleb128_size (unsigned int i)</span>
+<span class="lineNum">      30 </span>            : {
+<span class="lineNum">      31 </span>            :   int size;
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 :   size = 1;</span>
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :   while (i &gt;= 0x80)</span>
+<span class="lineNum">      34 </span>            :     {
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :       i &gt;&gt;= 7;</span>
+<span class="lineNum">      36 </span><span class="lineNoCov">          0 :       size++;</span>
+<span class="lineNum">      37 </span>            :     }
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :   return size;</span>
+<span class="lineNum">      39 </span>            : }
+<span class="lineNum">      40 </span>            : 
+<a name="41"><span class="lineNum">      41 </span>            : /* Return TRUE if the attribute has the default value (0/&quot;&quot;).  */</a>
+<span class="lineNum">      42 </span>            : static bfd_boolean
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 : is_default_attr (obj_attribute *attr)</span>
+<span class="lineNum">      44 </span>            : {
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_INT_VAL (attr-&gt;type) &amp;&amp; attr-&gt;i != 0)</span>
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_STR_VAL (attr-&gt;type) &amp;&amp; attr-&gt;s &amp;&amp; *attr-&gt;s)</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_NO_DEFAULT (attr-&gt;type))</span>
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">      53 </span>            : }
+<span class="lineNum">      54 </span>            : 
+<a name="55"><span class="lineNum">      55 </span>            : /* Return the size of a single attribute.  */</a>
+<span class="lineNum">      56 </span>            : static bfd_vma
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 : obj_attr_size (unsigned int tag, obj_attribute *attr)</span>
+<span class="lineNum">      58 </span>            : {
+<span class="lineNum">      59 </span>            :   bfd_vma size;
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :   if (is_default_attr (attr))</span>
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :   size = uleb128_size (tag);</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_INT_VAL (attr-&gt;type))</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :     size += uleb128_size (attr-&gt;i);</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_STR_VAL (attr-&gt;type))</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :     size += strlen ((char *)attr-&gt;s) + 1;</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :   return size;</span>
+<span class="lineNum">      70 </span>            : }
+<span class="lineNum">      71 </span>            : 
+<a name="72"><span class="lineNum">      72 </span>            : /* Return the vendor name for a given object attributes section.  */</a>
+<span class="lineNum">      73 </span>            : static const char *
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 : vendor_obj_attr_name (bfd *abfd, int vendor)</span>
+<span class="lineNum">      75 </span>            : {
+<span class="lineNum">      76 </span>            :   return (vendor == OBJ_ATTR_PROC
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :           ? get_elf_backend_data (abfd)-&gt;obj_attrs_vendor</span>
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 :           : &quot;gnu&quot;);</span>
+<span class="lineNum">      79 </span>            : }
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span>            : /* Return the size of the object attributes section for VENDOR
+<span class="lineNum">      82 </span>            :    (OBJ_ATTR_PROC or OBJ_ATTR_GNU), or 0 if there are no attributes
+<a name="83"><span class="lineNum">      83 </span>            :    for that vendor to record and the vendor is OBJ_ATTR_GNU.  */</a>
+<span class="lineNum">      84 </span>            : static bfd_vma
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 : vendor_obj_attr_size (bfd *abfd, int vendor)</span>
+<span class="lineNum">      86 </span>            : {
+<span class="lineNum">      87 </span>            :   bfd_vma size;
+<span class="lineNum">      88 </span>            :   obj_attribute *attr;
+<span class="lineNum">      89 </span>            :   obj_attribute_list *list;
+<span class="lineNum">      90 </span>            :   int i;
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 :   const char *vendor_name = vendor_obj_attr_name (abfd, vendor);</span>
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :   if (!vendor_name)</span>
+<span class="lineNum">      94 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineNoCov">          0 :   attr = elf_known_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :   size = 0;</span>
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :   for (i = LEAST_KNOWN_OBJ_ATTRIBUTE; i &lt; NUM_KNOWN_OBJ_ATTRIBUTES; i++)</span>
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :     size += obj_attr_size (i, &amp;attr[i]);</span>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :   for (list = elf_other_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">     102 </span>            :        list;
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :        list = list-&gt;next)</span>
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :     size += obj_attr_size (list-&gt;tag, &amp;list-&gt;attr);</span>
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            :   /* &lt;size&gt; &lt;vendor_name&gt; NUL 0x1 &lt;size&gt; */
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 :   return ((size || vendor == OBJ_ATTR_PROC)</span>
+<span class="lineNum">     108 </span><span class="lineNoCov">          0 :           ? size + 10 + strlen (vendor_name)</span>
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :           : 0);</span>
+<span class="lineNum">     110 </span>            : }
+<span class="lineNum">     111 </span>            : 
+<a name="112"><span class="lineNum">     112 </span>            : /* Return the size of the object attributes section.  */</a>
+<span class="lineNum">     113 </span>            : bfd_vma
+<span class="lineNum">     114 </span><span class="lineNoCov">          0 : bfd_elf_obj_attr_size (bfd *abfd)</span>
+<span class="lineNum">     115 </span>            : {
+<span class="lineNum">     116 </span>            :   bfd_vma size;
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :   size = vendor_obj_attr_size (abfd, OBJ_ATTR_PROC);</span>
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :   size += vendor_obj_attr_size (abfd, OBJ_ATTR_GNU);</span>
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :   /* 'A' &lt;sections for each vendor&gt; */
+<span class="lineNum">     122 </span><span class="lineNoCov">          0 :   return (size ? size + 1 : 0);</span>
+<span class="lineNum">     123 </span>            : }
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span>            : /* Write VAL in uleb128 format to P, returning a pointer to the
+<a name="126"><span class="lineNum">     126 </span>            :    following byte.  */</a>
+<span class="lineNum">     127 </span>            : static bfd_byte *
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 : write_uleb128 (bfd_byte *p, unsigned int val)</span>
+<span class="lineNum">     129 </span>            : {
+<span class="lineNum">     130 </span>            :   bfd_byte c;
+<span class="lineNum">     131 </span>            :   do
+<span class="lineNum">     132 </span>            :     {
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :       c = val &amp; 0x7f;</span>
+<span class="lineNum">     134 </span><span class="lineNoCov">          0 :       val &gt;&gt;= 7;</span>
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 :       if (val)</span>
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :         c |= 0x80;</span>
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :       *(p++) = c;</span>
+<span class="lineNum">     138 </span>            :     }
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :   while (val);</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :   return p;</span>
+<span class="lineNum">     141 </span>            : }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span>            : /* Write attribute ATTR to butter P, and return a pointer to the following
+<a name="144"><span class="lineNum">     144 </span>            :    byte.  */</a>
+<span class="lineNum">     145 </span>            : static bfd_byte *
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 : write_obj_attribute (bfd_byte *p, unsigned int tag, obj_attribute *attr)</span>
+<span class="lineNum">     147 </span>            : {
+<span class="lineNum">     148 </span>            :   /* Suppress default entries.  */
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :   if (is_default_attr (attr))</span>
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :     return p;</span>
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :   p = write_uleb128 (p, tag);</span>
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_INT_VAL (attr-&gt;type))</span>
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :     p = write_uleb128 (p, attr-&gt;i);</span>
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :   if (ATTR_TYPE_HAS_STR_VAL (attr-&gt;type))</span>
+<span class="lineNum">     156 </span>            :     {
+<span class="lineNum">     157 </span>            :       int len;
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 :       len = strlen (attr-&gt;s) + 1;</span>
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :       memcpy (p, attr-&gt;s, len);</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :       p += len;</span>
+<span class="lineNum">     162 </span>            :     }
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :   return p;</span>
+<span class="lineNum">     165 </span>            : }
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            : /* Write the contents of the object attributes section (length SIZE)
+<a name="168"><span class="lineNum">     168 </span>            :    for VENDOR to CONTENTS.  */</a>
+<span class="lineNum">     169 </span>            : static void
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 : vendor_set_obj_attr_contents (bfd *abfd, bfd_byte *contents, bfd_vma size,</span>
+<span class="lineNum">     171 </span>            :                               int vendor)
+<span class="lineNum">     172 </span>            : {
+<span class="lineNum">     173 </span>            :   bfd_byte *p;
+<span class="lineNum">     174 </span>            :   obj_attribute *attr;
+<span class="lineNum">     175 </span>            :   obj_attribute_list *list;
+<span class="lineNum">     176 </span>            :   int i;
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :   const char *vendor_name = vendor_obj_attr_name (abfd, vendor);</span>
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :   size_t vendor_length = strlen (vendor_name) + 1;</span>
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :   p = contents;</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :   bfd_put_32 (abfd, size, p);</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :   p += 4;</span>
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :   memcpy (p, vendor_name, vendor_length);</span>
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :   p += vendor_length;</span>
+<span class="lineNum">     185 </span><span class="lineNoCov">          0 :   *(p++) = Tag_File;</span>
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :   bfd_put_32 (abfd, size - 4 - vendor_length, p);</span>
+<span class="lineNum">     187 </span><span class="lineNoCov">          0 :   p += 4;</span>
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :   attr = elf_known_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :   for (i = LEAST_KNOWN_OBJ_ATTRIBUTE; i &lt; NUM_KNOWN_OBJ_ATTRIBUTES; i++)</span>
+<span class="lineNum">     191 </span>            :     {
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :       unsigned int tag = i;</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :       if (get_elf_backend_data (abfd)-&gt;obj_attrs_order)</span>
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :         tag = get_elf_backend_data (abfd)-&gt;obj_attrs_order (i);</span>
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :       p = write_obj_attribute (p, tag, &amp;attr[tag]);</span>
+<span class="lineNum">     196 </span>            :     }
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :   for (list = elf_other_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">     199 </span>            :        list;
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :        list = list-&gt;next)</span>
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :     p = write_obj_attribute (p, list-&gt;tag, &amp;list-&gt;attr);</span>
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     203 </span>            : 
+<a name="204"><span class="lineNum">     204 </span>            : /* Write the contents of the object attributes section to CONTENTS.  */</a>
+<span class="lineNum">     205 </span>            : void
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 : bfd_elf_set_obj_attr_contents (bfd *abfd, bfd_byte *contents, bfd_vma size)</span>
+<span class="lineNum">     207 </span>            : {
+<span class="lineNum">     208 </span>            :   bfd_byte *p;
+<span class="lineNum">     209 </span>            :   int vendor;
+<span class="lineNum">     210 </span>            :   bfd_vma my_size;
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :   p = contents;</span>
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :   *(p++) = 'A';</span>
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :   my_size = 1;</span>
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 :   for (vendor = OBJ_ATTR_FIRST; vendor &lt;= OBJ_ATTR_LAST; vendor++)</span>
+<span class="lineNum">     216 </span>            :     {
+<span class="lineNum">     217 </span><span class="lineNoCov">          0 :       bfd_vma vendor_size = vendor_obj_attr_size (abfd, vendor);</span>
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :       if (vendor_size)</span>
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :         vendor_set_obj_attr_contents (abfd, p, vendor_size, vendor);</span>
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :       p += vendor_size;</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :       my_size += vendor_size;</span>
+<span class="lineNum">     222 </span>            :     }
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :   if (size != my_size)</span>
+<span class="lineNum">     225 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     227 </span>            : 
+<a name="228"><span class="lineNum">     228 </span>            : /* Allocate/find an object attribute.  */</a>
+<span class="lineNum">     229 </span>            : static obj_attribute *
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 : elf_new_obj_attr (bfd *abfd, int vendor, unsigned int tag)</span>
+<span class="lineNum">     231 </span>            : {
+<span class="lineNum">     232 </span>            :   obj_attribute *attr;
+<span class="lineNum">     233 </span>            :   obj_attribute_list *list;
+<span class="lineNum">     234 </span>            :   obj_attribute_list *p;
+<span class="lineNum">     235 </span>            :   obj_attribute_list **lastp;
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :   if (tag &lt; NUM_KNOWN_OBJ_ATTRIBUTES)</span>
+<span class="lineNum">     239 </span>            :     {
+<span class="lineNum">     240 </span>            :       /* Known tags are preallocated.  */
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :       attr = &amp;elf_known_obj_attributes (abfd)[vendor][tag];</span>
+<span class="lineNum">     242 </span>            :     }
+<span class="lineNum">     243 </span>            :   else
+<span class="lineNum">     244 </span>            :     {
+<span class="lineNum">     245 </span>            :       /* Create a new tag.  */
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :       list = (obj_attribute_list *)</span>
+<span class="lineNum">     247 </span>            :         bfd_alloc (abfd, sizeof (obj_attribute_list));
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :       memset (list, 0, sizeof (obj_attribute_list));</span>
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :       list-&gt;tag = tag;</span>
+<span class="lineNum">     250 </span>            :       /* Keep the tag list in order.  */
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :       lastp = &amp;elf_other_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :       for (p = *lastp; p; p = p-&gt;next)</span>
+<span class="lineNum">     253 </span>            :         {
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :           if (tag &lt; p-&gt;tag)</span>
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :           lastp = &amp;p-&gt;next;</span>
+<span class="lineNum">     257 </span>            :         }
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :       list-&gt;next = *lastp;</span>
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :       *lastp = list;</span>
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :       attr = &amp;list-&gt;attr;</span>
+<span class="lineNum">     261 </span>            :     }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 :   return attr;</span>
+<span class="lineNum">     264 </span>            : }
+<span class="lineNum">     265 </span>            : 
+<a name="266"><span class="lineNum">     266 </span>            : /* Return the value of an integer object attribute.  */</a>
+<span class="lineNum">     267 </span>            : int
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 : bfd_elf_get_obj_attr_int (bfd *abfd, int vendor, unsigned int tag)</span>
+<span class="lineNum">     269 </span>            : {
+<span class="lineNum">     270 </span>            :   obj_attribute_list *p;
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :   if (tag &lt; NUM_KNOWN_OBJ_ATTRIBUTES)</span>
+<span class="lineNum">     273 </span>            :     {
+<span class="lineNum">     274 </span>            :       /* Known tags are preallocated.  */
+<span class="lineNum">     275 </span><span class="lineNoCov">          0 :       return elf_known_obj_attributes (abfd)[vendor][tag].i;</span>
+<span class="lineNum">     276 </span>            :     }
+<span class="lineNum">     277 </span>            :   else
+<span class="lineNum">     278 </span>            :     {
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :       for (p = elf_other_obj_attributes (abfd)[vendor];</span>
+<span class="lineNum">     280 </span>            :            p;
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :            p = p-&gt;next)</span>
+<span class="lineNum">     282 </span>            :         {
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :           if (tag == p-&gt;tag)</span>
+<span class="lineNum">     284 </span><span class="lineNoCov">          0 :             return p-&gt;attr.i;</span>
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :           if (tag &lt; p-&gt;tag)</span>
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     287 </span>            :         }
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :       return 0;</span>
+<span class="lineNum">     289 </span>            :     }
+<span class="lineNum">     290 </span>            : }
+<span class="lineNum">     291 </span>            : 
+<a name="292"><span class="lineNum">     292 </span>            : /* Add an integer object attribute.  */</a>
+<span class="lineNum">     293 </span>            : void
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 : bfd_elf_add_obj_attr_int (bfd *abfd, int vendor, unsigned int tag, unsigned int i)</span>
+<span class="lineNum">     295 </span>            : {
+<span class="lineNum">     296 </span>            :   obj_attribute *attr;
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span><span class="lineNoCov">          0 :   attr = elf_new_obj_attr (abfd, vendor, tag);</span>
+<span class="lineNum">     299 </span><span class="lineNoCov">          0 :   attr-&gt;type = _bfd_elf_obj_attrs_arg_type (abfd, vendor, tag);</span>
+<span class="lineNum">     300 </span><span class="lineNoCov">          0 :   attr-&gt;i = i;</span>
+<span class="lineNum">     301 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     302 </span>            : 
+<a name="303"><span class="lineNum">     303 </span>            : /* Duplicate an object attribute string value.  */</a>
+<span class="lineNum">     304 </span>            : char *
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 : _bfd_elf_attr_strdup (bfd *abfd, const char * s)</span>
+<span class="lineNum">     306 </span>            : {
+<span class="lineNum">     307 </span>            :   char * p;
+<span class="lineNum">     308 </span>            :   int len;
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :   len = strlen (s) + 1;</span>
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :   p = (char *) bfd_alloc (abfd, len);</span>
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 :   return (char *) memcpy (p, s, len);</span>
+<span class="lineNum">     313 </span>            : }
+<span class="lineNum">     314 </span>            : 
+<a name="315"><span class="lineNum">     315 </span>            : /* Add a string object attribute.  */</a>
+<span class="lineNum">     316 </span>            : void
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 : bfd_elf_add_obj_attr_string (bfd *abfd, int vendor, unsigned int tag, const char *s)</span>
+<span class="lineNum">     318 </span>            : {
+<span class="lineNum">     319 </span>            :   obj_attribute *attr;
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :   attr = elf_new_obj_attr (abfd, vendor, tag);</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :   attr-&gt;type = _bfd_elf_obj_attrs_arg_type (abfd, vendor, tag);</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :   attr-&gt;s = _bfd_elf_attr_strdup (abfd, s);</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     325 </span>            : 
+<a name="326"><span class="lineNum">     326 </span>            : /* Add a int+string object attribute.  */</a>
+<span class="lineNum">     327 </span>            : void
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 : bfd_elf_add_obj_attr_int_string (bfd *abfd, int vendor,</span>
+<span class="lineNum">     329 </span>            :                                  unsigned int tag,
+<span class="lineNum">     330 </span>            :                                  unsigned int i, const char *s)
+<span class="lineNum">     331 </span>            : {
+<span class="lineNum">     332 </span>            :   obj_attribute *attr;
+<span class="lineNum">     333 </span>            : 
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :   attr = elf_new_obj_attr (abfd, vendor, tag);</span>
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :   attr-&gt;type = _bfd_elf_obj_attrs_arg_type (abfd, vendor, tag);</span>
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :   attr-&gt;i = i;</span>
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :   attr-&gt;s = _bfd_elf_attr_strdup (abfd, s);</span>
+<span class="lineNum">     338 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     339 </span>            : 
+<a name="340"><span class="lineNum">     340 </span>            : /* Copy the object attributes from IBFD to OBFD.  */</a>
+<span class="lineNum">     341 </span>            : void
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 : _bfd_elf_copy_obj_attributes (bfd *ibfd, bfd *obfd)</span>
+<span class="lineNum">     343 </span>            : {
+<span class="lineNum">     344 </span>            :   obj_attribute *in_attr;
+<span class="lineNum">     345 </span>            :   obj_attribute *out_attr;
+<span class="lineNum">     346 </span>            :   obj_attribute_list *list;
+<span class="lineNum">     347 </span>            :   int i;
+<span class="lineNum">     348 </span>            :   int vendor;
+<span class="lineNum">     349 </span>            : 
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :   if (bfd_get_flavour (ibfd) != bfd_target_elf_flavour</span>
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :       || bfd_get_flavour (obfd) != bfd_target_elf_flavour)</span>
+<span class="lineNum">     352 </span><span class="lineNoCov">          0 :     return;</span>
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span><span class="lineNoCov">          0 :   for (vendor = OBJ_ATTR_FIRST; vendor &lt;= OBJ_ATTR_LAST; vendor++)</span>
+<span class="lineNum">     355 </span>            :     {
+<span class="lineNum">     356 </span>            :       in_attr
+<span class="lineNum">     357 </span><span class="lineNoCov">          0 :         = &amp;elf_known_obj_attributes (ibfd)[vendor][LEAST_KNOWN_OBJ_ATTRIBUTE];</span>
+<span class="lineNum">     358 </span>            :       out_attr
+<span class="lineNum">     359 </span><span class="lineNoCov">          0 :         = &amp;elf_known_obj_attributes (obfd)[vendor][LEAST_KNOWN_OBJ_ATTRIBUTE];</span>
+<span class="lineNum">     360 </span><span class="lineNoCov">          0 :       for (i = LEAST_KNOWN_OBJ_ATTRIBUTE; i &lt; NUM_KNOWN_OBJ_ATTRIBUTES; i++)</span>
+<span class="lineNum">     361 </span>            :         {
+<span class="lineNum">     362 </span><span class="lineNoCov">          0 :           out_attr-&gt;type = in_attr-&gt;type;</span>
+<span class="lineNum">     363 </span><span class="lineNoCov">          0 :           out_attr-&gt;i = in_attr-&gt;i;</span>
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :           if (in_attr-&gt;s &amp;&amp; *in_attr-&gt;s)</span>
+<span class="lineNum">     365 </span><span class="lineNoCov">          0 :             out_attr-&gt;s = _bfd_elf_attr_strdup (obfd, in_attr-&gt;s);</span>
+<span class="lineNum">     366 </span><span class="lineNoCov">          0 :           in_attr++;</span>
+<span class="lineNum">     367 </span><span class="lineNoCov">          0 :           out_attr++;</span>
+<span class="lineNum">     368 </span>            :         }
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :       for (list = elf_other_obj_attributes (ibfd)[vendor];</span>
+<span class="lineNum">     371 </span>            :            list;
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 :            list = list-&gt;next)</span>
+<span class="lineNum">     373 </span>            :         {
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 :           in_attr = &amp;list-&gt;attr;</span>
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :           switch (in_attr-&gt;type &amp; (ATTR_TYPE_FLAG_INT_VAL | ATTR_TYPE_FLAG_STR_VAL))</span>
+<span class="lineNum">     376 </span>            :             {
+<span class="lineNum">     377 </span><span class="lineNoCov">          0 :             case ATTR_TYPE_FLAG_INT_VAL:</span>
+<span class="lineNum">     378 </span><span class="lineNoCov">          0 :               bfd_elf_add_obj_attr_int (obfd, vendor, list-&gt;tag, in_attr-&gt;i);</span>
+<span class="lineNum">     379 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :             case ATTR_TYPE_FLAG_STR_VAL:</span>
+<span class="lineNum">     381 </span><span class="lineNoCov">          0 :               bfd_elf_add_obj_attr_string (obfd, vendor, list-&gt;tag,</span>
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :                                            in_attr-&gt;s);</span>
+<span class="lineNum">     383 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     384 </span><span class="lineNoCov">          0 :             case ATTR_TYPE_FLAG_INT_VAL | ATTR_TYPE_FLAG_STR_VAL:</span>
+<span class="lineNum">     385 </span><span class="lineNoCov">          0 :               bfd_elf_add_obj_attr_int_string (obfd, vendor, list-&gt;tag,</span>
+<span class="lineNum">     386 </span><span class="lineNoCov">          0 :                                                in_attr-&gt;i, in_attr-&gt;s);</span>
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :             default:</span>
+<span class="lineNum">     389 </span><span class="lineNoCov">          0 :               abort ();</span>
+<span class="lineNum">     390 </span>            :             }
+<span class="lineNum">     391 </span>            :         }
+<span class="lineNum">     392 </span>            :     }
+<span class="lineNum">     393 </span>            : }
+<span class="lineNum">     394 </span>            : 
+<span class="lineNum">     395 </span>            : /* Determine whether a GNU object attribute tag takes an integer, a
+<a name="396"><span class="lineNum">     396 </span>            :    string or both.  */</a>
+<span class="lineNum">     397 </span>            : static int
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 : gnu_obj_attrs_arg_type (unsigned int tag)</span>
+<span class="lineNum">     399 </span>            : {
+<span class="lineNum">     400 </span>            :   /* Except for Tag_compatibility, for GNU attributes we follow the
+<span class="lineNum">     401 </span>            :      same rule ARM ones &gt; 32 follow: odd-numbered tags take strings
+<span class="lineNum">     402 </span>            :      and even-numbered tags take integers.  In addition, tag &amp; 2 is
+<span class="lineNum">     403 </span>            :      nonzero for architecture-independent tags and zero for
+<span class="lineNum">     404 </span>            :      architecture-dependent ones.  */
+<span class="lineNum">     405 </span><span class="lineNoCov">          0 :   if (tag == Tag_compatibility)</span>
+<span class="lineNum">     406 </span><span class="lineNoCov">          0 :     return 3;</span>
+<span class="lineNum">     407 </span>            :   else
+<span class="lineNum">     408 </span><span class="lineNoCov">          0 :     return (tag &amp; 1) != 0 ? 2 : 1;</span>
+<span class="lineNum">     409 </span>            : }
+<span class="lineNum">     410 </span>            : 
+<a name="411"><span class="lineNum">     411 </span>            : /* Determine what arguments an attribute tag takes.  */</a>
+<span class="lineNum">     412 </span>            : int
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 : _bfd_elf_obj_attrs_arg_type (bfd *abfd, int vendor, unsigned int tag)</span>
+<span class="lineNum">     414 </span>            : {
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :   switch (vendor)</span>
+<span class="lineNum">     416 </span>            :     {
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :     case OBJ_ATTR_PROC:</span>
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 :       return get_elf_backend_data (abfd)-&gt;obj_attrs_arg_type (tag);</span>
+<span class="lineNum">     419 </span>            :       break;
+<span class="lineNum">     420 </span><span class="lineNoCov">          0 :     case OBJ_ATTR_GNU:</span>
+<span class="lineNum">     421 </span><span class="lineNoCov">          0 :       return gnu_obj_attrs_arg_type (tag);</span>
+<span class="lineNum">     422 </span>            :       break;
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 :     default:</span>
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :       abort ();</span>
+<span class="lineNum">     425 </span>            :     }
+<span class="lineNum">     426 </span>            : }
+<span class="lineNum">     427 </span>            : 
+<a name="428"><span class="lineNum">     428 </span>            : /* Parse an object attributes section.  */</a>
+<span class="lineNum">     429 </span>            : void
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 : _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)</span>
+<span class="lineNum">     431 </span>            : {
+<span class="lineNum">     432 </span>            :   bfd_byte *contents;
+<span class="lineNum">     433 </span>            :   bfd_byte *p;
+<span class="lineNum">     434 </span>            :   bfd_byte *p_end;
+<span class="lineNum">     435 </span>            :   bfd_vma len;
+<span class="lineNum">     436 </span>            :   const char *std_sec;
+<span class="lineNum">     437 </span>            : 
+<span class="lineNum">     438 </span>            :   /* PR 17512: file: 2844a11d.  */
+<span class="lineNum">     439 </span><span class="lineNoCov">          0 :   if (hdr-&gt;sh_size == 0)</span>
+<span class="lineNum">     440 </span><span class="lineNoCov">          0 :     return;</span>
+<span class="lineNum">     441 </span><span class="lineNoCov">          0 :   contents = (bfd_byte *) bfd_malloc (hdr-&gt;sh_size);</span>
+<span class="lineNum">     442 </span><span class="lineNoCov">          0 :   if (!contents)</span>
+<span class="lineNum">     443 </span><span class="lineNoCov">          0 :     return;</span>
+<span class="lineNum">     444 </span><span class="lineNoCov">          0 :   if (!bfd_get_section_contents (abfd, hdr-&gt;bfd_section, contents, 0,</span>
+<span class="lineNum">     445 </span>            :                                  hdr-&gt;sh_size))
+<span class="lineNum">     446 </span>            :     {
+<span class="lineNum">     447 </span><span class="lineNoCov">          0 :       free (contents);</span>
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 :       return;</span>
+<span class="lineNum">     449 </span>            :     }
+<span class="lineNum">     450 </span><span class="lineNoCov">          0 :   p = contents;</span>
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 :   p_end = p + hdr-&gt;sh_size;</span>
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :   std_sec = get_elf_backend_data (abfd)-&gt;obj_attrs_vendor;</span>
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :   if (*(p++) == 'A')</span>
+<span class="lineNum">     455 </span>            :     {
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :       len = hdr-&gt;sh_size - 1;</span>
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :       while (len &gt; 0 &amp;&amp; p &lt; p_end - 4)</span>
+<span class="lineNum">     459 </span>            :         {
+<span class="lineNum">     460 </span>            :           unsigned namelen;
+<span class="lineNum">     461 </span>            :           bfd_vma section_len;
+<span class="lineNum">     462 </span>            :           int vendor;
+<span class="lineNum">     463 </span>            : 
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :           section_len = bfd_get_32 (abfd, p);</span>
+<span class="lineNum">     465 </span><span class="lineNoCov">          0 :           p += 4;</span>
+<span class="lineNum">     466 </span><span class="lineNoCov">          0 :           if (section_len == 0)</span>
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     468 </span><span class="lineNoCov">          0 :           if (section_len &gt; len)</span>
+<span class="lineNum">     469 </span><span class="lineNoCov">          0 :             section_len = len;</span>
+<span class="lineNum">     470 </span><span class="lineNoCov">          0 :           len -= section_len;</span>
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :           section_len -= 4;</span>
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 :           namelen = strnlen ((char *) p, section_len) + 1;</span>
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 :           if (namelen == 0 || namelen &gt;= section_len)</span>
+<span class="lineNum">     474 </span>            :             break;
+<span class="lineNum">     475 </span><span class="lineNoCov">          0 :           section_len -= namelen;</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :           if (std_sec &amp;&amp; strcmp ((char *) p, std_sec) == 0)</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :             vendor = OBJ_ATTR_PROC;</span>
+<span class="lineNum">     478 </span><span class="lineNoCov">          0 :           else if (strcmp ((char *) p, &quot;gnu&quot;) == 0)</span>
+<span class="lineNum">     479 </span><span class="lineNoCov">          0 :             vendor = OBJ_ATTR_GNU;</span>
+<span class="lineNum">     480 </span>            :           else
+<span class="lineNum">     481 </span>            :             {
+<span class="lineNum">     482 </span>            :               /* Other vendor section.  Ignore it.  */
+<span class="lineNum">     483 </span><span class="lineNoCov">          0 :               p += namelen + section_len;</span>
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :               continue;</span>
+<span class="lineNum">     485 </span>            :             }
+<span class="lineNum">     486 </span>            : 
+<span class="lineNum">     487 </span><span class="lineNoCov">          0 :           p += namelen;</span>
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :           while (section_len &gt; 0 &amp;&amp; p &lt; p_end)</span>
+<span class="lineNum">     489 </span>            :             {
+<span class="lineNum">     490 </span>            :               unsigned int tag;
+<span class="lineNum">     491 </span>            :               unsigned int n;
+<span class="lineNum">     492 </span>            :               unsigned int val;
+<span class="lineNum">     493 </span>            :               bfd_vma subsection_len;
+<span class="lineNum">     494 </span>            :               bfd_byte *end;
+<span class="lineNum">     495 </span>            : 
+<span class="lineNum">     496 </span><span class="lineNoCov">          0 :               tag = safe_read_leb128 (abfd, p, &amp;n, FALSE, p_end);</span>
+<span class="lineNum">     497 </span><span class="lineNoCov">          0 :               p += n;</span>
+<span class="lineNum">     498 </span><span class="lineNoCov">          0 :               if (p &lt; p_end - 4)</span>
+<span class="lineNum">     499 </span><span class="lineNoCov">          0 :                 subsection_len = bfd_get_32 (abfd, p);</span>
+<span class="lineNum">     500 </span>            :               else
+<span class="lineNum">     501 </span><span class="lineNoCov">          0 :                 subsection_len = 0;</span>
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :               p += 4;</span>
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :               if (subsection_len == 0)</span>
+<span class="lineNum">     504 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :               if (subsection_len &gt; section_len)</span>
+<span class="lineNum">     506 </span><span class="lineNoCov">          0 :                 subsection_len = section_len;</span>
+<span class="lineNum">     507 </span><span class="lineNoCov">          0 :               section_len -= subsection_len;</span>
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :               subsection_len -= n + 4;</span>
+<span class="lineNum">     509 </span><span class="lineNoCov">          0 :               end = p + subsection_len;</span>
+<span class="lineNum">     510 </span>            :               /* PR 17512: file: 0e8c0c90.  */
+<span class="lineNum">     511 </span><span class="lineNoCov">          0 :               if (end &gt; p_end)</span>
+<span class="lineNum">     512 </span><span class="lineNoCov">          0 :                 end = p_end;</span>
+<span class="lineNum">     513 </span><span class="lineNoCov">          0 :               switch (tag)</span>
+<span class="lineNum">     514 </span>            :                 {
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :                 case Tag_File:</span>
+<span class="lineNum">     516 </span><span class="lineNoCov">          0 :                   while (p &lt; end)</span>
+<span class="lineNum">     517 </span>            :                     {
+<span class="lineNum">     518 </span>            :                       int type;
+<span class="lineNum">     519 </span>            : 
+<span class="lineNum">     520 </span><span class="lineNoCov">          0 :                       tag = safe_read_leb128 (abfd, p, &amp;n, FALSE, end);</span>
+<span class="lineNum">     521 </span><span class="lineNoCov">          0 :                       p += n;</span>
+<span class="lineNum">     522 </span><span class="lineNoCov">          0 :                       type = _bfd_elf_obj_attrs_arg_type (abfd, vendor, tag);</span>
+<span class="lineNum">     523 </span><span class="lineNoCov">          0 :                       switch (type &amp; (ATTR_TYPE_FLAG_INT_VAL | ATTR_TYPE_FLAG_STR_VAL))</span>
+<span class="lineNum">     524 </span>            :                         {
+<span class="lineNum">     525 </span><span class="lineNoCov">          0 :                         case ATTR_TYPE_FLAG_INT_VAL | ATTR_TYPE_FLAG_STR_VAL:</span>
+<span class="lineNum">     526 </span><span class="lineNoCov">          0 :                           val = safe_read_leb128 (abfd, p, &amp;n, FALSE, end);</span>
+<span class="lineNum">     527 </span><span class="lineNoCov">          0 :                           p += n;</span>
+<span class="lineNum">     528 </span><span class="lineNoCov">          0 :                           bfd_elf_add_obj_attr_int_string (abfd, vendor, tag,</span>
+<span class="lineNum">     529 </span>            :                                                            val, (char *) p);
+<span class="lineNum">     530 </span><span class="lineNoCov">          0 :                           p += strlen ((char *)p) + 1;</span>
+<span class="lineNum">     531 </span><span class="lineNoCov">          0 :                           break;</span>
+<span class="lineNum">     532 </span><span class="lineNoCov">          0 :                         case ATTR_TYPE_FLAG_STR_VAL:</span>
+<span class="lineNum">     533 </span><span class="lineNoCov">          0 :                           bfd_elf_add_obj_attr_string (abfd, vendor, tag,</span>
+<span class="lineNum">     534 </span>            :                                                        (char *) p);
+<span class="lineNum">     535 </span><span class="lineNoCov">          0 :                           p += strlen ((char *)p) + 1;</span>
+<span class="lineNum">     536 </span><span class="lineNoCov">          0 :                           break;</span>
+<span class="lineNum">     537 </span><span class="lineNoCov">          0 :                         case ATTR_TYPE_FLAG_INT_VAL:</span>
+<span class="lineNum">     538 </span><span class="lineNoCov">          0 :                           val = safe_read_leb128 (abfd, p, &amp;n, FALSE, end);</span>
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 :                           p += n;</span>
+<span class="lineNum">     540 </span><span class="lineNoCov">          0 :                           bfd_elf_add_obj_attr_int (abfd, vendor, tag, val);</span>
+<span class="lineNum">     541 </span><span class="lineNoCov">          0 :                           break;</span>
+<span class="lineNum">     542 </span><span class="lineNoCov">          0 :                         default:</span>
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :                           abort ();</span>
+<span class="lineNum">     544 </span>            :                         }
+<span class="lineNum">     545 </span>            :                     }
+<span class="lineNum">     546 </span><span class="lineNoCov">          0 :                   break;</span>
+<span class="lineNum">     547 </span><span class="lineNoCov">          0 :                 case Tag_Section:</span>
+<span class="lineNum">     548 </span>            :                 case Tag_Symbol:
+<span class="lineNum">     549 </span>            :                   /* Don't have anywhere convenient to attach these.
+<span class="lineNum">     550 </span>            :                      Fall through for now.  */
+<span class="lineNum">     551 </span>            :                 default:
+<span class="lineNum">     552 </span>            :                   /* Ignore things we don't kow about.  */
+<span class="lineNum">     553 </span><span class="lineNoCov">          0 :                   p += subsection_len;</span>
+<span class="lineNum">     554 </span><span class="lineNoCov">          0 :                   subsection_len = 0;</span>
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :                   break;</span>
+<span class="lineNum">     556 </span>            :                 }
+<span class="lineNum">     557 </span>            :             }
+<span class="lineNum">     558 </span>            :         }
+<span class="lineNum">     559 </span>            :     }
+<span class="lineNum">     560 </span><span class="lineNoCov">          0 :   free (contents);</span>
+<span class="lineNum">     561 </span>            : }
+<span class="lineNum">     562 </span>            : 
+<span class="lineNum">     563 </span>            : /* Merge common object attributes from IBFD into OBFD.  Raise an error
+<span class="lineNum">     564 </span>            :    if there are conflicting attributes.  Any processor-specific
+<span class="lineNum">     565 </span>            :    attributes have already been merged.  This must be called from the
+<span class="lineNum">     566 </span>            :    bfd_elfNN_bfd_merge_private_bfd_data hook for each individual
+<span class="lineNum">     567 </span>            :    target, along with any target-specific merging.  Because there are
+<span class="lineNum">     568 </span>            :    no common attributes other than Tag_compatibility at present, and
+<span class="lineNum">     569 </span>            :    non-&quot;gnu&quot; Tag_compatibility is not expected in &quot;gnu&quot; sections, this
+<span class="lineNum">     570 </span>            :    is not presently called for targets without their own
+<span class="lineNum">     571 </span>            :    attributes.  */
+<a name="572"><span class="lineNum">     572 </span>            : </a>
+<span class="lineNum">     573 </span>            : bfd_boolean
+<span class="lineNum">     574 </span><span class="lineNoCov">          0 : _bfd_elf_merge_object_attributes (bfd *ibfd, struct bfd_link_info *info)</span>
+<span class="lineNum">     575 </span>            : {
+<span class="lineNum">     576 </span><span class="lineNoCov">          0 :   bfd *obfd = info-&gt;output_bfd;</span>
+<span class="lineNum">     577 </span>            :   obj_attribute *in_attr;
+<span class="lineNum">     578 </span>            :   obj_attribute *out_attr;
+<span class="lineNum">     579 </span>            :   int vendor;
+<span class="lineNum">     580 </span>            : 
+<span class="lineNum">     581 </span>            :   /* The only common attribute is currently Tag_compatibility,
+<span class="lineNum">     582 </span>            :      accepted in both processor and &quot;gnu&quot; sections.  */
+<span class="lineNum">     583 </span><span class="lineNoCov">          0 :   for (vendor = OBJ_ATTR_FIRST; vendor &lt;= OBJ_ATTR_LAST; vendor++)</span>
+<span class="lineNum">     584 </span>            :     {
+<span class="lineNum">     585 </span>            :       /* Handle Tag_compatibility.  The tags are only compatible if the flags
+<span class="lineNum">     586 </span>            :          are identical and, if the flags are '1', the strings are identical.
+<span class="lineNum">     587 </span>            :          If the flags are non-zero, then we can only use the string &quot;gnu&quot;.  */
+<span class="lineNum">     588 </span><span class="lineNoCov">          0 :       in_attr = &amp;elf_known_obj_attributes (ibfd)[vendor][Tag_compatibility];</span>
+<span class="lineNum">     589 </span><span class="lineNoCov">          0 :       out_attr = &amp;elf_known_obj_attributes (obfd)[vendor][Tag_compatibility];</span>
+<span class="lineNum">     590 </span>            : 
+<span class="lineNum">     591 </span><span class="lineNoCov">          0 :       if (in_attr-&gt;i &gt; 0 &amp;&amp; strcmp (in_attr-&gt;s, &quot;gnu&quot;) != 0)</span>
+<span class="lineNum">     592 </span>            :         {
+<span class="lineNum">     593 </span><span class="lineNoCov">          0 :           _bfd_error_handler</span>
+<span class="lineNum">     594 </span>            :             /* xgettext:c-format */
+<span class="lineNum">     595 </span><span class="lineNoCov">          0 :                 (_(&quot;error: %B: Object has vendor-specific contents that &quot;</span>
+<span class="lineNum">     596 </span>            :                    &quot;must be processed by the '%s' toolchain&quot;),
+<span class="lineNum">     597 </span>            :                  ibfd, in_attr-&gt;s);
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">     599 </span>            :         }
+<span class="lineNum">     600 </span>            : 
+<span class="lineNum">     601 </span><span class="lineNoCov">          0 :       if (in_attr-&gt;i != out_attr-&gt;i</span>
+<span class="lineNum">     602 </span><span class="lineNoCov">          0 :           || (in_attr-&gt;i != 0 &amp;&amp; strcmp (in_attr-&gt;s, out_attr-&gt;s) != 0))</span>
+<span class="lineNum">     603 </span>            :         {
+<span class="lineNum">     604 </span>            :           /* xgettext:c-format */
+<span class="lineNum">     605 </span><span class="lineNoCov">          0 :           _bfd_error_handler (_(&quot;error: %B: Object tag '%d, %s' is &quot;</span>
+<span class="lineNum">     606 </span>            :                                 &quot;incompatible with tag '%d, %s'&quot;),
+<span class="lineNum">     607 </span>            :                               ibfd,
+<span class="lineNum">     608 </span><span class="lineNoCov">          0 :                               in_attr-&gt;i, in_attr-&gt;s ? in_attr-&gt;s : &quot;&quot;,</span>
+<span class="lineNum">     609 </span><span class="lineNoCov">          0 :                               out_attr-&gt;i, out_attr-&gt;s ? out_attr-&gt;s : &quot;&quot;);</span>
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">     611 </span>            :         }
+<span class="lineNum">     612 </span>            :     }
+<span class="lineNum">     613 </span>            : 
+<span class="lineNum">     614 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     615 </span>            : }
+<span class="lineNum">     616 </span>            : 
+<span class="lineNum">     617 </span>            : /* Merge an unknown processor-specific attribute TAG, within the range
+<span class="lineNum">     618 </span>            :    of known attributes, from IBFD into OBFD; return TRUE if the link
+<span class="lineNum">     619 </span>            :    is OK, FALSE if it must fail.  */
+<a name="620"><span class="lineNum">     620 </span>            : </a>
+<span class="lineNum">     621 </span>            : bfd_boolean
+<span class="lineNum">     622 </span><span class="lineNoCov">          0 : _bfd_elf_merge_unknown_attribute_low (bfd *ibfd, bfd *obfd, int tag)</span>
+<span class="lineNum">     623 </span>            : {
+<span class="lineNum">     624 </span>            :   obj_attribute *in_attr;
+<span class="lineNum">     625 </span>            :   obj_attribute *out_attr;
+<span class="lineNum">     626 </span><span class="lineNoCov">          0 :   bfd *err_bfd = NULL;</span>
+<span class="lineNum">     627 </span><span class="lineNoCov">          0 :   bfd_boolean result = TRUE;</span>
+<span class="lineNum">     628 </span>            : 
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 :   in_attr = elf_known_obj_attributes_proc (ibfd);</span>
+<span class="lineNum">     630 </span><span class="lineNoCov">          0 :   out_attr = elf_known_obj_attributes_proc (obfd);</span>
+<span class="lineNum">     631 </span>            : 
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :   if (out_attr[tag].i != 0 || out_attr[tag].s != NULL)</span>
+<span class="lineNum">     633 </span><span class="lineNoCov">          0 :     err_bfd = obfd;</span>
+<span class="lineNum">     634 </span><span class="lineNoCov">          0 :   else if (in_attr[tag].i != 0 || in_attr[tag].s != NULL)</span>
+<span class="lineNum">     635 </span><span class="lineNoCov">          0 :     err_bfd = ibfd;</span>
+<span class="lineNum">     636 </span>            : 
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :   if (err_bfd != NULL)</span>
+<span class="lineNum">     638 </span>            :     result
+<span class="lineNum">     639 </span><span class="lineNoCov">          0 :       = get_elf_backend_data (err_bfd)-&gt;obj_attrs_handle_unknown (err_bfd, tag);</span>
+<span class="lineNum">     640 </span>            : 
+<span class="lineNum">     641 </span>            :   /* Only pass on attributes that match in both inputs.  */
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :   if (in_attr[tag].i != out_attr[tag].i</span>
+<span class="lineNum">     643 </span><span class="lineNoCov">          0 :       || (in_attr[tag].s == NULL) != (out_attr[tag].s == NULL)</span>
+<span class="lineNum">     644 </span><span class="lineNoCov">          0 :       || (in_attr[tag].s != NULL &amp;&amp; out_attr[tag].s != NULL</span>
+<span class="lineNum">     645 </span><span class="lineNoCov">          0 :           &amp;&amp; strcmp (in_attr[tag].s, out_attr[tag].s) != 0))</span>
+<span class="lineNum">     646 </span>            :     {
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :       out_attr[tag].i = 0;</span>
+<span class="lineNum">     648 </span><span class="lineNoCov">          0 :       out_attr[tag].s = NULL;</span>
+<span class="lineNum">     649 </span>            :     }
+<span class="lineNum">     650 </span>            : 
+<span class="lineNum">     651 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     652 </span>            : }
+<span class="lineNum">     653 </span>            : 
+<span class="lineNum">     654 </span>            : /* Merge the lists of unknown processor-specific attributes, outside
+<span class="lineNum">     655 </span>            :    the known range, from IBFD into OBFD; return TRUE if the link is
+<span class="lineNum">     656 </span>            :    OK, FALSE if it must fail.  */
+<a name="657"><span class="lineNum">     657 </span>            : </a>
+<span class="lineNum">     658 </span>            : bfd_boolean
+<span class="lineNum">     659 </span><span class="lineNoCov">          0 : _bfd_elf_merge_unknown_attribute_list (bfd *ibfd, bfd *obfd)</span>
+<span class="lineNum">     660 </span>            : {
+<span class="lineNum">     661 </span>            :   obj_attribute_list *in_list;
+<span class="lineNum">     662 </span>            :   obj_attribute_list *out_list;
+<span class="lineNum">     663 </span>            :   obj_attribute_list **out_listp;
+<span class="lineNum">     664 </span><span class="lineNoCov">          0 :   bfd_boolean result = TRUE;</span>
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span><span class="lineNoCov">          0 :   in_list = elf_other_obj_attributes_proc (ibfd);</span>
+<span class="lineNum">     667 </span><span class="lineNoCov">          0 :   out_listp = &amp;elf_other_obj_attributes_proc (obfd);</span>
+<span class="lineNum">     668 </span><span class="lineNoCov">          0 :   out_list = *out_listp;</span>
+<span class="lineNum">     669 </span>            : 
+<span class="lineNum">     670 </span><span class="lineNoCov">          0 :   for (; in_list || out_list; )</span>
+<span class="lineNum">     671 </span>            :     {
+<span class="lineNum">     672 </span><span class="lineNoCov">          0 :       bfd *err_bfd = NULL;</span>
+<span class="lineNum">     673 </span><span class="lineNoCov">          0 :       unsigned int err_tag = 0;</span>
+<span class="lineNum">     674 </span>            : 
+<span class="lineNum">     675 </span>            :       /* The tags for each list are in numerical order.  */
+<span class="lineNum">     676 </span>            :       /* If the tags are equal, then merge.  */
+<span class="lineNum">     677 </span><span class="lineNoCov">          0 :       if (out_list &amp;&amp; (!in_list || in_list-&gt;tag &gt; out_list-&gt;tag))</span>
+<span class="lineNum">     678 </span>            :         {
+<span class="lineNum">     679 </span>            :           /* This attribute only exists in obfd.  We can't merge, and we don't
+<span class="lineNum">     680 </span>            :              know what the tag means, so delete it.  */
+<span class="lineNum">     681 </span><span class="lineNoCov">          0 :           err_bfd = obfd;</span>
+<span class="lineNum">     682 </span><span class="lineNoCov">          0 :           err_tag = out_list-&gt;tag;</span>
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :           *out_listp = out_list-&gt;next;</span>
+<span class="lineNum">     684 </span><span class="lineNoCov">          0 :           out_list = *out_listp;</span>
+<span class="lineNum">     685 </span>            :         }
+<span class="lineNum">     686 </span><span class="lineNoCov">          0 :       else if (in_list &amp;&amp; (!out_list || in_list-&gt;tag &lt; out_list-&gt;tag))</span>
+<span class="lineNum">     687 </span>            :         {
+<span class="lineNum">     688 </span>            :           /* This attribute only exists in ibfd. We can't merge, and we don't
+<span class="lineNum">     689 </span>            :              know what the tag means, so ignore it.  */
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :           err_bfd = ibfd;</span>
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :           err_tag = in_list-&gt;tag;</span>
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 :           in_list = in_list-&gt;next;</span>
+<span class="lineNum">     693 </span>            :         }
+<span class="lineNum">     694 </span>            :       else /* The tags are equal.  */
+<span class="lineNum">     695 </span>            :         {
+<span class="lineNum">     696 </span>            :           /* As present, all attributes in the list are unknown, and
+<span class="lineNum">     697 </span>            :              therefore can't be merged meaningfully.  */
+<span class="lineNum">     698 </span><span class="lineNoCov">          0 :           err_bfd = obfd;</span>
+<span class="lineNum">     699 </span><span class="lineNoCov">          0 :           err_tag = out_list-&gt;tag;</span>
+<span class="lineNum">     700 </span>            : 
+<span class="lineNum">     701 </span>            :           /*  Only pass on attributes that match in both inputs.  */
+<span class="lineNum">     702 </span><span class="lineNoCov">          0 :           if (in_list-&gt;attr.i != out_list-&gt;attr.i</span>
+<span class="lineNum">     703 </span><span class="lineNoCov">          0 :               || (in_list-&gt;attr.s == NULL) != (out_list-&gt;attr.s == NULL)</span>
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :               || (in_list-&gt;attr.s &amp;&amp; out_list-&gt;attr.s</span>
+<span class="lineNum">     705 </span><span class="lineNoCov">          0 :                   &amp;&amp; strcmp (in_list-&gt;attr.s, out_list-&gt;attr.s) != 0))</span>
+<span class="lineNum">     706 </span>            :             {
+<span class="lineNum">     707 </span>            :               /* No match.  Delete the attribute.  */
+<span class="lineNum">     708 </span><span class="lineNoCov">          0 :               *out_listp = out_list-&gt;next;</span>
+<span class="lineNum">     709 </span><span class="lineNoCov">          0 :               out_list = *out_listp;</span>
+<span class="lineNum">     710 </span>            :             }
+<span class="lineNum">     711 </span>            :           else
+<span class="lineNum">     712 </span>            :             {
+<span class="lineNum">     713 </span>            :               /* Matched.  Keep the attribute and move to the next.  */
+<span class="lineNum">     714 </span><span class="lineNoCov">          0 :               out_list = out_list-&gt;next;</span>
+<span class="lineNum">     715 </span><span class="lineNoCov">          0 :               in_list = in_list-&gt;next;</span>
+<span class="lineNum">     716 </span>            :             }
+<span class="lineNum">     717 </span>            :         }
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span><span class="lineNoCov">          0 :       if (err_bfd)</span>
+<span class="lineNum">     720 </span><span class="lineNoCov">          0 :         result = result</span>
+<span class="lineNum">     721 </span><span class="lineNoCov">          0 :           &amp;&amp; get_elf_backend_data (err_bfd)-&gt;obj_attrs_handle_unknown (err_bfd,</span>
+<span class="lineNum">     722 </span>            :                                                                        err_tag);
+<span class="lineNum">     723 </span>            :     }
+<span class="lineNum">     724 </span>            : 
+<span class="lineNum">     725 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     726 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

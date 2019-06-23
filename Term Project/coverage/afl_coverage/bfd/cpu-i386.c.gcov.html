@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/cpu-i386.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - cpu-i386.c<span style="font-size: 80%;"> (source / <a href="cpu-i386.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* BFD support for the Intel 386 architecture.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1992-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : extern void * bfd_arch_i386_short_nop_fill (bfd_size_type, bfd_boolean,
+<span class="lineNum">      27 </span>            :                                             bfd_boolean);
+<a name="28"><span class="lineNum">      28 </span>            : </a>
+<span class="lineNum">      29 </span>            : static const bfd_arch_info_type *
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 : bfd_i386_compatible (const bfd_arch_info_type *a,</span>
+<span class="lineNum">      31 </span>            :                      const bfd_arch_info_type *b)
+<span class="lineNum">      32 </span>            : {
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :   const bfd_arch_info_type *compat = bfd_default_compatible (a, b);</span>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            :   /* Don't allow mixing x64_32 with x86_64.  */
+<span class="lineNum">      36 </span><span class="lineNoCov">          0 :   if (compat</span>
+<span class="lineNum">      37 </span><span class="lineNoCov">          0 :       &amp;&amp; (a-&gt;mach &amp; bfd_mach_x64_32) != (b-&gt;mach &amp; bfd_mach_x64_32))</span>
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :     compat = NULL;</span>
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :   return compat;</span>
+<span class="lineNum">      41 </span>            : }
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : /* Fill the buffer with zero or nop instruction if CODE is TRUE.  Use
+<span class="lineNum">      44 </span>            :    multi byte nop instructions if LONG_NOP is TRUE.  */
+<a name="45"><span class="lineNum">      45 </span>            : </a>
+<span class="lineNum">      46 </span>            : static void *
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 : bfd_arch_i386_fill (bfd_size_type count, bfd_boolean code,</span>
+<span class="lineNum">      48 </span>            :                     bfd_boolean long_nop)
+<span class="lineNum">      49 </span>            : {
+<span class="lineNum">      50 </span>            :   /* nop */
+<span class="lineNum">      51 </span>            :   static const char nop_1[] = { 0x90 };
+<span class="lineNum">      52 </span>            :   /* xchg %ax,%ax */
+<span class="lineNum">      53 </span>            :   static const char nop_2[] = { 0x66, 0x90 };
+<span class="lineNum">      54 </span>            :   /* nopl (%[re]ax) */
+<span class="lineNum">      55 </span>            :   static const char nop_3[] = { 0x0f, 0x1f, 0x00 };
+<span class="lineNum">      56 </span>            :   /* nopl 0(%[re]ax) */
+<span class="lineNum">      57 </span>            :   static const char nop_4[] = { 0x0f, 0x1f, 0x40, 0x00 };
+<span class="lineNum">      58 </span>            :   /* nopl 0(%[re]ax,%[re]ax,1) */
+<span class="lineNum">      59 </span>            :   static const char nop_5[] = { 0x0f, 0x1f, 0x44, 0x00, 0x00 };
+<span class="lineNum">      60 </span>            :   /* nopw 0(%[re]ax,%[re]ax,1) */
+<span class="lineNum">      61 </span>            :   static const char nop_6[] = { 0x66, 0x0f, 0x1f, 0x44, 0x00, 0x00 };
+<span class="lineNum">      62 </span>            :   /* nopl 0L(%[re]ax) */
+<span class="lineNum">      63 </span>            :   static const char nop_7[] = { 0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00 };
+<span class="lineNum">      64 </span>            :   /* nopl 0L(%[re]ax,%[re]ax,1) */
+<span class="lineNum">      65 </span>            :   static const char nop_8[] =
+<span class="lineNum">      66 </span>            :     { 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00};
+<span class="lineNum">      67 </span>            :   /* nopw 0L(%[re]ax,%[re]ax,1) */
+<span class="lineNum">      68 </span>            :   static const char nop_9[] =
+<span class="lineNum">      69 </span>            :     { 0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+<span class="lineNum">      70 </span>            :   /* nopw %cs:0L(%[re]ax,%[re]ax,1) */
+<span class="lineNum">      71 </span>            :   static const char nop_10[] =
+<span class="lineNum">      72 </span>            :     { 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+<span class="lineNum">      73 </span>            :   static const char *const nops[] =
+<span class="lineNum">      74 </span>            :     { nop_1, nop_2, nop_3, nop_4, nop_5,
+<span class="lineNum">      75 </span>            :       nop_6, nop_7, nop_8, nop_9, nop_10 };
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 :   bfd_size_type nop_size = long_nop ? ARRAY_SIZE (nops) : 2;</span>
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 :   void *fill = bfd_malloc (count);</span>
+<span class="lineNum">      79 </span><span class="lineNoCov">          0 :   if (fill == NULL)</span>
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 :     return fill;</span>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :   if (code)</span>
+<span class="lineNum">      83 </span>            :     {
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :       bfd_byte *p = fill;</span>
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 :       while (count &gt;= nop_size)</span>
+<span class="lineNum">      86 </span>            :         {
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :           memcpy (p, nops[nop_size - 1], nop_size);</span>
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :           p += nop_size;</span>
+<span class="lineNum">      89 </span><span class="lineNoCov">          0 :           count -= nop_size;</span>
+<span class="lineNum">      90 </span>            :         }
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 :       if (count != 0)</span>
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :         memcpy (p, nops[count - 1], count);</span>
+<span class="lineNum">      93 </span>            :     }
+<span class="lineNum">      94 </span>            :   else
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :     memset (fill, 0, count);</span>
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :   return fill;</span>
+<span class="lineNum">      98 </span>            : }
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : /* Fill the buffer with zero or short nop instruction if CODE is TRUE.  */
+<a name="101"><span class="lineNum">     101 </span>            : </a>
+<span class="lineNum">     102 </span>            : void *
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 : bfd_arch_i386_short_nop_fill (bfd_size_type count,</span>
+<span class="lineNum">     104 </span>            :                               bfd_boolean is_bigendian ATTRIBUTE_UNUSED,
+<span class="lineNum">     105 </span>            :                               bfd_boolean code)
+<span class="lineNum">     106 </span>            : {
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 :   return bfd_arch_i386_fill (count, code, FALSE);</span>
+<span class="lineNum">     108 </span>            : }
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            : /* Fill the buffer with zero or long nop instruction if CODE is TRUE.  */
+<a name="111"><span class="lineNum">     111 </span>            : </a>
+<span class="lineNum">     112 </span>            : static void *
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 : bfd_arch_i386_long_nop_fill (bfd_size_type count,</span>
+<span class="lineNum">     114 </span>            :                              bfd_boolean is_bigendian ATTRIBUTE_UNUSED,
+<span class="lineNum">     115 </span>            :                              bfd_boolean code)
+<span class="lineNum">     116 </span>            : {
+<span class="lineNum">     117 </span><span class="lineNoCov">          0 :   return bfd_arch_i386_fill (count, code, TRUE);</span>
+<span class="lineNum">     118 </span>            : }
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            : /* Fill the buffer with zero, or one-byte nop instructions if CODE is TRUE.  */
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<span class="lineNum">     122 </span>            : static void *
+<span class="lineNum">     123 </span><span class="lineNoCov">          0 : bfd_arch_i386_onebyte_nop_fill (bfd_size_type count,</span>
+<span class="lineNum">     124 </span>            :                                 bfd_boolean is_bigendian ATTRIBUTE_UNUSED,
+<span class="lineNum">     125 </span>            :                                 bfd_boolean code)
+<span class="lineNum">     126 </span>            : {
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :   void *fill = bfd_malloc (count);</span>
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :   if (fill != NULL)</span>
+<span class="lineNum">     129 </span><span class="lineNoCov">          0 :     memset (fill, code ? 0x90 : 0, count);</span>
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :   return fill;</span>
+<span class="lineNum">     131 </span>            : }
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span>            : static const bfd_arch_info_type bfd_x64_32_nacl_arch =
+<span class="lineNum">     135 </span>            : {
+<span class="lineNum">     136 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     137 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     138 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     139 </span>            :   bfd_arch_i386,
+<span class="lineNum">     140 </span>            :   bfd_mach_x64_32_nacl,
+<span class="lineNum">     141 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     142 </span>            :   &quot;i386:x64-32:nacl&quot;,
+<span class="lineNum">     143 </span>            :   3,
+<span class="lineNum">     144 </span>            :   FALSE,
+<span class="lineNum">     145 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     146 </span>            :   bfd_default_scan,
+<span class="lineNum">     147 </span>            :   bfd_arch_i386_onebyte_nop_fill,
+<span class="lineNum">     148 </span>            :   NULL
+<span class="lineNum">     149 </span>            : };
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            : static const bfd_arch_info_type bfd_x86_64_nacl_arch =
+<span class="lineNum">     152 </span>            : {
+<span class="lineNum">     153 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     154 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     155 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     156 </span>            :   bfd_arch_i386,
+<span class="lineNum">     157 </span>            :   bfd_mach_x86_64_nacl,
+<span class="lineNum">     158 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     159 </span>            :   &quot;i386:x86-64:nacl&quot;,
+<span class="lineNum">     160 </span>            :   3,
+<span class="lineNum">     161 </span>            :   FALSE,
+<span class="lineNum">     162 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     163 </span>            :   bfd_default_scan,
+<span class="lineNum">     164 </span>            :   bfd_arch_i386_onebyte_nop_fill,
+<span class="lineNum">     165 </span>            :   &amp;bfd_x64_32_nacl_arch
+<span class="lineNum">     166 </span>            : };
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            : const bfd_arch_info_type bfd_i386_nacl_arch =
+<span class="lineNum">     169 </span>            : {
+<span class="lineNum">     170 </span>            :   32,   /* 32 bits in a word */
+<span class="lineNum">     171 </span>            :   32,   /* 32 bits in an address */
+<span class="lineNum">     172 </span>            :   8,    /* 8 bits in a byte */
+<span class="lineNum">     173 </span>            :   bfd_arch_i386,
+<span class="lineNum">     174 </span>            :   bfd_mach_i386_i386_nacl,
+<span class="lineNum">     175 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     176 </span>            :   &quot;i386:nacl&quot;,
+<span class="lineNum">     177 </span>            :   3,
+<span class="lineNum">     178 </span>            :   TRUE,
+<span class="lineNum">     179 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     180 </span>            :   bfd_default_scan,
+<span class="lineNum">     181 </span>            :   bfd_arch_i386_onebyte_nop_fill,
+<span class="lineNum">     182 </span>            :   &amp;bfd_x86_64_nacl_arch
+<span class="lineNum">     183 </span>            : };
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            : static const bfd_arch_info_type bfd_x64_32_arch_intel_syntax =
+<span class="lineNum">     186 </span>            : {
+<span class="lineNum">     187 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     188 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     189 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     190 </span>            :   bfd_arch_i386,
+<span class="lineNum">     191 </span>            :   bfd_mach_x64_32_intel_syntax,
+<span class="lineNum">     192 </span>            :   &quot;i386:intel&quot;,
+<span class="lineNum">     193 </span>            :   &quot;i386:x64-32:intel&quot;,
+<span class="lineNum">     194 </span>            :   3,
+<span class="lineNum">     195 </span>            :   FALSE,
+<span class="lineNum">     196 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     197 </span>            :   bfd_default_scan,
+<span class="lineNum">     198 </span>            :   bfd_arch_i386_long_nop_fill,
+<span class="lineNum">     199 </span>            :   &amp;bfd_i386_nacl_arch
+<span class="lineNum">     200 </span>            : };
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            : static const bfd_arch_info_type bfd_x86_64_arch_intel_syntax =
+<span class="lineNum">     203 </span>            : {
+<span class="lineNum">     204 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     205 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     206 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     207 </span>            :   bfd_arch_i386,
+<span class="lineNum">     208 </span>            :   bfd_mach_x86_64_intel_syntax,
+<span class="lineNum">     209 </span>            :   &quot;i386:intel&quot;,
+<span class="lineNum">     210 </span>            :   &quot;i386:x86-64:intel&quot;,
+<span class="lineNum">     211 </span>            :   3,
+<span class="lineNum">     212 </span>            :   FALSE,
+<span class="lineNum">     213 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     214 </span>            :   bfd_default_scan,
+<span class="lineNum">     215 </span>            :   bfd_arch_i386_long_nop_fill,
+<span class="lineNum">     216 </span>            :   &amp;bfd_x64_32_arch_intel_syntax,
+<span class="lineNum">     217 </span>            : };
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span>            : static const bfd_arch_info_type bfd_i386_arch_intel_syntax =
+<span class="lineNum">     220 </span>            : {
+<span class="lineNum">     221 </span>            :   32,   /* 32 bits in a word */
+<span class="lineNum">     222 </span>            :   32,   /* 32 bits in an address */
+<span class="lineNum">     223 </span>            :   8,    /* 8 bits in a byte */
+<span class="lineNum">     224 </span>            :   bfd_arch_i386,
+<span class="lineNum">     225 </span>            :   bfd_mach_i386_i386_intel_syntax,
+<span class="lineNum">     226 </span>            :   &quot;i386:intel&quot;,
+<span class="lineNum">     227 </span>            :   &quot;i386:intel&quot;,
+<span class="lineNum">     228 </span>            :   3,
+<span class="lineNum">     229 </span>            :   TRUE,
+<span class="lineNum">     230 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     231 </span>            :   bfd_default_scan,
+<span class="lineNum">     232 </span>            :   bfd_arch_i386_short_nop_fill,
+<span class="lineNum">     233 </span>            :   &amp;bfd_x86_64_arch_intel_syntax
+<span class="lineNum">     234 </span>            : };
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            : static const bfd_arch_info_type i8086_arch =
+<span class="lineNum">     237 </span>            : {
+<span class="lineNum">     238 </span>            :   32,   /* 32 bits in a word */
+<span class="lineNum">     239 </span>            :   32,   /* 32 bits in an address (well, not really) */
+<span class="lineNum">     240 </span>            :   8,    /* 8 bits in a byte */
+<span class="lineNum">     241 </span>            :   bfd_arch_i386,
+<span class="lineNum">     242 </span>            :   bfd_mach_i386_i8086,
+<span class="lineNum">     243 </span>            :   &quot;i8086&quot;,
+<span class="lineNum">     244 </span>            :   &quot;i8086&quot;,
+<span class="lineNum">     245 </span>            :   3,
+<span class="lineNum">     246 </span>            :   FALSE,
+<span class="lineNum">     247 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     248 </span>            :   bfd_default_scan,
+<span class="lineNum">     249 </span>            :   bfd_arch_i386_short_nop_fill,
+<span class="lineNum">     250 </span>            :   &amp;bfd_i386_arch_intel_syntax
+<span class="lineNum">     251 </span>            : };
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span>            : static const bfd_arch_info_type bfd_x64_32_arch =
+<span class="lineNum">     254 </span>            : {
+<span class="lineNum">     255 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     256 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     257 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     258 </span>            :   bfd_arch_i386,
+<span class="lineNum">     259 </span>            :   bfd_mach_x64_32,
+<span class="lineNum">     260 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     261 </span>            :   &quot;i386:x64-32&quot;,
+<span class="lineNum">     262 </span>            :   3,
+<span class="lineNum">     263 </span>            :   FALSE,
+<span class="lineNum">     264 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     265 </span>            :   bfd_default_scan,
+<span class="lineNum">     266 </span>            :   bfd_arch_i386_long_nop_fill,
+<span class="lineNum">     267 </span>            :   &amp;i8086_arch
+<span class="lineNum">     268 </span>            : };
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span>            : static const bfd_arch_info_type bfd_x86_64_arch =
+<span class="lineNum">     271 </span>            : {
+<span class="lineNum">     272 </span>            :   64, /* 64 bits in a word */
+<span class="lineNum">     273 </span>            :   64, /* 64 bits in an address */
+<span class="lineNum">     274 </span>            :   8,  /* 8 bits in a byte */
+<span class="lineNum">     275 </span>            :   bfd_arch_i386,
+<span class="lineNum">     276 </span>            :   bfd_mach_x86_64,
+<span class="lineNum">     277 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     278 </span>            :   &quot;i386:x86-64&quot;,
+<span class="lineNum">     279 </span>            :   3,
+<span class="lineNum">     280 </span>            :   FALSE,
+<span class="lineNum">     281 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     282 </span>            :   bfd_default_scan,
+<span class="lineNum">     283 </span>            :   bfd_arch_i386_long_nop_fill,
+<span class="lineNum">     284 </span>            :   &amp;bfd_x64_32_arch
+<span class="lineNum">     285 </span>            : };
+<span class="lineNum">     286 </span>            : 
+<span class="lineNum">     287 </span>            : const bfd_arch_info_type bfd_i386_arch =
+<span class="lineNum">     288 </span>            : {
+<span class="lineNum">     289 </span>            :   32,   /* 32 bits in a word */
+<span class="lineNum">     290 </span>            :   32,   /* 32 bits in an address */
+<span class="lineNum">     291 </span>            :   8,    /* 8 bits in a byte */
+<span class="lineNum">     292 </span>            :   bfd_arch_i386,
+<span class="lineNum">     293 </span>            :   bfd_mach_i386_i386,
+<span class="lineNum">     294 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     295 </span>            :   &quot;i386&quot;,
+<span class="lineNum">     296 </span>            :   3,
+<span class="lineNum">     297 </span>            :   TRUE,
+<span class="lineNum">     298 </span>            :   bfd_i386_compatible,
+<span class="lineNum">     299 </span>            :   bfd_default_scan,
+<span class="lineNum">     300 </span>            :   bfd_arch_i386_short_nop_fill,
+<span class="lineNum">     301 </span>            :   &amp;bfd_x86_64_arch
+<span class="lineNum">     302 </span>            : };
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

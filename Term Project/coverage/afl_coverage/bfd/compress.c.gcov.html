@@ -1,0 +1,687 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/compress.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - compress.c<span style="font-size: 80%;"> (source / <a href="compress.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">222</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Compressed section support (intended for debug sections).</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2008-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      22 </span>            : #include &lt;zlib.h&gt;
+<span class="lineNum">      23 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;safe-ctype.h&quot;
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : #define MAX_COMPRESSION_HEADER_SIZE 24
+<a name="28"><span class="lineNum">      28 </span>            : </a>
+<span class="lineNum">      29 </span>            : static bfd_boolean
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 : decompress_contents (bfd_byte *compressed_buffer,</span>
+<span class="lineNum">      31 </span>            :                      bfd_size_type compressed_size,
+<span class="lineNum">      32 </span>            :                      bfd_byte *uncompressed_buffer,
+<span class="lineNum">      33 </span>            :                      bfd_size_type uncompressed_size)
+<span class="lineNum">      34 </span>            : {
+<span class="lineNum">      35 </span>            :   z_stream strm;
+<span class="lineNum">      36 </span>            :   int rc;
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :   /* It is possible the section consists of several compressed
+<span class="lineNum">      39 </span>            :      buffers concatenated together, so we uncompress in a loop.  */
+<span class="lineNum">      40 </span>            :   /* PR 18313: The state field in the z_stream structure is supposed
+<span class="lineNum">      41 </span>            :      to be invisible to the user (ie us), but some compilers will
+<span class="lineNum">      42 </span>            :      still complain about it being used without initialisation.  So
+<span class="lineNum">      43 </span>            :      we first zero the entire z_stream structure and then set the fields
+<span class="lineNum">      44 </span>            :      that we need.  */
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :   memset (&amp; strm, 0, sizeof strm);</span>
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :   strm.avail_in = compressed_size;</span>
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :   strm.next_in = (Bytef*) compressed_buffer;</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :   strm.avail_out = uncompressed_size;</span>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            :   BFD_ASSERT (Z_OK == 0);
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 :   rc = inflateInit (&amp;strm);</span>
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :   while (strm.avail_in &gt; 0 &amp;&amp; strm.avail_out &gt; 0)</span>
+<span class="lineNum">      53 </span>            :     {
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :       if (rc != Z_OK)</span>
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :       strm.next_out = ((Bytef*) uncompressed_buffer</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :                        + (uncompressed_size - strm.avail_out));</span>
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :       rc = inflate (&amp;strm, Z_FINISH);</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :       if (rc != Z_STREAM_END)</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :       rc = inflateReset (&amp;strm);</span>
+<span class="lineNum">      62 </span>            :     }
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :   rc |= inflateEnd (&amp;strm);</span>
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :   return rc == Z_OK &amp;&amp; strm.avail_out == 0;</span>
+<span class="lineNum">      65 </span>            : }
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : /* Compress data of the size specified in @var{uncompressed_size}
+<span class="lineNum">      68 </span>            :    and pointed to by @var{uncompressed_buffer} using zlib and store
+<span class="lineNum">      69 </span>            :    as the contents field.  This function assumes the contents
+<span class="lineNum">      70 </span>            :    field was allocated using bfd_malloc() or equivalent.
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :    Return the uncompressed size if the full section contents is
+<span class="lineNum">      73 </span>            :    compressed successfully.  Otherwise return 0.  */
+<a name="74"><span class="lineNum">      74 </span>            : </a>
+<span class="lineNum">      75 </span>            : static bfd_size_type
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 : bfd_compress_section_contents (bfd *abfd, sec_ptr sec,</span>
+<span class="lineNum">      77 </span>            :                                bfd_byte *uncompressed_buffer,
+<span class="lineNum">      78 </span>            :                                bfd_size_type uncompressed_size)
+<span class="lineNum">      79 </span>            : {
+<span class="lineNum">      80 </span>            :   uLong compressed_size;
+<span class="lineNum">      81 </span>            :   bfd_byte *buffer;
+<span class="lineNum">      82 </span>            :   bfd_size_type buffer_size;
+<span class="lineNum">      83 </span>            :   bfd_boolean decompress;
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :   int zlib_size = 0;</span>
+<span class="lineNum">      85 </span>            :   int orig_compression_header_size;
+<span class="lineNum">      86 </span>            :   bfd_size_type orig_uncompressed_size;
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :   int header_size = bfd_get_compression_header_size (abfd, NULL);</span>
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :   bfd_boolean compressed</span>
+<span class="lineNum">      89 </span>            :     = bfd_is_section_compressed_with_header (abfd, sec,
+<span class="lineNum">      90 </span>            :                                              &amp;orig_compression_header_size,
+<span class="lineNum">      91 </span>            :                                              &amp;orig_uncompressed_size);
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :   /* Either ELF compression header or the 12-byte, &quot;ZLIB&quot; + 8-byte size,
+<span class="lineNum">      94 </span>            :      overhead in .zdebug* section.  */
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :   if (!header_size)</span>
+<span class="lineNum">      96 </span><span class="lineNoCov">          0 :      header_size = 12;</span>
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :   if (compressed)</span>
+<span class="lineNum">      99 </span>            :     {
+<span class="lineNum">     100 </span>            :       /* We shouldn't decompress unsupported compressed section.  */
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :       if (orig_compression_header_size &lt; 0)</span>
+<span class="lineNum">     102 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :       /* Different compression schemes.  Just move the compressed section
+<span class="lineNum">     105 </span>            :          contents to the right position. */
+<span class="lineNum">     106 </span><span class="lineNoCov">          0 :       if (orig_compression_header_size == 0)</span>
+<span class="lineNum">     107 </span>            :         {
+<span class="lineNum">     108 </span>            :           /* Convert it from .zdebug* section.  Get the uncompressed
+<span class="lineNum">     109 </span>            :              size first.  We need to substract the 12-byte overhead in
+<span class="lineNum">     110 </span>            :              .zdebug* section.  Set orig_compression_header_size to
+<span class="lineNum">     111 </span>            :              the 12-bye overhead.  */
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 :           orig_compression_header_size = 12;</span>
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :           zlib_size = uncompressed_size - 12;</span>
+<span class="lineNum">     114 </span>            :         }
+<span class="lineNum">     115 </span>            :       else
+<span class="lineNum">     116 </span>            :         {
+<span class="lineNum">     117 </span>            :           /* Convert it to .zdebug* section.  */
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :           zlib_size = uncompressed_size - orig_compression_header_size;</span>
+<span class="lineNum">     119 </span>            :         }
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :       /* Add the header size.  */
+<span class="lineNum">     122 </span><span class="lineNoCov">          0 :       compressed_size = zlib_size + header_size;</span>
+<span class="lineNum">     123 </span>            :     }
+<span class="lineNum">     124 </span>            :   else
+<span class="lineNum">     125 </span><span class="lineNoCov">          0 :     compressed_size = compressBound (uncompressed_size) + header_size;</span>
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span>            :   /* Uncompress if it leads to smaller size.  */
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :   if (compressed &amp;&amp; compressed_size &gt; orig_uncompressed_size)</span>
+<span class="lineNum">     129 </span>            :     {
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :       decompress = TRUE;</span>
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :       buffer_size = orig_uncompressed_size;</span>
+<span class="lineNum">     132 </span>            :     }
+<span class="lineNum">     133 </span>            :   else
+<span class="lineNum">     134 </span>            :     {
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 :       decompress = FALSE;</span>
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :       buffer_size = compressed_size;</span>
+<span class="lineNum">     137 </span>            :     }
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :   buffer = (bfd_byte *) bfd_alloc (abfd, buffer_size);</span>
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :   if (buffer == NULL)</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :   if (compressed)</span>
+<span class="lineNum">     143 </span>            :     {
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 :       sec-&gt;size = orig_uncompressed_size;</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :       if (decompress)</span>
+<span class="lineNum">     146 </span>            :         {
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :           if (!decompress_contents (uncompressed_buffer</span>
+<span class="lineNum">     148 </span>            :                                     + orig_compression_header_size,
+<span class="lineNum">     149 </span>            :                                     zlib_size, buffer, buffer_size))
+<span class="lineNum">     150 </span>            :             {
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :               bfd_set_error (bfd_error_bad_value);</span>
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :               bfd_release (abfd, buffer);</span>
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :               return 0;</span>
+<span class="lineNum">     154 </span>            :             }
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :           free (uncompressed_buffer);</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :           sec-&gt;contents = buffer;</span>
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :           sec-&gt;compress_status = COMPRESS_SECTION_DONE;</span>
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :           return orig_uncompressed_size;</span>
+<span class="lineNum">     159 </span>            :         }
+<span class="lineNum">     160 </span>            :       else
+<span class="lineNum">     161 </span>            :         {
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 :           bfd_update_compression_header (abfd, buffer, sec);</span>
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :           memmove (buffer + header_size,</span>
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :                    uncompressed_buffer + orig_compression_header_size,</span>
+<span class="lineNum">     165 </span>            :                    zlib_size);
+<span class="lineNum">     166 </span>            :         }
+<span class="lineNum">     167 </span>            :     }
+<span class="lineNum">     168 </span>            :   else
+<span class="lineNum">     169 </span>            :     {
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :       if (compress ((Bytef*) buffer + header_size,</span>
+<span class="lineNum">     171 </span>            :                     &amp;compressed_size,
+<span class="lineNum">     172 </span>            :                     (const Bytef*) uncompressed_buffer,
+<span class="lineNum">     173 </span>            :                     uncompressed_size) != Z_OK)
+<span class="lineNum">     174 </span>            :         {
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :           bfd_release (abfd, buffer);</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :           bfd_set_error (bfd_error_bad_value);</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :           return 0;</span>
+<span class="lineNum">     178 </span>            :         }
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :       compressed_size += header_size;</span>
+<span class="lineNum">     181 </span>            :       /* PR binutils/18087: If compression didn't make the section smaller,
+<span class="lineNum">     182 </span>            :          just keep it uncompressed.  */
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :       if (compressed_size &lt; uncompressed_size)</span>
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :         bfd_update_compression_header (abfd, buffer, sec);</span>
+<span class="lineNum">     185 </span>            :       else
+<span class="lineNum">     186 </span>            :         {
+<span class="lineNum">     187 </span>            :           /* NOTE: There is a small memory leak here since
+<span class="lineNum">     188 </span>            :              uncompressed_buffer is malloced and won't be freed.  */
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :           bfd_release (abfd, buffer);</span>
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :           sec-&gt;contents = uncompressed_buffer;</span>
+<span class="lineNum">     191 </span><span class="lineNoCov">          0 :           sec-&gt;compress_status = COMPRESS_SECTION_NONE;</span>
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :           return uncompressed_size;</span>
+<span class="lineNum">     193 </span>            :         }
+<span class="lineNum">     194 </span>            :     }
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :   free (uncompressed_buffer);</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :   sec-&gt;contents = buffer;</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :   sec-&gt;size = compressed_size;</span>
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :   sec-&gt;compress_status = COMPRESS_SECTION_DONE;</span>
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :   return uncompressed_size;</span>
+<span class="lineNum">     202 </span>            : }
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span>            : /*
+<span class="lineNum">     205 </span>            : FUNCTION
+<span class="lineNum">     206 </span>            :         bfd_get_full_section_contents
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span>            : SYNOPSIS
+<span class="lineNum">     209 </span>            :         bfd_boolean bfd_get_full_section_contents
+<span class="lineNum">     210 </span>            :           (bfd *abfd, asection *section, bfd_byte **ptr);
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span>            : DESCRIPTION
+<span class="lineNum">     213 </span>            :         Read all data from @var{section} in BFD @var{abfd}, decompress
+<span class="lineNum">     214 </span>            :         if needed, and store in @var{*ptr}.  If @var{*ptr} is NULL,
+<span class="lineNum">     215 </span>            :         return @var{*ptr} with memory malloc'd by this function.
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            :         Return @code{TRUE} if the full section contents is retrieved
+<span class="lineNum">     218 </span>            :         successfully.  If the section has no contents then this function
+<span class="lineNum">     219 </span>            :         returns @code{TRUE} but @var{*ptr} is set to NULL.
+<span class="lineNum">     220 </span>            : */
+<a name="221"><span class="lineNum">     221 </span>            : </a>
+<span class="lineNum">     222 </span>            : bfd_boolean
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 : bfd_get_full_section_contents (bfd *abfd, sec_ptr sec, bfd_byte **ptr)</span>
+<span class="lineNum">     224 </span>            : {
+<span class="lineNum">     225 </span>            :   bfd_size_type sz;
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :   bfd_byte *p = *ptr;</span>
+<span class="lineNum">     227 </span>            :   bfd_boolean ret;
+<span class="lineNum">     228 </span>            :   bfd_size_type save_size;
+<span class="lineNum">     229 </span>            :   bfd_size_type save_rawsize;
+<span class="lineNum">     230 </span>            :   bfd_byte *compressed_buffer;
+<span class="lineNum">     231 </span>            :   unsigned int compression_header_size;
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span><span class="lineNoCov">          0 :   if (abfd-&gt;direction != write_direction &amp;&amp; sec-&gt;rawsize != 0)</span>
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :     sz = sec-&gt;rawsize;</span>
+<span class="lineNum">     235 </span>            :   else
+<span class="lineNum">     236 </span><span class="lineNoCov">          0 :     sz = sec-&gt;size;</span>
+<span class="lineNum">     237 </span><span class="lineNoCov">          0 :   if (sz == 0)</span>
+<span class="lineNum">     238 </span>            :     {
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :       *ptr = NULL;</span>
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     241 </span>            :     }
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   switch (sec-&gt;compress_status)</span>
+<span class="lineNum">     244 </span>            :     {
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :     case COMPRESS_SECTION_NONE:</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :       if (p == NULL)</span>
+<span class="lineNum">     247 </span>            :         {
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :           p = (bfd_byte *) bfd_malloc (sz);</span>
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :           if (p == NULL)</span>
+<span class="lineNum">     250 </span>            :             {
+<span class="lineNum">     251 </span>            :               /* PR 20801: Provide a more helpful error message.  */
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :               if (bfd_get_error () == bfd_error_no_memory)</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :                 _bfd_error_handler</span>
+<span class="lineNum">     254 </span>            :                   /* xgettext:c-format */
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :                   (_(&quot;error: %B(%A) is too large (%#lx bytes)&quot;),</span>
+<span class="lineNum">     256 </span>            :                   abfd, sec, (long) sz);
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :             return FALSE;</span>
+<span class="lineNum">     258 </span>            :             }
+<span class="lineNum">     259 </span>            :         }
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span><span class="lineNoCov">          0 :       if (!bfd_get_section_contents (abfd, sec, p, 0, sz))</span>
+<span class="lineNum">     262 </span>            :         {
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 :           if (*ptr != p)</span>
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :             free (p);</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">     266 </span>            :         }
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :       *ptr = p;</span>
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :     case DECOMPRESS_SECTION_SIZED:</span>
+<span class="lineNum">     271 </span>            :       /* Read in the full compressed section contents.  */
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :       compressed_buffer = (bfd_byte *) bfd_malloc (sec-&gt;compressed_size);</span>
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :       if (compressed_buffer == NULL)</span>
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     275 </span><span class="lineNoCov">          0 :       save_rawsize = sec-&gt;rawsize;</span>
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 :       save_size = sec-&gt;size;</span>
+<span class="lineNum">     277 </span>            :       /* Clear rawsize, set size to compressed size and set compress_status
+<span class="lineNum">     278 </span>            :          to COMPRESS_SECTION_NONE.  If the compressed size is bigger than
+<span class="lineNum">     279 </span>            :          the uncompressed size, bfd_get_section_contents will fail.  */
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :       sec-&gt;rawsize = 0;</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :       sec-&gt;size = sec-&gt;compressed_size;</span>
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :       sec-&gt;compress_status = COMPRESS_SECTION_NONE;</span>
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :       ret = bfd_get_section_contents (abfd, sec, compressed_buffer,</span>
+<span class="lineNum">     284 </span>            :                                       0, sec-&gt;compressed_size);
+<span class="lineNum">     285 </span>            :       /* Restore rawsize and size.  */
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :       sec-&gt;rawsize = save_rawsize;</span>
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :       sec-&gt;size = save_size;</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :       sec-&gt;compress_status = DECOMPRESS_SECTION_SIZED;</span>
+<span class="lineNum">     289 </span><span class="lineNoCov">          0 :       if (!ret)</span>
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :         goto fail_compressed;</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span><span class="lineNoCov">          0 :       if (p == NULL)</span>
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :         p = (bfd_byte *) bfd_malloc (sz);</span>
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 :       if (p == NULL)</span>
+<span class="lineNum">     295 </span><span class="lineNoCov">          0 :         goto fail_compressed;</span>
+<span class="lineNum">     296 </span>            : 
+<span class="lineNum">     297 </span><span class="lineNoCov">          0 :       compression_header_size = bfd_get_compression_header_size (abfd, sec);</span>
+<span class="lineNum">     298 </span><span class="lineNoCov">          0 :       if (compression_header_size == 0)</span>
+<span class="lineNum">     299 </span>            :         /* Set header size to the zlib header size if it is a
+<span class="lineNum">     300 </span>            :            SHF_COMPRESSED section.  */
+<span class="lineNum">     301 </span><span class="lineNoCov">          0 :         compression_header_size = 12;</span>
+<span class="lineNum">     302 </span><span class="lineNoCov">          0 :       if (!decompress_contents (compressed_buffer + compression_header_size,</span>
+<span class="lineNum">     303 </span>            :                                 sec-&gt;compressed_size, p, sz))
+<span class="lineNum">     304 </span>            :         {
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :           bfd_set_error (bfd_error_bad_value);</span>
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :           if (p != *ptr)</span>
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :             free (p);</span>
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :         fail_compressed:</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :           free (compressed_buffer);</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">     311 </span>            :         }
+<span class="lineNum">     312 </span>            : 
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :       free (compressed_buffer);</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :       *ptr = p;</span>
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :     case COMPRESS_SECTION_DONE:</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :       if (sec-&gt;contents == NULL)</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 :       if (p == NULL)</span>
+<span class="lineNum">     321 </span>            :         {
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :           p = (bfd_byte *) bfd_malloc (sz);</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :           if (p == NULL)</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :             return FALSE;</span>
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :           *ptr = p;</span>
+<span class="lineNum">     326 </span>            :         }
+<span class="lineNum">     327 </span>            :       /* PR 17512; file: 5bc29788.  */
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :       if (p != sec-&gt;contents)</span>
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :         memcpy (p, sec-&gt;contents, sz);</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :     default:</span>
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :       abort ();</span>
+<span class="lineNum">     334 </span>            :     }
+<span class="lineNum">     335 </span>            : }
+<span class="lineNum">     336 </span>            : 
+<span class="lineNum">     337 </span>            : /*
+<span class="lineNum">     338 </span>            : FUNCTION
+<span class="lineNum">     339 </span>            :         bfd_cache_section_contents
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            : SYNOPSIS
+<span class="lineNum">     342 </span>            :         void bfd_cache_section_contents
+<span class="lineNum">     343 </span>            :           (asection *sec, void *contents);
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span>            : DESCRIPTION
+<span class="lineNum">     346 </span>            :         Stash @var(contents) so any following reads of @var(sec) do
+<span class="lineNum">     347 </span>            :         not need to decompress again.
+<span class="lineNum">     348 </span>            : */
+<a name="349"><span class="lineNum">     349 </span>            : </a>
+<span class="lineNum">     350 </span>            : void
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 : bfd_cache_section_contents (asection *sec, void *contents)</span>
+<span class="lineNum">     352 </span>            : {
+<span class="lineNum">     353 </span><span class="lineNoCov">          0 :   if (sec-&gt;compress_status == DECOMPRESS_SECTION_SIZED)</span>
+<span class="lineNum">     354 </span><span class="lineNoCov">          0 :     sec-&gt;compress_status = COMPRESS_SECTION_DONE;</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :   sec-&gt;contents = contents;</span>
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :   sec-&gt;flags |= SEC_IN_MEMORY;</span>
+<span class="lineNum">     357 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            : /*
+<span class="lineNum">     360 </span>            : FUNCTION
+<span class="lineNum">     361 </span>            :         bfd_is_section_compressed_with_header
+<span class="lineNum">     362 </span>            : 
+<span class="lineNum">     363 </span>            : SYNOPSIS
+<span class="lineNum">     364 </span>            :         bfd_boolean bfd_is_section_compressed_with_header
+<span class="lineNum">     365 </span>            :           (bfd *abfd, asection *section,
+<span class="lineNum">     366 </span>            :           int *compression_header_size_p,
+<span class="lineNum">     367 </span>            :           bfd_size_type *uncompressed_size_p);
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            : DESCRIPTION
+<span class="lineNum">     370 </span>            :         Return @code{TRUE} if @var{section} is compressed.  Compression
+<span class="lineNum">     371 </span>            :         header size is returned in @var{compression_header_size_p} and
+<span class="lineNum">     372 </span>            :         uncompressed size is returned in @var{uncompressed_size_p}.  If
+<span class="lineNum">     373 </span>            :         compression is unsupported, compression header size is returned
+<span class="lineNum">     374 </span>            :         with -1 and uncompressed size is returned with 0.
+<span class="lineNum">     375 </span>            : */
+<a name="376"><span class="lineNum">     376 </span>            : </a>
+<span class="lineNum">     377 </span>            : bfd_boolean
+<span class="lineNum">     378 </span><span class="lineNoCov">          0 : bfd_is_section_compressed_with_header (bfd *abfd, sec_ptr sec,</span>
+<span class="lineNum">     379 </span>            :                                        int *compression_header_size_p,
+<span class="lineNum">     380 </span>            :                                        bfd_size_type *uncompressed_size_p)
+<span class="lineNum">     381 </span>            : {
+<span class="lineNum">     382 </span>            :   bfd_byte header[MAX_COMPRESSION_HEADER_SIZE];
+<span class="lineNum">     383 </span>            :   int compression_header_size;
+<span class="lineNum">     384 </span>            :   int header_size;
+<span class="lineNum">     385 </span><span class="lineNoCov">          0 :   unsigned int saved = sec-&gt;compress_status;</span>
+<span class="lineNum">     386 </span>            :   bfd_boolean compressed;
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :   compression_header_size = bfd_get_compression_header_size (abfd, sec);</span>
+<span class="lineNum">     389 </span><span class="lineNoCov">          0 :   if (compression_header_size &gt; MAX_COMPRESSION_HEADER_SIZE)</span>
+<span class="lineNum">     390 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     391 </span><span class="lineNoCov">          0 :   header_size = compression_header_size ? compression_header_size : 12;</span>
+<span class="lineNum">     392 </span>            : 
+<span class="lineNum">     393 </span>            :   /* Don't decompress the section.  */
+<span class="lineNum">     394 </span><span class="lineNoCov">          0 :   sec-&gt;compress_status = COMPRESS_SECTION_NONE;</span>
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            :   /* Read the header.  */
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :   if (bfd_get_section_contents (abfd, sec, header, 0, header_size))</span>
+<span class="lineNum">     398 </span>            :     {
+<span class="lineNum">     399 </span><span class="lineNoCov">          0 :       if (compression_header_size == 0)</span>
+<span class="lineNum">     400 </span>            :         /* In this case, it should be &quot;ZLIB&quot; followed by the uncompressed
+<span class="lineNum">     401 </span>            :            section size, 8 bytes in big-endian order.  */
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :         compressed = CONST_STRNEQ ((char*) header , &quot;ZLIB&quot;);</span>
+<span class="lineNum">     403 </span>            :       else
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :         compressed = TRUE;</span>
+<span class="lineNum">     405 </span>            :     }
+<span class="lineNum">     406 </span>            :   else
+<span class="lineNum">     407 </span><span class="lineNoCov">          0 :     compressed = FALSE;</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span><span class="lineNoCov">          0 :   *uncompressed_size_p = sec-&gt;size;</span>
+<span class="lineNum">     410 </span><span class="lineNoCov">          0 :   if (compressed)</span>
+<span class="lineNum">     411 </span>            :     {
+<span class="lineNum">     412 </span><span class="lineNoCov">          0 :       if (compression_header_size != 0)</span>
+<span class="lineNum">     413 </span>            :         {
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 :           if (!bfd_check_compression_header (abfd, header, sec,</span>
+<span class="lineNum">     415 </span>            :                                              uncompressed_size_p))
+<span class="lineNum">     416 </span><span class="lineNoCov">          0 :             compression_header_size = -1;</span>
+<span class="lineNum">     417 </span>            :         }
+<span class="lineNum">     418 </span>            :       /* Check for the pathalogical case of a debug string section that
+<span class="lineNum">     419 </span>            :          contains the string ZLIB.... as the first entry.  We assume that
+<span class="lineNum">     420 </span>            :          no uncompressed .debug_str section would ever be big enough to
+<span class="lineNum">     421 </span>            :          have the first byte of its (big-endian) size be non-zero.  */
+<span class="lineNum">     422 </span><span class="lineNoCov">          0 :       else if (strcmp (sec-&gt;name, &quot;.debug_str&quot;) == 0</span>
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 :                &amp;&amp; ISPRINT (header[4]))</span>
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :         compressed = FALSE;</span>
+<span class="lineNum">     425 </span>            :       else
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :         *uncompressed_size_p = bfd_getb64 (header + 4);</span>
+<span class="lineNum">     427 </span>            :     }
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span>            :   /* Restore compress_status.  */
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 :   sec-&gt;compress_status = saved;</span>
+<span class="lineNum">     431 </span><span class="lineNoCov">          0 :   *compression_header_size_p = compression_header_size;</span>
+<span class="lineNum">     432 </span><span class="lineNoCov">          0 :   return compressed;</span>
+<span class="lineNum">     433 </span>            : }
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            : /*
+<span class="lineNum">     436 </span>            : FUNCTION
+<span class="lineNum">     437 </span>            :         bfd_is_section_compressed
+<span class="lineNum">     438 </span>            : 
+<span class="lineNum">     439 </span>            : SYNOPSIS
+<span class="lineNum">     440 </span>            :         bfd_boolean bfd_is_section_compressed
+<span class="lineNum">     441 </span>            :           (bfd *abfd, asection *section);
+<span class="lineNum">     442 </span>            : 
+<span class="lineNum">     443 </span>            : DESCRIPTION
+<span class="lineNum">     444 </span>            :         Return @code{TRUE} if @var{section} is compressed.
+<span class="lineNum">     445 </span>            : */
+<a name="446"><span class="lineNum">     446 </span>            : </a>
+<span class="lineNum">     447 </span>            : bfd_boolean
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 : bfd_is_section_compressed (bfd *abfd, sec_ptr sec)</span>
+<span class="lineNum">     449 </span>            : {
+<span class="lineNum">     450 </span>            :   int compression_header_size;
+<span class="lineNum">     451 </span>            :   bfd_size_type uncompressed_size;
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :   return (bfd_is_section_compressed_with_header (abfd, sec,</span>
+<span class="lineNum">     453 </span>            :                                                  &amp;compression_header_size,
+<span class="lineNum">     454 </span>            :                                                  &amp;uncompressed_size)
+<span class="lineNum">     455 </span><span class="lineNoCov">          0 :           &amp;&amp; compression_header_size &gt;= 0</span>
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :           &amp;&amp; uncompressed_size &gt; 0);</span>
+<span class="lineNum">     457 </span>            : }
+<span class="lineNum">     458 </span>            : 
+<span class="lineNum">     459 </span>            : /*
+<span class="lineNum">     460 </span>            : FUNCTION
+<span class="lineNum">     461 </span>            :         bfd_init_section_decompress_status
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span>            : SYNOPSIS
+<span class="lineNum">     464 </span>            :         bfd_boolean bfd_init_section_decompress_status
+<span class="lineNum">     465 </span>            :           (bfd *abfd, asection *section);
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span>            : DESCRIPTION
+<span class="lineNum">     468 </span>            :         Record compressed section size, update section size with
+<span class="lineNum">     469 </span>            :         decompressed size and set compress_status to
+<span class="lineNum">     470 </span>            :         DECOMPRESS_SECTION_SIZED.
+<span class="lineNum">     471 </span>            : 
+<span class="lineNum">     472 </span>            :         Return @code{FALSE} if the section is not a valid compressed
+<span class="lineNum">     473 </span>            :         section.  Otherwise, return @code{TRUE}.
+<span class="lineNum">     474 </span>            : */
+<a name="475"><span class="lineNum">     475 </span>            : </a>
+<span class="lineNum">     476 </span>            : bfd_boolean
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 : bfd_init_section_decompress_status (bfd *abfd, sec_ptr sec)</span>
+<span class="lineNum">     478 </span>            : {
+<span class="lineNum">     479 </span>            :   bfd_byte header[MAX_COMPRESSION_HEADER_SIZE];
+<span class="lineNum">     480 </span>            :   int compression_header_size;
+<span class="lineNum">     481 </span>            :   int header_size;
+<span class="lineNum">     482 </span>            :   bfd_size_type uncompressed_size;
+<span class="lineNum">     483 </span>            : 
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :   compression_header_size = bfd_get_compression_header_size (abfd, sec);</span>
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :   if (compression_header_size &gt; MAX_COMPRESSION_HEADER_SIZE)</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     487 </span><span class="lineNoCov">          0 :   header_size = compression_header_size ? compression_header_size : 12;</span>
+<span class="lineNum">     488 </span>            : 
+<span class="lineNum">     489 </span>            :   /* Read the header.  */
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 :   if (sec-&gt;rawsize != 0</span>
+<span class="lineNum">     491 </span><span class="lineNoCov">          0 :       || sec-&gt;contents != NULL</span>
+<span class="lineNum">     492 </span><span class="lineNoCov">          0 :       || sec-&gt;compress_status != COMPRESS_SECTION_NONE</span>
+<span class="lineNum">     493 </span><span class="lineNoCov">          0 :       || !bfd_get_section_contents (abfd, sec, header, 0, header_size))</span>
+<span class="lineNum">     494 </span>            :     {
+<span class="lineNum">     495 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     496 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     497 </span>            :     }
+<span class="lineNum">     498 </span>            : 
+<span class="lineNum">     499 </span><span class="lineNoCov">          0 :   if (compression_header_size == 0)</span>
+<span class="lineNum">     500 </span>            :     {
+<span class="lineNum">     501 </span>            :       /* In this case, it should be &quot;ZLIB&quot; followed by the uncompressed
+<span class="lineNum">     502 </span>            :          section size, 8 bytes in big-endian order.  */
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :       if (! CONST_STRNEQ ((char*) header, &quot;ZLIB&quot;))</span>
+<span class="lineNum">     504 </span>            :         {
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :           bfd_set_error (bfd_error_wrong_format);</span>
+<span class="lineNum">     506 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">     507 </span>            :         }
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :       uncompressed_size = bfd_getb64 (header + 4);</span>
+<span class="lineNum">     509 </span>            :     }
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :   else if (!bfd_check_compression_header (abfd, header, sec,</span>
+<span class="lineNum">     511 </span>            :                                          &amp;uncompressed_size))
+<span class="lineNum">     512 </span>            :     {
+<span class="lineNum">     513 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_wrong_format);</span>
+<span class="lineNum">     514 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     515 </span>            :     }
+<span class="lineNum">     516 </span>            : 
+<span class="lineNum">     517 </span><span class="lineNoCov">          0 :   sec-&gt;compressed_size = sec-&gt;size;</span>
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 :   sec-&gt;size = uncompressed_size;</span>
+<span class="lineNum">     519 </span><span class="lineNoCov">          0 :   sec-&gt;compress_status = DECOMPRESS_SECTION_SIZED;</span>
+<span class="lineNum">     520 </span>            : 
+<span class="lineNum">     521 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     522 </span>            : }
+<span class="lineNum">     523 </span>            : 
+<span class="lineNum">     524 </span>            : /*
+<span class="lineNum">     525 </span>            : FUNCTION
+<span class="lineNum">     526 </span>            :         bfd_init_section_compress_status
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span>            : SYNOPSIS
+<span class="lineNum">     529 </span>            :         bfd_boolean bfd_init_section_compress_status
+<span class="lineNum">     530 </span>            :           (bfd *abfd, asection *section);
+<span class="lineNum">     531 </span>            : 
+<span class="lineNum">     532 </span>            : DESCRIPTION
+<span class="lineNum">     533 </span>            :         If open for read, compress section, update section size with
+<span class="lineNum">     534 </span>            :         compressed size and set compress_status to COMPRESS_SECTION_DONE.
+<span class="lineNum">     535 </span>            : 
+<span class="lineNum">     536 </span>            :         Return @code{FALSE} if the section is not a valid compressed
+<span class="lineNum">     537 </span>            :         section.  Otherwise, return @code{TRUE}.
+<span class="lineNum">     538 </span>            : */
+<a name="539"><span class="lineNum">     539 </span>            : </a>
+<span class="lineNum">     540 </span>            : bfd_boolean
+<span class="lineNum">     541 </span><span class="lineNoCov">          0 : bfd_init_section_compress_status (bfd *abfd, sec_ptr sec)</span>
+<span class="lineNum">     542 </span>            : {
+<span class="lineNum">     543 </span>            :   bfd_size_type uncompressed_size;
+<span class="lineNum">     544 </span>            :   bfd_byte *uncompressed_buffer;
+<span class="lineNum">     545 </span>            :   bfd_boolean ret;
+<span class="lineNum">     546 </span>            : 
+<span class="lineNum">     547 </span>            :   /* Error if not opened for read.  */
+<span class="lineNum">     548 </span><span class="lineNoCov">          0 :   if (abfd-&gt;direction != read_direction</span>
+<span class="lineNum">     549 </span><span class="lineNoCov">          0 :       || sec-&gt;size == 0</span>
+<span class="lineNum">     550 </span><span class="lineNoCov">          0 :       || sec-&gt;rawsize != 0</span>
+<span class="lineNum">     551 </span><span class="lineNoCov">          0 :       || sec-&gt;contents != NULL</span>
+<span class="lineNum">     552 </span><span class="lineNoCov">          0 :       || sec-&gt;compress_status != COMPRESS_SECTION_NONE)</span>
+<span class="lineNum">     553 </span>            :     {
+<span class="lineNum">     554 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     556 </span>            :     }
+<span class="lineNum">     557 </span>            : 
+<span class="lineNum">     558 </span>            :   /* Read in the full section contents and compress it.  */
+<span class="lineNum">     559 </span><span class="lineNoCov">          0 :   uncompressed_size = sec-&gt;size;</span>
+<span class="lineNum">     560 </span><span class="lineNoCov">          0 :   uncompressed_buffer = (bfd_byte *) bfd_malloc (uncompressed_size);</span>
+<span class="lineNum">     561 </span><span class="lineNoCov">          0 :   if (!bfd_get_section_contents (abfd, sec, uncompressed_buffer,</span>
+<span class="lineNum">     562 </span>            :                                  0, uncompressed_size))
+<span class="lineNum">     563 </span><span class="lineNoCov">          0 :     ret = FALSE;</span>
+<span class="lineNum">     564 </span>            :   else
+<span class="lineNum">     565 </span>            :     {
+<span class="lineNum">     566 </span><span class="lineNoCov">          0 :       uncompressed_size = bfd_compress_section_contents (abfd, sec,</span>
+<span class="lineNum">     567 </span>            :                                                          uncompressed_buffer,
+<span class="lineNum">     568 </span>            :                                                          uncompressed_size);
+<span class="lineNum">     569 </span><span class="lineNoCov">          0 :       ret = uncompressed_size != 0;</span>
+<span class="lineNum">     570 </span>            :     }
+<span class="lineNum">     571 </span>            : 
+<span class="lineNum">     572 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     573 </span>            : }
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span>            : /*
+<span class="lineNum">     576 </span>            : FUNCTION
+<span class="lineNum">     577 </span>            :         bfd_compress_section
+<span class="lineNum">     578 </span>            : 
+<span class="lineNum">     579 </span>            : SYNOPSIS
+<span class="lineNum">     580 </span>            :         bfd_boolean bfd_compress_section
+<span class="lineNum">     581 </span>            :           (bfd *abfd, asection *section, bfd_byte *uncompressed_buffer);
+<span class="lineNum">     582 </span>            : 
+<span class="lineNum">     583 </span>            : DESCRIPTION
+<span class="lineNum">     584 </span>            :         If open for write, compress section, update section size with
+<span class="lineNum">     585 </span>            :         compressed size and set compress_status to COMPRESS_SECTION_DONE.
+<span class="lineNum">     586 </span>            : 
+<span class="lineNum">     587 </span>            :         Return @code{FALSE} if compression fail.  Otherwise, return
+<span class="lineNum">     588 </span>            :         @code{TRUE}.
+<span class="lineNum">     589 </span>            : */
+<a name="590"><span class="lineNum">     590 </span>            : </a>
+<span class="lineNum">     591 </span>            : bfd_boolean
+<span class="lineNum">     592 </span><span class="lineNoCov">          0 : bfd_compress_section (bfd *abfd, sec_ptr sec, bfd_byte *uncompressed_buffer)</span>
+<span class="lineNum">     593 </span>            : {
+<span class="lineNum">     594 </span><span class="lineNoCov">          0 :   bfd_size_type uncompressed_size = sec-&gt;size;</span>
+<span class="lineNum">     595 </span>            : 
+<span class="lineNum">     596 </span>            :   /* Error if not opened for write.  */
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :   if (abfd-&gt;direction != write_direction</span>
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 :       || uncompressed_size == 0</span>
+<span class="lineNum">     599 </span><span class="lineNoCov">          0 :       || uncompressed_buffer == NULL</span>
+<span class="lineNum">     600 </span><span class="lineNoCov">          0 :       || sec-&gt;contents != NULL</span>
+<span class="lineNum">     601 </span><span class="lineNoCov">          0 :       || sec-&gt;compressed_size != 0</span>
+<span class="lineNum">     602 </span><span class="lineNoCov">          0 :       || sec-&gt;compress_status != COMPRESS_SECTION_NONE)</span>
+<span class="lineNum">     603 </span>            :     {
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     605 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     606 </span>            :     }
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span>            :   /* Compress it.  */
+<span class="lineNum">     609 </span><span class="lineNoCov">          0 :   return bfd_compress_section_contents (abfd, sec, uncompressed_buffer,</span>
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :                                         uncompressed_size) != 0;</span>
+<span class="lineNum">     611 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

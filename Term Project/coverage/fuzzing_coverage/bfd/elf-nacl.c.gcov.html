@@ -1,0 +1,429 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/elf-nacl.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - elf-nacl.c<span style="font-size: 80%;"> (source / <a href="elf-nacl.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">146</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Native Client support for ELF</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2012-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.  */
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      20 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      21 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;elf-bfd.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;elf-nacl.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;elf/common.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;elf/internal.h&quot;
+<a name="26"><span class="lineNum">      26 </span>            : </a>
+<span class="lineNum">      27 </span>            : static bfd_boolean
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 : segment_executable (struct elf_segment_map *seg)</span>
+<span class="lineNum">      29 </span>            : {
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 :   if (seg-&gt;p_flags_valid)</span>
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :     return (seg-&gt;p_flags &amp; PF_X) != 0;</span>
+<span class="lineNum">      32 </span>            :   else
+<span class="lineNum">      33 </span>            :     {
+<span class="lineNum">      34 </span>            :       /* The p_flags value has not been computed yet,
+<span class="lineNum">      35 </span>            :          so we have to look through the sections.  */
+<span class="lineNum">      36 </span>            :       unsigned int i;
+<span class="lineNum">      37 </span><span class="lineNoCov">          0 :       for (i = 0; i &lt; seg-&gt;count; ++i)</span>
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :         if (seg-&gt;sections[i]-&gt;flags &amp; SEC_CODE)</span>
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :           return TRUE;</span>
+<span class="lineNum">      40 </span>            :     }
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">      42 </span>            : }
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            : /* Determine if this segment is eligible to receive the file and program
+<span class="lineNum">      45 </span>            :    headers.  It must be read-only and non-executable.
+<span class="lineNum">      46 </span>            :    Its first section must start far enough past the page boundary to
+<a name="47"><span class="lineNum">      47 </span>            :    allow space for the headers.  */</a>
+<span class="lineNum">      48 </span>            : static bfd_boolean
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 : segment_eligible_for_headers (struct elf_segment_map *seg,</span>
+<span class="lineNum">      50 </span>            :                               bfd_vma minpagesize, bfd_vma sizeof_headers)
+<span class="lineNum">      51 </span>            : {
+<span class="lineNum">      52 </span>            :   unsigned int i;
+<span class="lineNum">      53 </span><span class="lineNoCov">          0 :   if (seg-&gt;count == 0 || seg-&gt;sections[0]-&gt;lma % minpagesize &lt; sizeof_headers)</span>
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; seg-&gt;count; ++i)</span>
+<span class="lineNum">      56 </span>            :     {
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :       if ((seg-&gt;sections[i]-&gt;flags &amp; (SEC_CODE|SEC_READONLY)) != SEC_READONLY)</span>
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">      59 </span>            :     }
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">      61 </span>            : }
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : /* We permute the segment_map to get BFD to do the file layout we want:
+<span class="lineNum">      65 </span>            :    The first non-executable PT_LOAD segment appears first in the file
+<a name="66"><span class="lineNum">      66 </span>            :    and contains the ELF file header and phdrs.  */</a>
+<span class="lineNum">      67 </span>            : bfd_boolean
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 : nacl_modify_segment_map (bfd *abfd, struct bfd_link_info *info)</span>
+<span class="lineNum">      69 </span>            : {
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :   const struct elf_backend_data *const bed = get_elf_backend_data (abfd);</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :   struct elf_segment_map **m = &amp;elf_seg_map (abfd);</span>
+<span class="lineNum">      72 </span><span class="lineNoCov">          0 :   struct elf_segment_map **first_load = NULL;</span>
+<span class="lineNum">      73 </span><span class="lineNoCov">          0 :   struct elf_segment_map **last_load = NULL;</span>
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 :   bfd_boolean moved_headers = FALSE;</span>
+<span class="lineNum">      75 </span>            :   int sizeof_headers;
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :   if (info != NULL &amp;&amp; info-&gt;user_phdrs)</span>
+<span class="lineNum">      78 </span>            :     /* The linker script used PHDRS explicitly, so don't change what the
+<span class="lineNum">      79 </span>            :        user asked for.  */
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :   if (info != NULL)</span>
+<span class="lineNum">      83 </span>            :     /* We're doing linking, so evalute SIZEOF_HEADERS as in a linker script.  */
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :     sizeof_headers = bfd_sizeof_headers (abfd, info);</span>
+<span class="lineNum">      85 </span>            :   else
+<span class="lineNum">      86 </span>            :     {
+<span class="lineNum">      87 </span>            :       /* We're not doing linking, so this is objcopy or suchlike.
+<span class="lineNum">      88 </span>            :          We just need to collect the size of the existing headers.  */
+<span class="lineNum">      89 </span>            :       struct elf_segment_map *seg;
+<span class="lineNum">      90 </span><span class="lineNoCov">          0 :       sizeof_headers = bed-&gt;s-&gt;sizeof_ehdr;</span>
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 :       for (seg = *m; seg != NULL; seg = seg-&gt;next)</span>
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :         sizeof_headers += bed-&gt;s-&gt;sizeof_phdr;</span>
+<span class="lineNum">      93 </span>            :     }
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :   while (*m != NULL)</span>
+<span class="lineNum">      96 </span>            :     {
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :       struct elf_segment_map *seg = *m;</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :       if (seg-&gt;p_type == PT_LOAD)</span>
+<span class="lineNum">     100 </span>            :         {
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :           bfd_boolean executable = segment_executable (seg);</span>
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :           if (executable</span>
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :               &amp;&amp; seg-&gt;count &gt; 0</span>
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 :               &amp;&amp; seg-&gt;sections[0]-&gt;vma % bed-&gt;minpagesize == 0)</span>
+<span class="lineNum">     106 </span>            :             {
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 :               asection *lastsec = seg-&gt;sections[seg-&gt;count - 1];</span>
+<span class="lineNum">     108 </span><span class="lineNoCov">          0 :               bfd_vma end = lastsec-&gt;vma + lastsec-&gt;size;</span>
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :               if (end % bed-&gt;minpagesize != 0)</span>
+<span class="lineNum">     110 </span>            :                 {
+<span class="lineNum">     111 </span>            :                   /* This is an executable segment that starts on a page
+<span class="lineNum">     112 </span>            :                      boundary but does not end on a page boundary.  Fill
+<span class="lineNum">     113 </span>            :                      it out to a whole page with code fill (the tail of
+<span class="lineNum">     114 </span>            :                      the segment will not be within any section).  Thus
+<span class="lineNum">     115 </span>            :                      the entire code segment can be mapped from the file
+<span class="lineNum">     116 </span>            :                      as whole pages and that mapping will contain only
+<span class="lineNum">     117 </span>            :                      valid instructions.
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            :                      To accomplish this, we must fake out the code in
+<span class="lineNum">     120 </span>            :                      assign_file_positions_for_load_sections (elf.c) so
+<span class="lineNum">     121 </span>            :                      that it advances past the rest of the final page,
+<span class="lineNum">     122 </span>            :                      rather than trying to put the next (unaligned, or
+<span class="lineNum">     123 </span>            :                      unallocated) section.  We do this by appending a
+<span class="lineNum">     124 </span>            :                      dummy section record to this element in the segment
+<span class="lineNum">     125 </span>            :                      map.  No such output section ever actually exists,
+<span class="lineNum">     126 </span>            :                      but this gets the layout logic to advance the file
+<span class="lineNum">     127 </span>            :                      positions past this partial page.  Since we are
+<span class="lineNum">     128 </span>            :                      lying to BFD like this, nothing will ever know to
+<span class="lineNum">     129 </span>            :                      write the section contents.  So we do that by hand
+<span class="lineNum">     130 </span>            :                      after the fact, in nacl_final_write_processing, below.  */
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            :                   struct elf_segment_map *newseg;
+<span class="lineNum">     133 </span>            :                   asection *sec;
+<span class="lineNum">     134 </span>            :                   struct bfd_elf_section_data *secdata;
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :                   BFD_ASSERT (!seg-&gt;p_size_valid);</span>
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :                   secdata = bfd_zalloc (abfd, sizeof *secdata);</span>
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :                   if (secdata == NULL)</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :                     return FALSE;</span>
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :                   sec = bfd_zalloc (abfd, sizeof *sec);</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :                   if (sec == NULL)</span>
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 :                     return FALSE;</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            :                   /* Fill in only the fields that actually affect the logic
+<span class="lineNum">     147 </span>            :                      in assign_file_positions_for_load_sections.  */
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :                   sec-&gt;vma = end;</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :                   sec-&gt;lma = lastsec-&gt;lma + lastsec-&gt;size;</span>
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :                   sec-&gt;size = bed-&gt;minpagesize - (end % bed-&gt;minpagesize);</span>
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :                   sec-&gt;flags = (SEC_ALLOC | SEC_LOAD</span>
+<span class="lineNum">     152 </span>            :                                 | SEC_READONLY | SEC_CODE | SEC_LINKER_CREATED);
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :                   sec-&gt;used_by_bfd = secdata;</span>
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :                   secdata-&gt;this_hdr.sh_type = SHT_PROGBITS;</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :                   secdata-&gt;this_hdr.sh_flags = SHF_ALLOC | SHF_EXECINSTR;</span>
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :                   secdata-&gt;this_hdr.sh_addr = sec-&gt;vma;</span>
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :                   secdata-&gt;this_hdr.sh_size = sec-&gt;size;</span>
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :                   newseg = bfd_alloc (abfd,</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :                                       sizeof *newseg + ((seg-&gt;count + 1)</span>
+<span class="lineNum">     162 </span>            :                                                         * sizeof (asection *)));
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :                   if (newseg == NULL)</span>
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :                     return FALSE;</span>
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :                   memcpy (newseg, seg,</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :                           sizeof *newseg + (seg-&gt;count * sizeof (asection *)));</span>
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :                   newseg-&gt;sections[newseg-&gt;count++] = sec;</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :                   *m = seg = newseg;</span>
+<span class="lineNum">     169 </span>            :                 }
+<span class="lineNum">     170 </span>            :             }
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span>            :           /* First, we're just finding the earliest PT_LOAD.
+<span class="lineNum">     173 </span>            :              By the normal rules, this will be the lowest-addressed one.
+<span class="lineNum">     174 </span>            :              We only have anything interesting to do if it's executable.  */
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :           last_load = m;</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :           if (first_load == NULL)</span>
+<span class="lineNum">     177 </span>            :             {
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :               if (!executable)</span>
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :                 goto next;</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :               first_load = m;</span>
+<span class="lineNum">     181 </span>            :             }
+<span class="lineNum">     182 </span>            :           /* Now that we've noted the first PT_LOAD, we're looking for
+<span class="lineNum">     183 </span>            :              the first non-executable PT_LOAD with a nonempty p_filesz.  */
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :           else if (!moved_headers</span>
+<span class="lineNum">     185 </span><span class="lineNoCov">          0 :                    &amp;&amp; segment_eligible_for_headers (seg, bed-&gt;minpagesize,</span>
+<span class="lineNum">     186 </span>            :                                                     sizeof_headers))
+<span class="lineNum">     187 </span>            :             {
+<span class="lineNum">     188 </span>            :               /* This is the one we were looking for!
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span>            :                  First, clear the flags on previous segments that
+<span class="lineNum">     191 </span>            :                  say they include the file header and phdrs.  */
+<span class="lineNum">     192 </span>            :               struct elf_segment_map *prevseg;
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :               for (prevseg = *first_load;</span>
+<span class="lineNum">     194 </span>            :                    prevseg != seg;
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :                    prevseg = prevseg-&gt;next)</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :                 if (prevseg-&gt;p_type == PT_LOAD)</span>
+<span class="lineNum">     197 </span>            :                   {
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :                     prevseg-&gt;includes_filehdr = 0;</span>
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :                     prevseg-&gt;includes_phdrs = 0;</span>
+<span class="lineNum">     200 </span>            :                   }
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :               /* This segment will include those headers instead.  */
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :               seg-&gt;includes_filehdr = 1;</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :               seg-&gt;includes_phdrs = 1;</span>
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :               moved_headers = TRUE;</span>
+<span class="lineNum">     207 </span>            :             }
+<span class="lineNum">     208 </span>            :         }
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 :     next:</span>
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :       m = &amp;seg-&gt;next;</span>
+<span class="lineNum">     212 </span>            :     }
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :   if (first_load != last_load &amp;&amp; moved_headers)</span>
+<span class="lineNum">     215 </span>            :     {
+<span class="lineNum">     216 </span>            :       /* Now swap the first and last PT_LOAD segments'
+<span class="lineNum">     217 </span>            :          positions in segment_map.  */
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :       struct elf_segment_map *first = *first_load;</span>
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :       struct elf_segment_map *last = *last_load;</span>
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :       *first_load = first-&gt;next;</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :       first-&gt;next = last-&gt;next;</span>
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :       last-&gt;next = first;</span>
+<span class="lineNum">     223 </span>            :     }
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     226 </span>            : }
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            : /* After nacl_modify_segment_map has done its work, the file layout has
+<span class="lineNum">     229 </span>            :    been done as we wanted.  But the PT_LOAD phdrs are no longer in the
+<span class="lineNum">     230 </span>            :    proper order for the ELF rule that they must appear in ascending address
+<a name="231"><span class="lineNum">     231 </span>            :    order.  So find the two segments we swapped before, and swap them back.  */</a>
+<span class="lineNum">     232 </span>            : bfd_boolean
+<span class="lineNum">     233 </span><span class="lineNoCov">          0 : nacl_modify_program_headers (bfd *abfd, struct bfd_link_info *info)</span>
+<span class="lineNum">     234 </span>            : {
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :   struct elf_segment_map **m = &amp;elf_seg_map (abfd);</span>
+<span class="lineNum">     236 </span><span class="lineNoCov">          0 :   Elf_Internal_Phdr *phdr = elf_tdata (abfd)-&gt;phdr;</span>
+<span class="lineNum">     237 </span><span class="lineNoCov">          0 :   Elf_Internal_Phdr *p = phdr;</span>
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :   if (info != NULL &amp;&amp; info-&gt;user_phdrs)</span>
+<span class="lineNum">     240 </span>            :     /* The linker script used PHDRS explicitly, so don't change what the
+<span class="lineNum">     241 </span>            :        user asked for.  */
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span>            :   /* Find the PT_LOAD that contains the headers (should be the first).  */
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :   while (*m != NULL)</span>
+<span class="lineNum">     246 </span>            :     {
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :       if ((*m)-&gt;p_type == PT_LOAD &amp;&amp; (*m)-&gt;includes_filehdr)</span>
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :       m = &amp;(*m)-&gt;next;</span>
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :       ++p;</span>
+<span class="lineNum">     252 </span>            :     }
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :   if (*m != NULL)</span>
+<span class="lineNum">     255 </span>            :     {
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :       struct elf_segment_map **first_load_seg = m;</span>
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :       Elf_Internal_Phdr *first_load_phdr = p;</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :       struct elf_segment_map **next_load_seg = NULL;</span>
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :       Elf_Internal_Phdr *next_load_phdr = NULL;</span>
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span>            :       /* Now move past that first one and find the PT_LOAD that should be
+<span class="lineNum">     262 </span>            :          before it by address order.  */
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :       m = &amp;(*m)-&gt;next;</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :       ++p;</span>
+<span class="lineNum">     266 </span>            : 
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :       while (*m != NULL)</span>
+<span class="lineNum">     268 </span>            :         {
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :           if (p-&gt;p_type == PT_LOAD &amp;&amp; p-&gt;p_vaddr &lt; first_load_phdr-&gt;p_vaddr)</span>
+<span class="lineNum">     270 </span>            :             {
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 :               next_load_seg = m;</span>
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :               next_load_phdr = p;</span>
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">     274 </span>            :             }
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 :           m = &amp;(*m)-&gt;next;</span>
+<span class="lineNum">     277 </span><span class="lineNoCov">          0 :           ++p;</span>
+<span class="lineNum">     278 </span>            :         }
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            :       /* Swap their positions in the segment_map back to how they used to be.
+<span class="lineNum">     281 </span>            :          The phdrs have already been set up by now, so we have to slide up
+<span class="lineNum">     282 </span>            :          the earlier ones to insert the one that should be first.  */
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :       if (next_load_seg != NULL)</span>
+<span class="lineNum">     284 </span>            :         {
+<span class="lineNum">     285 </span>            :           Elf_Internal_Phdr move_phdr;
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :           struct elf_segment_map *first_seg = *first_load_seg;</span>
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :           struct elf_segment_map *next_seg = *next_load_seg;</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :           struct elf_segment_map *first_next = first_seg-&gt;next;</span>
+<span class="lineNum">     289 </span><span class="lineNoCov">          0 :           struct elf_segment_map *next_next = next_seg-&gt;next;</span>
+<span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span><span class="lineNoCov">          0 :           if (next_load_seg == &amp;first_seg-&gt;next)</span>
+<span class="lineNum">     292 </span>            :             {
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :               *first_load_seg = next_seg;</span>
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 :               next_seg-&gt;next = first_seg;</span>
+<span class="lineNum">     295 </span><span class="lineNoCov">          0 :               first_seg-&gt;next = next_next;</span>
+<span class="lineNum">     296 </span>            :             }
+<span class="lineNum">     297 </span>            :           else
+<span class="lineNum">     298 </span>            :             {
+<span class="lineNum">     299 </span><span class="lineNoCov">          0 :               *first_load_seg = first_next;</span>
+<span class="lineNum">     300 </span><span class="lineNoCov">          0 :               *next_load_seg = next_next;</span>
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span><span class="lineNoCov">          0 :               first_seg-&gt;next = *next_load_seg;</span>
+<span class="lineNum">     303 </span><span class="lineNoCov">          0 :               *next_load_seg = first_seg;</span>
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :               next_seg-&gt;next = *first_load_seg;</span>
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :               *first_load_seg = next_seg;</span>
+<span class="lineNum">     307 </span>            :             }
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :           move_phdr = *next_load_phdr;</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :           memmove (first_load_phdr + 1, first_load_phdr,</span>
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :                    (next_load_phdr - first_load_phdr) * sizeof move_phdr);</span>
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 :           *first_load_phdr = move_phdr;</span>
+<span class="lineNum">     313 </span>            :         }
+<span class="lineNum">     314 </span>            :     }
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     317 </span>            : }
+<a name="318"><span class="lineNum">     318 </span>            : </a>
+<span class="lineNum">     319 </span>            : void
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 : nacl_final_write_processing (bfd *abfd, bfd_boolean linker ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     321 </span>            : {
+<span class="lineNum">     322 </span>            :   struct elf_segment_map *seg;
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :   for (seg = elf_seg_map (abfd); seg != NULL; seg = seg-&gt;next)</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :     if (seg-&gt;p_type == PT_LOAD</span>
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :         &amp;&amp; seg-&gt;count &gt; 1</span>
+<span class="lineNum">     326 </span><span class="lineNoCov">          0 :         &amp;&amp; seg-&gt;sections[seg-&gt;count - 1]-&gt;owner == NULL)</span>
+<span class="lineNum">     327 </span>            :       {
+<span class="lineNum">     328 </span>            :         /* This is a fake section added in nacl_modify_segment_map, above.
+<span class="lineNum">     329 </span>            :            It's not a real BFD section, so nothing wrote its contents.
+<span class="lineNum">     330 </span>            :            Now write out its contents.  */
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :         asection *sec = seg-&gt;sections[seg-&gt;count - 1];</span>
+<span class="lineNum">     333 </span>            :         char *fill;
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :         BFD_ASSERT (sec-&gt;flags &amp; SEC_LINKER_CREATED);</span>
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :         BFD_ASSERT (sec-&gt;flags &amp; SEC_CODE);</span>
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :         BFD_ASSERT (sec-&gt;size &gt; 0);</span>
+<span class="lineNum">     338 </span>            : 
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :         fill = abfd-&gt;arch_info-&gt;fill (sec-&gt;size, bfd_big_endian (abfd), TRUE);</span>
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :         if (fill == NULL</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :             || bfd_seek (abfd, sec-&gt;filepos, SEEK_SET) != 0</span>
+<span class="lineNum">     343 </span><span class="lineNoCov">          0 :             || bfd_bwrite (fill, sec-&gt;size, abfd) != sec-&gt;size)</span>
+<span class="lineNum">     344 </span>            :           {
+<span class="lineNum">     345 </span>            :             /* We don't have a proper way to report an error here.  So
+<span class="lineNum">     346 </span>            :                instead fudge things so that elf_write_shdrs_and_ehdr will
+<span class="lineNum">     347 </span>            :                fail.  */
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :             elf_elfheader (abfd)-&gt;e_shoff = (file_ptr) -1;</span>
+<span class="lineNum">     349 </span>            :           }
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :         free (fill);</span>
+<span class="lineNum">     352 </span>            :       }
+<span class="lineNum">     353 </span><span class="lineNoCov">          0 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

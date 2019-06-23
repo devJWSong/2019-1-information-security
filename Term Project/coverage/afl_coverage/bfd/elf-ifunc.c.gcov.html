@@ -1,0 +1,558 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/elf-ifunc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - elf-ifunc.c<span style="font-size: 80%;"> (source / <a href="elf-ifunc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">212</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* ELF STT_GNU_IFUNC support.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2009-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;bfdlink.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : #define ARCH_SIZE 0
+<span class="lineNum">      26 </span>            : #include &quot;elf-bfd.h&quot;
+<span class="lineNum">      27 </span>            : #include &quot;safe-ctype.h&quot;
+<span class="lineNum">      28 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      29 </span>            : #include &quot;objalloc.h&quot;
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : /* Create sections needed by STT_GNU_IFUNC symbol.  */
+<a name="32"><span class="lineNum">      32 </span>            : </a>
+<span class="lineNum">      33 </span>            : bfd_boolean
+<span class="lineNum">      34 </span><span class="lineNoCov">          0 : _bfd_elf_create_ifunc_sections (bfd *abfd, struct bfd_link_info *info)</span>
+<span class="lineNum">      35 </span>            : {
+<span class="lineNum">      36 </span>            :   flagword flags, pltflags;
+<span class="lineNum">      37 </span>            :   asection *s;
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :   const struct elf_backend_data *bed = get_elf_backend_data (abfd);</span>
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :   struct elf_link_hash_table *htab = elf_hash_table (info);</span>
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :   if (htab-&gt;irelifunc != NULL || htab-&gt;iplt != NULL)</span>
+<span class="lineNum">      42 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span><span class="lineNoCov">          0 :   flags = bed-&gt;dynamic_sec_flags;</span>
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :   pltflags = flags;</span>
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :   if (bed-&gt;plt_not_loaded)</span>
+<span class="lineNum">      47 </span>            :     /* We do not clear SEC_ALLOC here because we still want the OS to
+<span class="lineNum">      48 </span>            :        allocate space for the section; it's just that there's nothing
+<span class="lineNum">      49 </span>            :        to read in from the object file.  */
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 :     pltflags &amp;= ~ (SEC_CODE | SEC_LOAD | SEC_HAS_CONTENTS);</span>
+<span class="lineNum">      51 </span>            :   else
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :     pltflags |= SEC_ALLOC | SEC_CODE | SEC_LOAD;</span>
+<span class="lineNum">      53 </span><span class="lineNoCov">          0 :   if (bed-&gt;plt_readonly)</span>
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :     pltflags |= SEC_READONLY;</span>
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :   if (bfd_link_pic (info))</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :     {</span>
+<span class="lineNum">      58 </span>            :       /* We need to create .rel[a].ifunc for PIC objects.  */
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :       const char *rel_sec = (bed-&gt;rela_plts_and_copies_p</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :                              ? &quot;.rela.ifunc&quot; : &quot;.rel.ifunc&quot;);</span>
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :       s = bfd_make_section_with_flags (abfd, rel_sec,</span>
+<span class="lineNum">      63 </span>            :                                        flags | SEC_READONLY);
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :       if (s == NULL</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :           || ! bfd_set_section_alignment (abfd, s,</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :                                           bed-&gt;s-&gt;log_file_align))</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :       htab-&gt;irelifunc = s;</span>
+<span class="lineNum">      69 </span>            :     }
+<span class="lineNum">      70 </span>            :   else
+<span class="lineNum">      71 </span>            :     {
+<span class="lineNum">      72 </span>            :       /* We need to create .iplt, .rel[a].iplt, .igot and .igot.plt
+<span class="lineNum">      73 </span>            :          for static executables.   */
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 :       s = bfd_make_section_with_flags (abfd, &quot;.iplt&quot;, pltflags);</span>
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :       if (s == NULL</span>
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 :           || ! bfd_set_section_alignment (abfd, s, bed-&gt;plt_alignment))</span>
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 :       htab-&gt;iplt = s;</span>
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 :       s = bfd_make_section_with_flags (abfd,</span>
+<span class="lineNum">      81 </span>            :                                        (bed-&gt;rela_plts_and_copies_p
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :                                         ? &quot;.rela.iplt&quot; : &quot;.rel.iplt&quot;),</span>
+<span class="lineNum">      83 </span>            :                                        flags | SEC_READONLY);
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :       if (s == NULL</span>
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 :           || ! bfd_set_section_alignment (abfd, s,</span>
+<span class="lineNum">      86 </span><span class="lineNoCov">          0 :                                           bed-&gt;s-&gt;log_file_align))</span>
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :       htab-&gt;irelplt = s;</span>
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :       /* We don't need the .igot section if we have the .igot.plt
+<span class="lineNum">      91 </span>            :          section.  */
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :       if (bed-&gt;want_got_plt)</span>
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :         s = bfd_make_section_with_flags (abfd, &quot;.igot.plt&quot;, flags);</span>
+<span class="lineNum">      94 </span>            :       else
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :         s = bfd_make_section_with_flags (abfd, &quot;.igot&quot;, flags);</span>
+<span class="lineNum">      96 </span><span class="lineNoCov">          0 :       if (s == NULL</span>
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :           || !bfd_set_section_alignment (abfd, s,</span>
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :                                          bed-&gt;s-&gt;log_file_align))</span>
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     100 </span><span class="lineNoCov">          0 :       htab-&gt;igotplt = s;</span>
+<span class="lineNum">     101 </span>            :     }
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     104 </span>            : }
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            : /* Allocate space in .plt, .got and associated reloc sections for
+<span class="lineNum">     107 </span>            :    dynamic relocs against a STT_GNU_IFUNC symbol definition.  */
+<a name="108"><span class="lineNum">     108 </span>            : </a>
+<span class="lineNum">     109 </span>            : bfd_boolean
+<span class="lineNum">     110 </span><span class="lineNoCov">          0 : _bfd_elf_allocate_ifunc_dyn_relocs (struct bfd_link_info *info,</span>
+<span class="lineNum">     111 </span>            :                                     struct elf_link_hash_entry *h,
+<span class="lineNum">     112 </span>            :                                     struct elf_dyn_relocs **head,
+<span class="lineNum">     113 </span>            :                                     bfd_boolean *readonly_dynrelocs_against_ifunc_p,
+<span class="lineNum">     114 </span>            :                                     unsigned int plt_entry_size,
+<span class="lineNum">     115 </span>            :                                     unsigned int plt_header_size,
+<span class="lineNum">     116 </span>            :                                     unsigned int got_entry_size,
+<span class="lineNum">     117 </span>            :                                     bfd_boolean avoid_plt)
+<span class="lineNum">     118 </span>            : {
+<span class="lineNum">     119 </span>            :   asection *plt, *gotplt, *relplt;
+<span class="lineNum">     120 </span>            :   struct elf_dyn_relocs *p;
+<span class="lineNum">     121 </span>            :   unsigned int sizeof_reloc;
+<span class="lineNum">     122 </span>            :   const struct elf_backend_data *bed;
+<span class="lineNum">     123 </span>            :   struct elf_link_hash_table *htab;
+<span class="lineNum">     124 </span>            :   bfd_boolean readonly_dynrelocs_against_ifunc;
+<span class="lineNum">     125 </span>            :   /* If AVOID_PLT is TRUE, don't use PLT if possible.  */
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :   bfd_boolean use_plt = !avoid_plt || h-&gt;plt.refcount &gt; 0;</span>
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :   bfd_boolean need_dynreloc = !use_plt || bfd_link_pic (info);</span>
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span>            :   /* When a PIC object references a STT_GNU_IFUNC symbol defined
+<span class="lineNum">     130 </span>            :      in executable or it isn't referenced via PLT, the address of
+<span class="lineNum">     131 </span>            :      the resolved function may be used.  But in non-PIC executable,
+<span class="lineNum">     132 </span>            :      the address of its .plt slot may be used.  Pointer equality may
+<span class="lineNum">     133 </span>            :      not work correctly.  PIE or non-PLT reference should be used if
+<span class="lineNum">     134 </span>            :      pointer equality is required here.  */
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 :   if (!need_dynreloc</span>
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :       &amp;&amp; (h-&gt;dynindx != -1</span>
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :           || info-&gt;export_dynamic)</span>
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :       &amp;&amp; h-&gt;pointer_equality_needed)</span>
+<span class="lineNum">     139 </span>            :     {
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :       info-&gt;callbacks-&gt;einfo</span>
+<span class="lineNum">     141 </span>            :         /* xgettext:c-format */
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :         (_(&quot;%F%P: dynamic STT_GNU_IFUNC symbol `%s' with pointer &quot;</span>
+<span class="lineNum">     143 </span>            :            &quot;equality in `%B' can not be used when making an &quot;
+<span class="lineNum">     144 </span>            :            &quot;executable; recompile with -fPIE and relink with -pie\n&quot;),
+<span class="lineNum">     145 </span>            :          h-&gt;root.root.string,
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :          h-&gt;root.u.def.section-&gt;owner);</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_bad_value);</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     149 </span>            :     }
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :   htab = elf_hash_table (info);</span>
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span>            :   /* When the symbol is marked with regular reference, if PLT isn't used
+<span class="lineNum">     154 </span>            :      or we are building a PIC object, we must keep dynamic relocation
+<span class="lineNum">     155 </span>            :      if there is non-GOT reference and use PLT if there is PC-relative
+<span class="lineNum">     156 </span>            :      reference.  */
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :   if (need_dynreloc &amp;&amp; h-&gt;ref_regular)</span>
+<span class="lineNum">     158 </span>            :     {
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 :       bfd_boolean keep = FALSE;</span>
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :       for (p = *head; p != NULL; p = p-&gt;next)</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :         if (p-&gt;count)</span>
+<span class="lineNum">     162 </span>            :           {
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :             h-&gt;non_got_ref = 1;</span>
+<span class="lineNum">     164 </span>            :             /* Need dynamic relocations for non-GOT reference.  */
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :             keep = TRUE;</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :             if (p-&gt;pc_count)</span>
+<span class="lineNum">     167 </span>            :               {
+<span class="lineNum">     168 </span>            :                 /* Must use PLT for PC-relative reference.  */
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :                 use_plt = TRUE;</span>
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :                 need_dynreloc = bfd_link_pic (info);</span>
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">     172 </span>            :               }
+<span class="lineNum">     173 </span>            :           }
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :       if (keep)</span>
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :         goto keep;</span>
+<span class="lineNum">     176 </span>            :     }
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            :   /* Support garbage collection against STT_GNU_IFUNC symbols.  */
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :   if (h-&gt;plt.refcount &lt;= 0 &amp;&amp; h-&gt;got.refcount &lt;= 0)</span>
+<span class="lineNum">     180 </span>            :     {
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :       h-&gt;got = htab-&gt;init_got_offset;</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :       h-&gt;plt = htab-&gt;init_plt_offset;</span>
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :       *head = NULL;</span>
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     185 </span>            :     }
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            :   /* Return and discard space for dynamic relocations against it if
+<span class="lineNum">     188 </span>            :      it is never referenced.  */
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :   if (!h-&gt;ref_regular)</span>
+<span class="lineNum">     190 </span>            :     {
+<span class="lineNum">     191 </span><span class="lineNoCov">          0 :       if (h-&gt;plt.refcount &gt; 0</span>
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :           || h-&gt;got.refcount &gt; 0)</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :       h-&gt;got = htab-&gt;init_got_offset;</span>
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :       h-&gt;plt = htab-&gt;init_plt_offset;</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :       *head = NULL;</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     198 </span>            :     }
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 : keep:</span>
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :   bed = get_elf_backend_data (info-&gt;output_bfd);</span>
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :   if (bed-&gt;rela_plts_and_copies_p)</span>
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :     sizeof_reloc = bed-&gt;s-&gt;sizeof_rela;</span>
+<span class="lineNum">     204 </span>            :   else
+<span class="lineNum">     205 </span><span class="lineNoCov">          0 :     sizeof_reloc = bed-&gt;s-&gt;sizeof_rel;</span>
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            :   /* When building a static executable, use .iplt, .igot.plt and
+<span class="lineNum">     208 </span>            :      .rel[a].iplt sections for STT_GNU_IFUNC symbols.  */
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 :   if (htab-&gt;splt != NULL)</span>
+<span class="lineNum">     210 </span>            :     {
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :       plt = htab-&gt;splt;</span>
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :       gotplt = htab-&gt;sgotplt;</span>
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :       relplt = htab-&gt;srelplt;</span>
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            :       /* If this is the first .plt entry and PLT is used, make room for
+<span class="lineNum">     216 </span>            :          the special first entry.  */
+<span class="lineNum">     217 </span><span class="lineNoCov">          0 :       if (plt-&gt;size == 0 &amp;&amp; use_plt)</span>
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :         plt-&gt;size += plt_header_size;</span>
+<span class="lineNum">     219 </span>            :     }
+<span class="lineNum">     220 </span>            :   else
+<span class="lineNum">     221 </span>            :     {
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :       plt = htab-&gt;iplt;</span>
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 :       gotplt = htab-&gt;igotplt;</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :       relplt = htab-&gt;irelplt;</span>
+<span class="lineNum">     225 </span>            :     }
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :   if (use_plt)</span>
+<span class="lineNum">     228 </span>            :     {
+<span class="lineNum">     229 </span>            :       /* Don't update value of STT_GNU_IFUNC symbol to PLT.  We need
+<span class="lineNum">     230 </span>            :          the original value for R_*_IRELATIVE.  */
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :       h-&gt;plt.offset = plt-&gt;size;</span>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :       /* Make room for this entry in the .plt/.iplt section.  */
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :       plt-&gt;size += plt_entry_size;</span>
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            :       /* We also need to make an entry in the .got.plt/.got.iplt section,
+<span class="lineNum">     237 </span>            :          which will be placed in the .got section by the linker script.  */
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :       gotplt-&gt;size += got_entry_size;</span>
+<span class="lineNum">     239 </span>            :     }
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            :   /* We also need to make an entry in the .rel[a].plt/.rel[a].iplt
+<span class="lineNum">     242 </span>            :      section for GOTPLT relocation if PLT is used.  */
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   if (use_plt)</span>
+<span class="lineNum">     244 </span>            :     {
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :       relplt-&gt;size += sizeof_reloc;</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :       relplt-&gt;reloc_count++;</span>
+<span class="lineNum">     247 </span>            :     }
+<span class="lineNum">     248 </span>            : 
+<span class="lineNum">     249 </span>            :   /* We need dynamic relocation for STT_GNU_IFUNC symbol only when
+<span class="lineNum">     250 </span>            :      there is a non-GOT reference in a PIC object or PLT isn't used.  */
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :   if (!need_dynreloc || !h-&gt;non_got_ref)</span>
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :     *head = NULL;</span>
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :   readonly_dynrelocs_against_ifunc = FALSE;</span>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            :   /* Finally, allocate space.  */
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :   p = *head;</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :   if (p != NULL)</span>
+<span class="lineNum">     259 </span>            :     {
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :       bfd_size_type count = 0;</span>
+<span class="lineNum">     261 </span>            :       do
+<span class="lineNum">     262 </span>            :         {
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 :           if (!readonly_dynrelocs_against_ifunc)</span>
+<span class="lineNum">     264 </span>            :             {
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :               asection *s = p-&gt;sec-&gt;output_section;</span>
+<span class="lineNum">     266 </span><span class="lineNoCov">          0 :               if (s != NULL &amp;&amp; (s-&gt;flags &amp; SEC_READONLY) != 0)</span>
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :                 readonly_dynrelocs_against_ifunc = TRUE;</span>
+<span class="lineNum">     268 </span>            :             }
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :           count += p-&gt;count;</span>
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :           p = p-&gt;next;</span>
+<span class="lineNum">     271 </span>            :         }
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :       while (p != NULL);</span>
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            :       /* Dynamic relocations are stored in
+<span class="lineNum">     275 </span>            :          1. .rel[a].ifunc section in PIC object.
+<span class="lineNum">     276 </span>            :          2. .rel[a].got section in dynamic executable.
+<span class="lineNum">     277 </span>            :          3. .rel[a].iplt section in static executable.  */
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 :       if (bfd_link_pic (info))</span>
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :         htab-&gt;irelifunc-&gt;size += count * sizeof_reloc;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :       else if (htab-&gt;splt != NULL)</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :         htab-&gt;srelgot-&gt;size += count * sizeof_reloc;</span>
+<span class="lineNum">     282 </span>            :       else
+<span class="lineNum">     283 </span>            :         {
+<span class="lineNum">     284 </span><span class="lineNoCov">          0 :           relplt-&gt;size += count * sizeof_reloc;</span>
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :           relplt-&gt;reloc_count += count;</span>
+<span class="lineNum">     286 </span>            :         }
+<span class="lineNum">     287 </span>            :     }
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span><span class="lineNoCov">          0 :   if (readonly_dynrelocs_against_ifunc_p)</span>
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :     *readonly_dynrelocs_against_ifunc_p = readonly_dynrelocs_against_ifunc;</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :   /* For STT_GNU_IFUNC symbol, .got.plt has the real function address
+<span class="lineNum">     293 </span>            :      and .got has the PLT entry adddress.  We will load the GOT entry
+<span class="lineNum">     294 </span>            :      with the PLT entry in finish_dynamic_symbol if it is used.  For
+<span class="lineNum">     295 </span>            :      branch, it uses .got.plt.  For symbol value, if PLT is used,
+<span class="lineNum">     296 </span>            :      1. Use .got.plt in a PIC object if it is forced local or not
+<span class="lineNum">     297 </span>            :      dynamic.
+<span class="lineNum">     298 </span>            :      2. Use .got.plt in a non-PIC object if pointer equality isn't
+<span class="lineNum">     299 </span>            :      needed.
+<span class="lineNum">     300 </span>            :      3. Use .got.plt in PIE.
+<span class="lineNum">     301 </span>            :      4. Use .got.plt if .got isn't used.
+<span class="lineNum">     302 </span>            :      5. Otherwise use .got so that it can be shared among different
+<span class="lineNum">     303 </span>            :      objects at run-time.
+<span class="lineNum">     304 </span>            :      If PLT isn't used, always use .got for symbol value.
+<span class="lineNum">     305 </span>            :      We only need to relocate .got entry in PIC object or in dynamic
+<span class="lineNum">     306 </span>            :      executable without PLT.  */
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :   if (use_plt</span>
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :       &amp;&amp; (h-&gt;got.refcount &lt;= 0</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :           || (bfd_link_pic (info)</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :               &amp;&amp; (h-&gt;dynindx == -1</span>
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :                   || h-&gt;forced_local))</span>
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 :           || (!bfd_link_pic (info)</span>
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :               &amp;&amp; !h-&gt;pointer_equality_needed)</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :           || bfd_link_pie (info)</span>
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :           || htab-&gt;sgot == NULL))</span>
+<span class="lineNum">     316 </span>            :     {
+<span class="lineNum">     317 </span>            :       /* Use .got.plt.  */
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :       h-&gt;got.offset = (bfd_vma) -1;</span>
+<span class="lineNum">     319 </span>            :     }
+<span class="lineNum">     320 </span>            :   else
+<span class="lineNum">     321 </span>            :     {
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :       if (!use_plt)</span>
+<span class="lineNum">     323 </span>            :         {
+<span class="lineNum">     324 </span>            :           /* PLT isn't used.  */
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :           h-&gt;plt.offset = (bfd_vma) -1;</span>
+<span class="lineNum">     326 </span>            :         }
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :       if (h-&gt;got.refcount &lt;= 0)</span>
+<span class="lineNum">     328 </span>            :         {
+<span class="lineNum">     329 </span>            :           /* GOT isn't need when there are only relocations for static
+<span class="lineNum">     330 </span>            :              pointers.  */
+<span class="lineNum">     331 </span><span class="lineNoCov">          0 :           h-&gt;got.offset = (bfd_vma) -1;</span>
+<span class="lineNum">     332 </span>            :         }
+<span class="lineNum">     333 </span>            :       else
+<span class="lineNum">     334 </span>            :         {
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :           h-&gt;got.offset = htab-&gt;sgot-&gt;size;</span>
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :           htab-&gt;sgot-&gt;size += got_entry_size;</span>
+<span class="lineNum">     337 </span>            :           /* Need to relocate the GOT entry in a PIC object or PLT isn't
+<span class="lineNum">     338 </span>            :              used.  Otherwise, the GOT entry will be filled with the PLT
+<span class="lineNum">     339 </span>            :              entry and dynamic GOT relocation isn't needed.  */
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :           if (need_dynreloc)</span>
+<span class="lineNum">     341 </span>            :             {
+<span class="lineNum">     342 </span>            :               /* For non-static executable, dynamic GOT relocation is in
+<span class="lineNum">     343 </span>            :                  .rel[a].got section, but for static executable, it is
+<span class="lineNum">     344 </span>            :                  in .rel[a].iplt section.  */
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :               if (htab-&gt;splt != NULL)</span>
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :                 htab-&gt;srelgot-&gt;size += sizeof_reloc;</span>
+<span class="lineNum">     347 </span>            :               else
+<span class="lineNum">     348 </span>            :                 {
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :                   relplt-&gt;size += sizeof_reloc;</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :                   relplt-&gt;reloc_count++;</span>
+<span class="lineNum">     351 </span>            :                 }
+<span class="lineNum">     352 </span>            :             }
+<span class="lineNum">     353 </span>            :         }
+<span class="lineNum">     354 </span>            :     }
+<span class="lineNum">     355 </span>            : 
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     357 </span>            : }
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            : /* Similar to _bfd_elf_get_synthetic_symtab, optimized for unsorted PLT
+<span class="lineNum">     360 </span>            :    entries.  PLT is the PLT section.  PLT_SYM_VAL is a function pointer
+<span class="lineNum">     361 </span>            :    which returns an array of PLT entry symbol values.  */
+<a name="362"><span class="lineNum">     362 </span>            : </a>
+<span class="lineNum">     363 </span>            : long
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 : _bfd_elf_ifunc_get_synthetic_symtab</span>
+<span class="lineNum">     365 </span>            :   (bfd *abfd, long symcount ATTRIBUTE_UNUSED,
+<span class="lineNum">     366 </span>            :    asymbol **syms ATTRIBUTE_UNUSED, long dynsymcount, asymbol **dynsyms,
+<span class="lineNum">     367 </span>            :    asymbol **ret, asection *plt,
+<span class="lineNum">     368 </span>            :    bfd_vma *(*get_plt_sym_val) (bfd *, asymbol **, asection *, asection *))
+<span class="lineNum">     369 </span>            : {
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :   const struct elf_backend_data *bed = get_elf_backend_data (abfd);</span>
+<span class="lineNum">     371 </span>            :   asection *relplt;
+<span class="lineNum">     372 </span>            :   asymbol *s;
+<span class="lineNum">     373 </span>            :   const char *relplt_name;
+<span class="lineNum">     374 </span>            :   bfd_boolean (*slurp_relocs) (bfd *, asection *, asymbol **, bfd_boolean);
+<span class="lineNum">     375 </span>            :   arelent *p;
+<span class="lineNum">     376 </span>            :   long count, i, n;
+<span class="lineNum">     377 </span>            :   size_t size;
+<span class="lineNum">     378 </span>            :   Elf_Internal_Shdr *hdr;
+<span class="lineNum">     379 </span>            :   char *names;
+<span class="lineNum">     380 </span>            :   bfd_vma *plt_sym_val;
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :   *ret = NULL;</span>
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span><span class="lineNoCov">          0 :   if (plt == NULL)</span>
+<span class="lineNum">     385 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     386 </span>            : 
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :   if ((abfd-&gt;flags &amp; (DYNAMIC | EXEC_P)) == 0)</span>
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span><span class="lineNoCov">          0 :   if (dynsymcount &lt;= 0)</span>
+<span class="lineNum">     391 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     392 </span>            : 
+<span class="lineNum">     393 </span><span class="lineNoCov">          0 :   relplt_name = bed-&gt;relplt_name;</span>
+<span class="lineNum">     394 </span><span class="lineNoCov">          0 :   if (relplt_name == NULL)</span>
+<span class="lineNum">     395 </span><span class="lineNoCov">          0 :     relplt_name = bed-&gt;rela_plts_and_copies_p ? &quot;.rela.plt&quot; : &quot;.rel.plt&quot;;</span>
+<span class="lineNum">     396 </span><span class="lineNoCov">          0 :   relplt = bfd_get_section_by_name (abfd, relplt_name);</span>
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :   if (relplt == NULL)</span>
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :   hdr = &amp;elf_section_data (relplt)-&gt;this_hdr;</span>
+<span class="lineNum">     401 </span><span class="lineNoCov">          0 :   if (hdr-&gt;sh_link != elf_dynsymtab (abfd)</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :       || (hdr-&gt;sh_type != SHT_REL &amp;&amp; hdr-&gt;sh_type != SHT_RELA))</span>
+<span class="lineNum">     403 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     404 </span>            : 
+<span class="lineNum">     405 </span><span class="lineNoCov">          0 :   slurp_relocs = get_elf_backend_data (abfd)-&gt;s-&gt;slurp_reloc_table;</span>
+<span class="lineNum">     406 </span><span class="lineNoCov">          0 :   if (! (*slurp_relocs) (abfd, relplt, dynsyms, TRUE))</span>
+<span class="lineNum">     407 </span><span class="lineNoCov">          0 :     return -1;</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span><span class="lineNoCov">          0 :   count = relplt-&gt;size / hdr-&gt;sh_entsize;</span>
+<span class="lineNum">     410 </span><span class="lineNoCov">          0 :   size = count * sizeof (asymbol);</span>
+<span class="lineNum">     411 </span><span class="lineNoCov">          0 :   p = relplt-&gt;relocation;</span>
+<span class="lineNum">     412 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; count; i++, p += bed-&gt;s-&gt;int_rels_per_ext_rel)</span>
+<span class="lineNum">     413 </span>            :     {
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 :       size += strlen ((*p-&gt;sym_ptr_ptr)-&gt;name) + sizeof (&quot;@plt&quot;);</span>
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :       if (p-&gt;addend != 0)</span>
+<span class="lineNum">     416 </span>            :         {
+<span class="lineNum">     417 </span>            : #ifdef BFD64
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 :           size += sizeof (&quot;+0x&quot;) - 1 + 8 + 8 * (bed-&gt;s-&gt;elfclass == ELFCLASS64);</span>
+<span class="lineNum">     419 </span>            : #else
+<span class="lineNum">     420 </span>            :           size += sizeof (&quot;+0x&quot;) - 1 + 8;
+<span class="lineNum">     421 </span>            : #endif
+<span class="lineNum">     422 </span>            :         }
+<span class="lineNum">     423 </span>            :     }
+<span class="lineNum">     424 </span>            : 
+<span class="lineNum">     425 </span><span class="lineNoCov">          0 :   plt_sym_val = get_plt_sym_val (abfd, dynsyms, plt, relplt);</span>
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :   if (plt_sym_val == NULL)</span>
+<span class="lineNum">     427 </span><span class="lineNoCov">          0 :     return -1;</span>
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span><span class="lineNoCov">          0 :   s = *ret = (asymbol *) bfd_malloc (size);</span>
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 :   if (s == NULL)</span>
+<span class="lineNum">     431 </span>            :     {
+<span class="lineNum">     432 </span><span class="lineNoCov">          0 :       free (plt_sym_val);</span>
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :       return -1;</span>
+<span class="lineNum">     434 </span>            :     }
+<span class="lineNum">     435 </span>            : 
+<span class="lineNum">     436 </span><span class="lineNoCov">          0 :   names = (char *) (s + count);</span>
+<span class="lineNum">     437 </span><span class="lineNoCov">          0 :   p = relplt-&gt;relocation;</span>
+<span class="lineNum">     438 </span><span class="lineNoCov">          0 :   n = 0;</span>
+<span class="lineNum">     439 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; count; i++, p += bed-&gt;s-&gt;int_rels_per_ext_rel)</span>
+<span class="lineNum">     440 </span>            :     {
+<span class="lineNum">     441 </span>            :       size_t len;
+<span class="lineNum">     442 </span>            :       bfd_vma addr;
+<span class="lineNum">     443 </span>            : 
+<span class="lineNum">     444 </span><span class="lineNoCov">          0 :       addr = plt_sym_val[i];</span>
+<span class="lineNum">     445 </span><span class="lineNoCov">          0 :       if (addr == (bfd_vma) -1)</span>
+<span class="lineNum">     446 </span><span class="lineNoCov">          0 :         continue;</span>
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 :       *s = **p-&gt;sym_ptr_ptr;</span>
+<span class="lineNum">     449 </span>            :       /* Undefined syms won't have BSF_LOCAL or BSF_GLOBAL set.  Since
+<span class="lineNum">     450 </span>            :          we are defining a symbol, ensure one of them is set.  */
+<span class="lineNum">     451 </span><span class="lineNoCov">          0 :       if ((s-&gt;flags &amp; BSF_LOCAL) == 0)</span>
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :         s-&gt;flags |= BSF_GLOBAL;</span>
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :       s-&gt;flags |= BSF_SYNTHETIC;</span>
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :       s-&gt;section = plt;</span>
+<span class="lineNum">     455 </span><span class="lineNoCov">          0 :       s-&gt;value = addr - plt-&gt;vma;</span>
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :       s-&gt;name = names;</span>
+<span class="lineNum">     457 </span><span class="lineNoCov">          0 :       s-&gt;udata.p = NULL;</span>
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :       len = strlen ((*p-&gt;sym_ptr_ptr)-&gt;name);</span>
+<span class="lineNum">     459 </span><span class="lineNoCov">          0 :       memcpy (names, (*p-&gt;sym_ptr_ptr)-&gt;name, len);</span>
+<span class="lineNum">     460 </span><span class="lineNoCov">          0 :       names += len;</span>
+<span class="lineNum">     461 </span><span class="lineNoCov">          0 :       if (p-&gt;addend != 0)</span>
+<span class="lineNum">     462 </span>            :         {
+<span class="lineNum">     463 </span>            :           char buf[30], *a;
+<span class="lineNum">     464 </span>            : 
+<span class="lineNum">     465 </span><span class="lineNoCov">          0 :           memcpy (names, &quot;+0x&quot;, sizeof (&quot;+0x&quot;) - 1);</span>
+<span class="lineNum">     466 </span><span class="lineNoCov">          0 :           names += sizeof (&quot;+0x&quot;) - 1;</span>
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :           bfd_sprintf_vma (abfd, buf, p-&gt;addend);</span>
+<span class="lineNum">     468 </span><span class="lineNoCov">          0 :           for (a = buf; *a == '0'; ++a)</span>
+<span class="lineNum">     469 </span>            :             ;
+<span class="lineNum">     470 </span><span class="lineNoCov">          0 :           len = strlen (a);</span>
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :           memcpy (names, a, len);</span>
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 :           names += len;</span>
+<span class="lineNum">     473 </span>            :         }
+<span class="lineNum">     474 </span><span class="lineNoCov">          0 :       memcpy (names, &quot;@plt&quot;, sizeof (&quot;@plt&quot;));</span>
+<span class="lineNum">     475 </span><span class="lineNoCov">          0 :       names += sizeof (&quot;@plt&quot;);</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :       ++s, ++n;</span>
+<span class="lineNum">     477 </span>            :     }
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span><span class="lineNoCov">          0 :   free (plt_sym_val);</span>
+<span class="lineNum">     480 </span>            : 
+<span class="lineNum">     481 </span><span class="lineNoCov">          0 :   return n;</span>
+<span class="lineNum">     482 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

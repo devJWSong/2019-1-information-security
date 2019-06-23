@@ -1,0 +1,1706 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/doc/chew.c</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">bfd/doc</a> - chew.c<span style="font-size: 80%;"> (source / <a href="chew.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">562</td>
+            <td class="headerCovTableEntry">728</td>
+            <td class="headerCovTableEntryMed">77.2 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">45</td>
+            <td class="headerCovTableEntry">64</td>
+            <td class="headerCovTableEntryLo">70.3 %</td>
+          </tr>
+          <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* chew</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Contributed by steve chamberlain @cygnus
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /* Yet another way of extracting documentation from source.
+<span class="lineNum">      23 </span>            :    No, I haven't finished it yet, but I hope you people like it better
+<span class="lineNum">      24 </span>            :    than the old way
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :    sac
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            :    Basically, this is a sort of string forth, maybe we should call it
+<span class="lineNum">      29 </span>            :    struth?
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            :    You define new words thus:
+<span class="lineNum">      32 </span>            :    : &lt;newword&gt; &lt;oldwords&gt; ;
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : */
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : /* Primitives provided by the program:
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :    Two stacks are provided, a string stack and an integer stack.
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            :    Internal state variables:
+<span class="lineNum">      41 </span>            :         internal_wanted - indicates whether `-i' was passed
+<span class="lineNum">      42 </span>            :         internal_mode - user-settable
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            :    Commands:
+<span class="lineNum">      45 </span>            :         push_text
+<span class="lineNum">      46 </span>            :         ! - pop top of integer stack for address, pop next for value; store
+<span class="lineNum">      47 </span>            :         @ - treat value on integer stack as the address of an integer; push
+<span class="lineNum">      48 </span>            :                 that integer on the integer stack after popping the &quot;address&quot;
+<span class="lineNum">      49 </span>            :         hello - print &quot;hello\n&quot; to stdout
+<span class="lineNum">      50 </span>            :         stdout - put stdout marker on TOS
+<span class="lineNum">      51 </span>            :         stderr - put stderr marker on TOS
+<span class="lineNum">      52 </span>            :         print - print TOS-1 on TOS (eg: &quot;hello\n&quot; stdout print)
+<span class="lineNum">      53 </span>            :         skip_past_newline
+<span class="lineNum">      54 </span>            :         catstr - fn icatstr
+<span class="lineNum">      55 </span>            :         copy_past_newline - append input, up to and including newline into TOS
+<span class="lineNum">      56 </span>            :         dup - fn other_dup
+<span class="lineNum">      57 </span>            :         drop - discard TOS
+<span class="lineNum">      58 </span>            :         idrop - ditto
+<span class="lineNum">      59 </span>            :         remchar - delete last character from TOS
+<span class="lineNum">      60 </span>            :         get_stuff_in_command
+<span class="lineNum">      61 </span>            :         do_fancy_stuff - translate &lt;&lt;foo&gt;&gt; to @code{foo} in TOS
+<span class="lineNum">      62 </span>            :         bulletize - if &quot;o&quot; lines found, prepend @itemize @bullet to TOS
+<span class="lineNum">      63 </span>            :                 and @item to each &quot;o&quot; line; append @end itemize
+<span class="lineNum">      64 </span>            :         courierize - put @example around . and | lines, translate {* *} { }
+<span class="lineNum">      65 </span>            :         exit - fn chew_exit
+<span class="lineNum">      66 </span>            :         swap
+<span class="lineNum">      67 </span>            :         outputdots - strip out lines without leading dots
+<span class="lineNum">      68 </span>            :         paramstuff - convert full declaration into &quot;PARAMS&quot; form if not already
+<span class="lineNum">      69 </span>            :         maybecatstr - do catstr if internal_mode == internal_wanted, discard
+<span class="lineNum">      70 </span>            :                 value in any case
+<span class="lineNum">      71 </span>            :         translatecomments - turn {* and *} into comment delimiters
+<span class="lineNum">      72 </span>            :         kill_bogus_lines - get rid of extra newlines
+<span class="lineNum">      73 </span>            :         indent
+<span class="lineNum">      74 </span>            :         internalmode - pop from integer stack, set `internalmode' to that value
+<span class="lineNum">      75 </span>            :         print_stack_level - print current stack depth to stderr
+<span class="lineNum">      76 </span>            :         strip_trailing_newlines - go ahead, guess...
+<span class="lineNum">      77 </span>            :         [quoted string] - push string onto string stack
+<span class="lineNum">      78 </span>            :         [word starting with digit] - push atol(str) onto integer stack
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            :    A command must be all upper-case, and alone on a line.
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            :    Foo.  */
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : #include &quot;ansidecl.h&quot;
+<span class="lineNum">      85 </span>            : #include &lt;assert.h&gt;
+<span class="lineNum">      86 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      87 </span>            : #include &lt;ctype.h&gt;
+<span class="lineNum">      88 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      89 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            : #define DEF_SIZE 5000
+<span class="lineNum">      92 </span>            : #define STACK 50
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : int internal_wanted;
+<span class="lineNum">      95 </span>            : int internal_mode;
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            : int warning;
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : /* Here is a string type ...  */
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            : typedef struct buffer
+<span class="lineNum">     102 </span>            : {
+<span class="lineNum">     103 </span>            :   char *ptr;
+<span class="lineNum">     104 </span>            :   unsigned long write_idx;
+<span class="lineNum">     105 </span>            :   unsigned long size;
+<span class="lineNum">     106 </span>            : } string_type;
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : #ifdef __STDC__
+<span class="lineNum">     109 </span>            : static void init_string_with_size (string_type *, unsigned int);
+<span class="lineNum">     110 </span>            : static void init_string (string_type *);
+<span class="lineNum">     111 </span>            : static int find (string_type *, char *);
+<span class="lineNum">     112 </span>            : static void write_buffer (string_type *, FILE *);
+<span class="lineNum">     113 </span>            : static void delete_string (string_type *);
+<span class="lineNum">     114 </span>            : static char *addr (string_type *, unsigned int);
+<span class="lineNum">     115 </span>            : static char at (string_type *, unsigned int);
+<span class="lineNum">     116 </span>            : static void catchar (string_type *, int);
+<span class="lineNum">     117 </span>            : static void overwrite_string (string_type *, string_type *);
+<span class="lineNum">     118 </span>            : static void catbuf (string_type *, char *, unsigned int);
+<span class="lineNum">     119 </span>            : static void cattext (string_type *, char *);
+<span class="lineNum">     120 </span>            : static void catstr (string_type *, string_type *);
+<span class="lineNum">     121 </span>            : static void die (char *);
+<span class="lineNum">     122 </span>            : #endif
+<a name="123"><span class="lineNum">     123 </span>            : </a>
+<span class="lineNum">     124 </span>            : static void
+<span class="lineNum">     125 </span><span class="lineCov">      10007 : init_string_with_size (buffer, size)</span>
+<span class="lineNum">     126 </span>            :      string_type *buffer;
+<span class="lineNum">     127 </span>            :      unsigned int size;
+<span class="lineNum">     128 </span>            : {
+<span class="lineNum">     129 </span><span class="lineCov">      10007 :   buffer-&gt;write_idx = 0;</span>
+<span class="lineNum">     130 </span><span class="lineCov">      10007 :   buffer-&gt;size = size;</span>
+<span class="lineNum">     131 </span><span class="lineCov">      10007 :   buffer-&gt;ptr = (char *) malloc (size);</span>
+<span class="lineNum">     132 </span><span class="lineCov">      10007 : }</span>
+<a name="133"><span class="lineNum">     133 </span>            : </a>
+<span class="lineNum">     134 </span>            : static void
+<span class="lineNum">     135 </span><span class="lineCov">      10007 : init_string (buffer)</span>
+<span class="lineNum">     136 </span>            :      string_type *buffer;
+<span class="lineNum">     137 </span>            : {
+<span class="lineNum">     138 </span><span class="lineCov">      10007 :   init_string_with_size (buffer, DEF_SIZE);</span>
+<span class="lineNum">     139 </span><span class="lineCov">      10007 : }</span>
+<a name="140"><span class="lineNum">     140 </span>            : </a>
+<span class="lineNum">     141 </span>            : static int
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 : find (str, what)</span>
+<span class="lineNum">     143 </span>            :      string_type *str;
+<span class="lineNum">     144 </span>            :      char *what;
+<span class="lineNum">     145 </span>            : {
+<span class="lineNum">     146 </span>            :   unsigned int i;
+<span class="lineNum">     147 </span>            :   char *p;
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :   p = what;</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; str-&gt;write_idx &amp;&amp; *p; i++)</span>
+<span class="lineNum">     150 </span>            :     {
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :       if (*p == str-&gt;ptr[i])</span>
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :         p++;</span>
+<span class="lineNum">     153 </span>            :       else
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :         p = what;</span>
+<span class="lineNum">     155 </span>            :     }
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :   return (*p == 0);</span>
+<span class="lineNum">     157 </span>            : }
+<a name="158"><span class="lineNum">     158 </span>            : </a>
+<span class="lineNum">     159 </span>            : static void
+<span class="lineNum">     160 </span><span class="lineCov">         22 : write_buffer (buffer, f)</span>
+<span class="lineNum">     161 </span>            :      string_type *buffer;
+<span class="lineNum">     162 </span>            :      FILE *f;
+<span class="lineNum">     163 </span>            : {
+<span class="lineNum">     164 </span><span class="lineCov">         22 :   if (buffer-&gt;write_idx != 0</span>
+<span class="lineNum">     165 </span><span class="lineCov">         21 :       &amp;&amp; fwrite (buffer-&gt;ptr, buffer-&gt;write_idx, 1, f) != 1)</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :     die (&quot;cannot write output&quot;);</span>
+<span class="lineNum">     167 </span><span class="lineCov">         22 : }</span>
+<a name="168"><span class="lineNum">     168 </span>            : </a>
+<span class="lineNum">     169 </span>            : static void
+<span class="lineNum">     170 </span><span class="lineCov">       9659 : delete_string (buffer)</span>
+<span class="lineNum">     171 </span>            :      string_type *buffer;
+<span class="lineNum">     172 </span>            : {
+<span class="lineNum">     173 </span><span class="lineCov">       9659 :   if (buffer-&gt;ptr)</span>
+<span class="lineNum">     174 </span><span class="lineCov">       9659 :     free (buffer-&gt;ptr);</span>
+<span class="lineNum">     175 </span><span class="lineCov">       9659 :   buffer-&gt;ptr = NULL;</span>
+<span class="lineNum">     176 </span><span class="lineCov">       9659 : }</span>
+<a name="177"><span class="lineNum">     177 </span>            : </a>
+<span class="lineNum">     178 </span>            : static char *
+<span class="lineNum">     179 </span><span class="lineCov">       4275 : addr (buffer, idx)</span>
+<span class="lineNum">     180 </span>            :      string_type *buffer;
+<span class="lineNum">     181 </span>            :      unsigned int idx;
+<span class="lineNum">     182 </span>            : {
+<span class="lineNum">     183 </span><span class="lineCov">       4275 :   return buffer-&gt;ptr + idx;</span>
+<span class="lineNum">     184 </span>            : }
+<a name="185"><span class="lineNum">     185 </span>            : </a>
+<span class="lineNum">     186 </span>            : static char
+<span class="lineNum">     187 </span><span class="lineCov">   10483626 : at (buffer, pos)</span>
+<span class="lineNum">     188 </span>            :      string_type *buffer;
+<span class="lineNum">     189 </span>            :      unsigned int pos;
+<span class="lineNum">     190 </span>            : {
+<span class="lineNum">     191 </span><span class="lineCov">   10483626 :   if (pos &gt;= buffer-&gt;write_idx)</span>
+<span class="lineNum">     192 </span><span class="lineCov">       2758 :     return 0;</span>
+<span class="lineNum">     193 </span><span class="lineCov">   10480868 :   return buffer-&gt;ptr[pos];</span>
+<span class="lineNum">     194 </span>            : }
+<a name="195"><span class="lineNum">     195 </span>            : </a>
+<span class="lineNum">     196 </span>            : static void
+<span class="lineNum">     197 </span><span class="lineCov">    1790243 : catchar (buffer, ch)</span>
+<span class="lineNum">     198 </span>            :      string_type *buffer;
+<span class="lineNum">     199 </span>            :      int ch;
+<span class="lineNum">     200 </span>            : {
+<span class="lineNum">     201 </span><span class="lineCov">    1790243 :   if (buffer-&gt;write_idx == buffer-&gt;size)</span>
+<span class="lineNum">     202 </span>            :     {
+<span class="lineNum">     203 </span><span class="lineCov">        104 :       buffer-&gt;size *= 2;</span>
+<span class="lineNum">     204 </span><span class="lineCov">        104 :       buffer-&gt;ptr = (char *) realloc (buffer-&gt;ptr, buffer-&gt;size);</span>
+<span class="lineNum">     205 </span>            :     }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span><span class="lineCov">    1790243 :   buffer-&gt;ptr[buffer-&gt;write_idx++] = ch;</span>
+<span class="lineNum">     208 </span><span class="lineCov">    1790243 : }</span>
+<a name="209"><span class="lineNum">     209 </span>            : </a>
+<span class="lineNum">     210 </span>            : static void
+<span class="lineNum">     211 </span><span class="lineCov">        326 : overwrite_string (dst, src)</span>
+<span class="lineNum">     212 </span>            :      string_type *dst;
+<span class="lineNum">     213 </span>            :      string_type *src;
+<span class="lineNum">     214 </span>            : {
+<span class="lineNum">     215 </span><span class="lineCov">        326 :   free (dst-&gt;ptr);</span>
+<span class="lineNum">     216 </span><span class="lineCov">        326 :   dst-&gt;size = src-&gt;size;</span>
+<span class="lineNum">     217 </span><span class="lineCov">        326 :   dst-&gt;write_idx = src-&gt;write_idx;</span>
+<span class="lineNum">     218 </span><span class="lineCov">        326 :   dst-&gt;ptr = src-&gt;ptr;</span>
+<span class="lineNum">     219 </span><span class="lineCov">        326 : }</span>
+<a name="220"><span class="lineNum">     220 </span>            : </a>
+<span class="lineNum">     221 </span>            : static void
+<span class="lineNum">     222 </span><span class="lineCov">      17036 : catbuf (buffer, buf, len)</span>
+<span class="lineNum">     223 </span>            :      string_type *buffer;
+<span class="lineNum">     224 </span>            :      char *buf;
+<span class="lineNum">     225 </span>            :      unsigned int len;
+<span class="lineNum">     226 </span>            : {
+<span class="lineNum">     227 </span><span class="lineCov">      17036 :   if (buffer-&gt;write_idx + len &gt;= buffer-&gt;size)</span>
+<span class="lineNum">     228 </span>            :     {
+<span class="lineNum">     229 </span><span class="lineCov">        299 :       while (buffer-&gt;write_idx + len &gt;= buffer-&gt;size)</span>
+<span class="lineNum">     230 </span><span class="lineCov">        117 :         buffer-&gt;size *= 2;</span>
+<span class="lineNum">     231 </span><span class="lineCov">         91 :       buffer-&gt;ptr = (char *) realloc (buffer-&gt;ptr, buffer-&gt;size);</span>
+<span class="lineNum">     232 </span>            :     }
+<span class="lineNum">     233 </span><span class="lineCov">      17036 :   memcpy (buffer-&gt;ptr + buffer-&gt;write_idx, buf, len);</span>
+<span class="lineNum">     234 </span><span class="lineCov">      17036 :   buffer-&gt;write_idx += len;</span>
+<span class="lineNum">     235 </span><span class="lineCov">      17036 : }</span>
+<a name="236"><span class="lineNum">     236 </span>            : </a>
+<span class="lineNum">     237 </span>            : static void
+<span class="lineNum">     238 </span><span class="lineCov">       8320 : cattext (buffer, string)</span>
+<span class="lineNum">     239 </span>            :      string_type *buffer;
+<span class="lineNum">     240 </span>            :      char *string;
+<span class="lineNum">     241 </span>            : {
+<span class="lineNum">     242 </span><span class="lineCov">       8320 :   catbuf (buffer, string, (unsigned int) strlen (string));</span>
+<span class="lineNum">     243 </span><span class="lineCov">       8320 : }</span>
+<a name="244"><span class="lineNum">     244 </span>            : </a>
+<span class="lineNum">     245 </span>            : static void
+<span class="lineNum">     246 </span><span class="lineCov">       8432 : catstr (dst, src)</span>
+<span class="lineNum">     247 </span>            :      string_type *dst;
+<span class="lineNum">     248 </span>            :      string_type *src;
+<span class="lineNum">     249 </span>            : {
+<span class="lineNum">     250 </span><span class="lineCov">       8432 :   catbuf (dst, src-&gt;ptr, src-&gt;write_idx);</span>
+<span class="lineNum">     251 </span><span class="lineCov">       8432 : }</span>
+<a name="252"><span class="lineNum">     252 </span>            : </a>
+<span class="lineNum">     253 </span>            : static unsigned int
+<span class="lineNum">     254 </span><span class="lineCov">      14512 : skip_white_and_stars (src, idx)</span>
+<span class="lineNum">     255 </span>            :      string_type *src;
+<span class="lineNum">     256 </span>            :      unsigned int idx;
+<span class="lineNum">     257 </span>            : {
+<span class="lineNum">     258 </span>            :   char c;
+<span class="lineNum">     259 </span><span class="lineCov">      76220 :   while ((c = at (src, idx)),</span>
+<span class="lineNum">     260 </span><span class="lineCov">      30854 :          isspace ((unsigned char) c)</span>
+<span class="lineNum">     261 </span><span class="lineCov">      47196 :          || (c == '*'</span>
+<span class="lineNum">     262 </span>            :              /* Don't skip past end-of-comment or star as first
+<span class="lineNum">     263 </span>            :                 character on its line.  */
+<span class="lineNum">     264 </span><span class="lineCov">        232 :              &amp;&amp; at (src, idx +1) != '/'</span>
+<span class="lineNum">     265 </span><span class="lineCov">          5 :              &amp;&amp; at (src, idx -1) != '\n'))</span>
+<span class="lineNum">     266 </span><span class="lineCov">      16342 :     idx++;</span>
+<span class="lineNum">     267 </span><span class="lineCov">      14512 :   return idx;</span>
+<span class="lineNum">     268 </span>            : }
+<a name="269"><span class="lineNum">     269 </span>            : </a>
+<span class="lineNum">     270 </span>            : static unsigned int
+<span class="lineNum">     271 </span><span class="lineCov">       6304 : skip_past_newline_1 (ptr, idx)</span>
+<span class="lineNum">     272 </span>            :      string_type *ptr;
+<span class="lineNum">     273 </span>            :      unsigned int idx;
+<span class="lineNum">     274 </span>            : {
+<span class="lineNum">     275 </span><span class="lineCov">     124447 :   while (at (ptr, idx)</span>
+<span class="lineNum">     276 </span><span class="lineCov">     118143 :          &amp;&amp; at (ptr, idx) != '\n')</span>
+<span class="lineNum">     277 </span><span class="lineCov">     111839 :     idx++;</span>
+<span class="lineNum">     278 </span><span class="lineCov">       6304 :   if (at (ptr, idx) == '\n')</span>
+<span class="lineNum">     279 </span><span class="lineCov">       6304 :     return idx + 1;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :   return idx;</span>
+<span class="lineNum">     281 </span>            : }
+<span class="lineNum">     282 </span>            : 
+<span class="lineNum">     283 </span>            : /***********************************************************************/
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span>            : string_type stack[STACK];
+<span class="lineNum">     286 </span>            : string_type *tos;
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            : unsigned int idx = 0; /* Pos in input buffer */
+<span class="lineNum">     289 </span>            : string_type *ptr; /* and the buffer */
+<span class="lineNum">     290 </span>            : typedef void (*stinst_type)();
+<span class="lineNum">     291 </span>            : stinst_type *pc;
+<span class="lineNum">     292 </span>            : stinst_type sstack[STACK];
+<span class="lineNum">     293 </span>            : stinst_type *ssp = &amp;sstack[0];
+<span class="lineNum">     294 </span>            : long istack[STACK];
+<span class="lineNum">     295 </span>            : long *isp = &amp;istack[0];
+<span class="lineNum">     296 </span>            : 
+<span class="lineNum">     297 </span>            : typedef int *word_type;
+<span class="lineNum">     298 </span>            : 
+<span class="lineNum">     299 </span>            : struct dict_struct
+<span class="lineNum">     300 </span>            : {
+<span class="lineNum">     301 </span>            :   char *word;
+<span class="lineNum">     302 </span>            :   struct dict_struct *next;
+<span class="lineNum">     303 </span>            :   stinst_type *code;
+<span class="lineNum">     304 </span>            :   int code_length;
+<span class="lineNum">     305 </span>            :   int code_end;
+<span class="lineNum">     306 </span>            :   int var;
+<span class="lineNum">     307 </span>            : };
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span>            : typedef struct dict_struct dict_type;
+<a name="310"><span class="lineNum">     310 </span>            : </a>
+<span class="lineNum">     311 </span>            : static void
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 : die (msg)</span>
+<span class="lineNum">     313 </span>            :      char *msg;
+<span class="lineNum">     314 </span>            : {
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :   fprintf (stderr, &quot;%s\n&quot;, msg);</span>
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :   exit (1);</span>
+<span class="lineNum">     317 </span>            : }
+<a name="318"><span class="lineNum">     318 </span>            : </a>
+<span class="lineNum">     319 </span>            : static void
+<span class="lineNum">     320 </span><span class="lineCov">      16516 : check_range ()</span>
+<span class="lineNum">     321 </span>            : {
+<span class="lineNum">     322 </span><span class="lineCov">      16516 :   if (tos &lt; stack)</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :     die (&quot;underflow in string stack&quot;);</span>
+<span class="lineNum">     324 </span><span class="lineCov">      16516 :   if (tos &gt;= stack + STACK)</span>
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :     die (&quot;overflow in string stack&quot;);</span>
+<span class="lineNum">     326 </span><span class="lineCov">      16516 : }</span>
+<a name="327"><span class="lineNum">     327 </span>            : </a>
+<span class="lineNum">     328 </span>            : static void
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 : icheck_range ()</span>
+<span class="lineNum">     330 </span>            : {
+<span class="lineNum">     331 </span><span class="lineNoCov">          0 :   if (isp &lt; istack)</span>
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :     die (&quot;underflow in integer stack&quot;);</span>
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :   if (isp &gt;= istack + STACK)</span>
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :     die (&quot;overflow in integer stack&quot;);</span>
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     336 </span>            : 
+<span class="lineNum">     337 </span>            : #ifdef __STDC__
+<span class="lineNum">     338 </span>            : static void exec (dict_type *);
+<span class="lineNum">     339 </span>            : static void call (void);
+<span class="lineNum">     340 </span>            : static void remchar (void), strip_trailing_newlines (void), push_number (void);
+<span class="lineNum">     341 </span>            : static void push_text (void);
+<span class="lineNum">     342 </span>            : static void remove_noncomments (string_type *, string_type *);
+<span class="lineNum">     343 </span>            : static void print_stack_level (void);
+<span class="lineNum">     344 </span>            : static void paramstuff (void), translatecomments (void);
+<span class="lineNum">     345 </span>            : static void outputdots (void), courierize (void), bulletize (void);
+<span class="lineNum">     346 </span>            : static void do_fancy_stuff (void);
+<span class="lineNum">     347 </span>            : static int iscommand (string_type *, unsigned int);
+<span class="lineNum">     348 </span>            : static int copy_past_newline (string_type *, unsigned int, string_type *);
+<span class="lineNum">     349 </span>            : static void icopy_past_newline (void), kill_bogus_lines (void), indent (void);
+<span class="lineNum">     350 </span>            : static void get_stuff_in_command (void), swap (void), other_dup (void);
+<span class="lineNum">     351 </span>            : static void drop (void), idrop (void);
+<span class="lineNum">     352 </span>            : static void icatstr (void), skip_past_newline (void), internalmode (void);
+<span class="lineNum">     353 </span>            : static void maybecatstr (void);
+<span class="lineNum">     354 </span>            : static char *nextword (char *, char **);
+<span class="lineNum">     355 </span>            : dict_type *lookup_word (char *);
+<span class="lineNum">     356 </span>            : static void perform (void);
+<span class="lineNum">     357 </span>            : dict_type *newentry (char *);
+<span class="lineNum">     358 </span>            : unsigned int add_to_definition (dict_type *, stinst_type);
+<span class="lineNum">     359 </span>            : void add_intrinsic (char *, void (*)());
+<span class="lineNum">     360 </span>            : void add_var (char *);
+<span class="lineNum">     361 </span>            : void compile (char *);
+<span class="lineNum">     362 </span>            : static void bang (void);
+<span class="lineNum">     363 </span>            : static void atsign (void);
+<span class="lineNum">     364 </span>            : static void hello (void);
+<span class="lineNum">     365 </span>            : static void stdout_ (void);
+<span class="lineNum">     366 </span>            : static void stderr_ (void);
+<span class="lineNum">     367 </span>            : static void print (void);
+<span class="lineNum">     368 </span>            : static void read_in (string_type *, FILE *);
+<span class="lineNum">     369 </span>            : static void usage (void);
+<span class="lineNum">     370 </span>            : static void chew_exit (void);
+<span class="lineNum">     371 </span>            : #endif
+<a name="372"><span class="lineNum">     372 </span>            : </a>
+<span class="lineNum">     373 </span>            : static void
+<span class="lineNum">     374 </span><span class="lineCov">      23816 : exec (word)</span>
+<span class="lineNum">     375 </span>            :      dict_type *word;
+<span class="lineNum">     376 </span>            : {
+<span class="lineNum">     377 </span><span class="lineCov">      23816 :   pc = word-&gt;code;</span>
+<span class="lineNum">     378 </span><span class="lineCov">      90568 :   while (*pc)</span>
+<span class="lineNum">     379 </span><span class="lineCov">      42936 :     (*pc) ();</span>
+<span class="lineNum">     380 </span><span class="lineCov">      23816 : }</span>
+<a name="381"><span class="lineNum">     381 </span>            : </a>
+<span class="lineNum">     382 </span>            : static void
+<span class="lineNum">     383 </span><span class="lineCov">      19544 : call ()</span>
+<span class="lineNum">     384 </span>            : {
+<span class="lineNum">     385 </span><span class="lineCov">      19544 :   stinst_type *oldpc = pc;</span>
+<span class="lineNum">     386 </span>            :   dict_type *e;
+<span class="lineNum">     387 </span><span class="lineCov">      19544 :   e = (dict_type *) (pc[1]);</span>
+<span class="lineNum">     388 </span><span class="lineCov">      19544 :   exec (e);</span>
+<span class="lineNum">     389 </span><span class="lineCov">      19544 :   pc = oldpc + 2;</span>
+<span class="lineNum">     390 </span><span class="lineCov">      19544 : }</span>
+<a name="391"><span class="lineNum">     391 </span>            : </a>
+<span class="lineNum">     392 </span>            : static void
+<span class="lineNum">     393 </span><span class="lineCov">        184 : remchar ()</span>
+<span class="lineNum">     394 </span>            : {
+<span class="lineNum">     395 </span><span class="lineCov">        184 :   if (tos-&gt;write_idx)</span>
+<span class="lineNum">     396 </span><span class="lineCov">        184 :     tos-&gt;write_idx--;</span>
+<span class="lineNum">     397 </span><span class="lineCov">        184 :   pc++;</span>
+<span class="lineNum">     398 </span><span class="lineCov">        184 : }</span>
+<a name="399"><span class="lineNum">     399 </span>            : </a>
+<span class="lineNum">     400 </span>            : static void
+<span class="lineNum">     401 </span><span class="lineCov">        574 : strip_trailing_newlines ()</span>
+<span class="lineNum">     402 </span>            : {
+<span class="lineNum">     403 </span><span class="lineCov">       1847 :   while ((isspace ((unsigned char) at (tos, tos-&gt;write_idx - 1))</span>
+<span class="lineNum">     404 </span><span class="lineCov">        574 :           || at (tos, tos-&gt;write_idx - 1) == '\n')</span>
+<span class="lineNum">     405 </span><span class="lineCov">        699 :          &amp;&amp; tos-&gt;write_idx &gt; 0)</span>
+<span class="lineNum">     406 </span><span class="lineCov">        699 :     tos-&gt;write_idx--;</span>
+<span class="lineNum">     407 </span><span class="lineCov">        574 :   pc++;</span>
+<span class="lineNum">     408 </span><span class="lineCov">        574 : }</span>
+<a name="409"><span class="lineNum">     409 </span>            : </a>
+<span class="lineNum">     410 </span>            : static void
+<span class="lineNum">     411 </span><span class="lineNoCov">          0 : push_number ()</span>
+<span class="lineNum">     412 </span>            : {
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 :   isp++;</span>
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">     416 </span><span class="lineNoCov">          0 :   *isp = (long) (*pc);</span>
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 : }</span>
+<a name="419"><span class="lineNum">     419 </span>            : </a>
+<span class="lineNum">     420 </span>            : static void
+<span class="lineNum">     421 </span><span class="lineCov">       4479 : push_text ()</span>
+<span class="lineNum">     422 </span>            : {
+<span class="lineNum">     423 </span><span class="lineCov">       4479 :   tos++;</span>
+<span class="lineNum">     424 </span><span class="lineCov">       4479 :   check_range ();</span>
+<span class="lineNum">     425 </span><span class="lineCov">       4479 :   init_string (tos);</span>
+<span class="lineNum">     426 </span><span class="lineCov">       4479 :   pc++;</span>
+<span class="lineNum">     427 </span><span class="lineCov">       4479 :   cattext (tos, *((char **) pc));</span>
+<span class="lineNum">     428 </span><span class="lineCov">       4479 :   pc++;</span>
+<span class="lineNum">     429 </span><span class="lineCov">       4479 : }</span>
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span>            : /* This function removes everything not inside comments starting on
+<span class="lineNum">     432 </span>            :    the first char of the line from the  string, also when copying
+<span class="lineNum">     433 </span>            :    comments, removes blank space and leading *'s.
+<span class="lineNum">     434 </span>            :    Blank lines are turned into one blank line.  */
+<a name="435"><span class="lineNum">     435 </span>            : </a>
+<span class="lineNum">     436 </span>            : static void
+<span class="lineNum">     437 </span><span class="lineCov">         22 : remove_noncomments (src, dst)</span>
+<span class="lineNum">     438 </span>            :      string_type *src;
+<span class="lineNum">     439 </span>            :      string_type *dst;
+<span class="lineNum">     440 </span>            : {
+<span class="lineNum">     441 </span><span class="lineCov">         22 :   unsigned int idx = 0;</span>
+<span class="lineNum">     442 </span>            : 
+<span class="lineNum">     443 </span><span class="lineCov">    1136835 :   while (at (src, idx))</span>
+<span class="lineNum">     444 </span>            :     {
+<span class="lineNum">     445 </span>            :       /* Now see if we have a comment at the start of the line.  */
+<span class="lineNum">     446 </span><span class="lineCov">    1137547 :       if (at (src, idx) == '\n'</span>
+<span class="lineNum">     447 </span><span class="lineCov">      42649 :           &amp;&amp; at (src, idx + 1) == '/'</span>
+<span class="lineNum">     448 </span><span class="lineCov">        756 :           &amp;&amp; at (src, idx + 2) == '*')</span>
+<span class="lineNum">     449 </span>            :         {
+<span class="lineNum">     450 </span><span class="lineCov">        756 :           idx += 3;</span>
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span><span class="lineCov">        756 :           idx = skip_white_and_stars (src, idx);</span>
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span>            :           /* Remove leading dot */
+<span class="lineNum">     455 </span><span class="lineCov">        756 :           if (at (src, idx) == '.')</span>
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :             idx++;</span>
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span>            :           /* Copy to the end of the line, or till the end of the
+<span class="lineNum">     459 </span>            :              comment.  */
+<span class="lineNum">     460 </span><span class="lineCov">     465885 :           while (at (src, idx))</span>
+<span class="lineNum">     461 </span>            :             {
+<span class="lineNum">     462 </span><span class="lineCov">     465129 :               if (at (src, idx) == '\n')</span>
+<span class="lineNum">     463 </span>            :                 {
+<span class="lineNum">     464 </span>            :                   /* end of line, echo and scrape of leading blanks  */
+<span class="lineNum">     465 </span><span class="lineCov">      13756 :                   if (at (src, idx + 1) == '\n')</span>
+<span class="lineNum">     466 </span><span class="lineCov">       1199 :                     catchar (dst, '\n');</span>
+<span class="lineNum">     467 </span><span class="lineCov">      13756 :                   catchar (dst, '\n');</span>
+<span class="lineNum">     468 </span><span class="lineCov">      13756 :                   idx++;</span>
+<span class="lineNum">     469 </span><span class="lineCov">      13756 :                   idx = skip_white_and_stars (src, idx);</span>
+<span class="lineNum">     470 </span>            :                 }
+<span class="lineNum">     471 </span><span class="lineCov">     451373 :               else if (at (src, idx) == '*' &amp;&amp; at (src, idx + 1) == '/')</span>
+<span class="lineNum">     472 </span>            :                 {
+<span class="lineNum">     473 </span><span class="lineCov">        756 :                   idx += 2;</span>
+<span class="lineNum">     474 </span><span class="lineCov">        756 :                   cattext (dst, &quot;\nENDDD\n&quot;);</span>
+<span class="lineNum">     475 </span><span class="lineCov">        756 :                   break;</span>
+<span class="lineNum">     476 </span>            :                 }
+<span class="lineNum">     477 </span>            :               else
+<span class="lineNum">     478 </span>            :                 {
+<span class="lineNum">     479 </span><span class="lineCov">     450617 :                   catchar (dst, at (src, idx));</span>
+<span class="lineNum">     480 </span><span class="lineCov">     450617 :                   idx++;</span>
+<span class="lineNum">     481 </span>            :                 }
+<span class="lineNum">     482 </span>            :             }
+<span class="lineNum">     483 </span>            :         }
+<span class="lineNum">     484 </span>            :       else
+<span class="lineNum">     485 </span><span class="lineCov">    1136035 :         idx++;</span>
+<span class="lineNum">     486 </span>            :     }
+<span class="lineNum">     487 </span><span class="lineCov">         22 : }</span>
+<a name="488"><span class="lineNum">     488 </span>            : </a>
+<span class="lineNum">     489 </span>            : static void
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 : print_stack_level ()</span>
+<span class="lineNum">     491 </span>            : {
+<span class="lineNum">     492 </span><span class="lineNoCov">          0 :   fprintf (stderr, &quot;current string stack depth = %ld, &quot;,</span>
+<span class="lineNum">     493 </span><span class="lineNoCov">          0 :            (long) (tos - stack));</span>
+<span class="lineNum">     494 </span><span class="lineNoCov">          0 :   fprintf (stderr, &quot;current integer stack depth = %ld\n&quot;,</span>
+<span class="lineNum">     495 </span><span class="lineNoCov">          0 :            (long) (isp - istack));</span>
+<span class="lineNum">     496 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">     497 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     498 </span>            : 
+<span class="lineNum">     499 </span>            : /* turn:
+<span class="lineNum">     500 </span>            :      foobar name(stuff);
+<span class="lineNum">     501 </span>            :    into:
+<span class="lineNum">     502 </span>            :      foobar
+<span class="lineNum">     503 </span>            :      name PARAMS ((stuff));
+<span class="lineNum">     504 </span>            :    and a blank line.
+<span class="lineNum">     505 </span>            :  */
+<a name="506"><span class="lineNum">     506 </span>            : </a>
+<span class="lineNum">     507 </span>            : static void
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 : paramstuff ()</span>
+<span class="lineNum">     509 </span>            : {
+<span class="lineNum">     510 </span>            :   unsigned int openp;
+<span class="lineNum">     511 </span>            :   unsigned int fname;
+<span class="lineNum">     512 </span>            :   unsigned int idx;
+<span class="lineNum">     513 </span>            :   unsigned int len;
+<span class="lineNum">     514 </span>            :   string_type out;
+<span class="lineNum">     515 </span><span class="lineNoCov">          0 :   init_string (&amp;out);</span>
+<span class="lineNum">     516 </span>            : 
+<span class="lineNum">     517 </span>            : #define NO_PARAMS 1
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            :   /* Make sure that it's not already param'd or proto'd.  */
+<span class="lineNum">     520 </span>            :   if (NO_PARAMS
+<span class="lineNum">     521 </span>            :       || find (tos, &quot;PARAMS&quot;) || find (tos, &quot;PROTO&quot;) || !find (tos, &quot;(&quot;))
+<span class="lineNum">     522 </span>            :     {
+<span class="lineNum">     523 </span><span class="lineNoCov">          0 :       catstr (&amp;out, tos);</span>
+<span class="lineNum">     524 </span>            :     }
+<span class="lineNum">     525 </span>            :   else
+<span class="lineNum">     526 </span>            :     {
+<span class="lineNum">     527 </span>            :       /* Find the open paren.  */
+<span class="lineNum">     528 </span>            :       for (openp = 0; at (tos, openp) != '(' &amp;&amp; at (tos, openp); openp++)
+<span class="lineNum">     529 </span>            :         ;
+<span class="lineNum">     530 </span>            : 
+<span class="lineNum">     531 </span>            :       fname = openp;
+<span class="lineNum">     532 </span>            :       /* Step back to the fname.  */
+<span class="lineNum">     533 </span>            :       fname--;
+<span class="lineNum">     534 </span>            :       while (fname &amp;&amp; isspace ((unsigned char) at (tos, fname)))
+<span class="lineNum">     535 </span>            :         fname--;
+<span class="lineNum">     536 </span>            :       while (fname
+<span class="lineNum">     537 </span>            :              &amp;&amp; !isspace ((unsigned char) at (tos,fname))
+<span class="lineNum">     538 </span>            :              &amp;&amp; at (tos,fname) != '*')
+<span class="lineNum">     539 </span>            :         fname--;
+<span class="lineNum">     540 </span>            : 
+<span class="lineNum">     541 </span>            :       fname++;
+<span class="lineNum">     542 </span>            : 
+<span class="lineNum">     543 </span>            :       /* Output type, omitting trailing whitespace character(s), if
+<span class="lineNum">     544 </span>            :          any.  */
+<span class="lineNum">     545 </span>            :       for (len = fname; 0 &lt; len; len--)
+<span class="lineNum">     546 </span>            :         {
+<span class="lineNum">     547 </span>            :           if (!isspace ((unsigned char) at (tos, len - 1)))
+<span class="lineNum">     548 </span>            :             break;
+<span class="lineNum">     549 </span>            :         }
+<span class="lineNum">     550 </span>            :       for (idx = 0; idx &lt; len; idx++)
+<span class="lineNum">     551 </span>            :         catchar (&amp;out, at (tos, idx));
+<span class="lineNum">     552 </span>            : 
+<span class="lineNum">     553 </span>            :       cattext (&amp;out, &quot;\n&quot;);       /* Insert a newline between type and fnname */
+<span class="lineNum">     554 </span>            : 
+<span class="lineNum">     555 </span>            :       /* Output function name, omitting trailing whitespace
+<span class="lineNum">     556 </span>            :          character(s), if any.  */
+<span class="lineNum">     557 </span>            :       for (len = openp; 0 &lt; len; len--)
+<span class="lineNum">     558 </span>            :         {
+<span class="lineNum">     559 </span>            :           if (!isspace ((unsigned char) at (tos, len - 1)))
+<span class="lineNum">     560 </span>            :             break;
+<span class="lineNum">     561 </span>            :         }
+<span class="lineNum">     562 </span>            :       for (idx = fname; idx &lt; len; idx++)
+<span class="lineNum">     563 </span>            :         catchar (&amp;out, at (tos, idx));
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            :       cattext (&amp;out, &quot; PARAMS (&quot;);
+<span class="lineNum">     566 </span>            : 
+<span class="lineNum">     567 </span>            :       for (idx = openp; at (tos, idx) &amp;&amp; at (tos, idx) != ';'; idx++)
+<span class="lineNum">     568 </span>            :         catchar (&amp;out, at (tos, idx));
+<span class="lineNum">     569 </span>            : 
+<span class="lineNum">     570 </span>            :       cattext (&amp;out, &quot;);\n\n&quot;);
+<span class="lineNum">     571 </span>            :     }
+<span class="lineNum">     572 </span><span class="lineNoCov">          0 :   overwrite_string (tos, &amp;out);</span>
+<span class="lineNum">     573 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     576 </span>            : 
+<span class="lineNum">     577 </span>            : /* turn {*
+<span class="lineNum">     578 </span>            :    and *} into comments */
+<a name="579"><span class="lineNum">     579 </span>            : </a>
+<span class="lineNum">     580 </span>            : static void
+<span class="lineNum">     581 </span><span class="lineCov">         16 : translatecomments ()</span>
+<span class="lineNum">     582 </span>            : {
+<span class="lineNum">     583 </span><span class="lineCov">         16 :   unsigned int idx = 0;</span>
+<span class="lineNum">     584 </span>            :   string_type out;
+<span class="lineNum">     585 </span><span class="lineCov">         16 :   init_string (&amp;out);</span>
+<span class="lineNum">     586 </span>            : 
+<span class="lineNum">     587 </span><span class="lineCov">      63902 :   while (at (tos, idx))</span>
+<span class="lineNum">     588 </span>            :     {
+<span class="lineNum">     589 </span><span class="lineCov">      63870 :       if (at (tos, idx) == '{' &amp;&amp; at (tos, idx + 1) == '*')</span>
+<span class="lineNum">     590 </span>            :         {
+<span class="lineNum">     591 </span><span class="lineCov">        267 :           cattext (&amp;out, &quot;/*&quot;);</span>
+<span class="lineNum">     592 </span><span class="lineCov">        267 :           idx += 2;</span>
+<span class="lineNum">     593 </span>            :         }
+<span class="lineNum">     594 </span><span class="lineCov">      63603 :       else if (at (tos, idx) == '*' &amp;&amp; at (tos, idx + 1) == '}')</span>
+<span class="lineNum">     595 </span>            :         {
+<span class="lineNum">     596 </span><span class="lineCov">        267 :           cattext (&amp;out, &quot;*/&quot;);</span>
+<span class="lineNum">     597 </span><span class="lineCov">        267 :           idx += 2;</span>
+<span class="lineNum">     598 </span>            :         }
+<span class="lineNum">     599 </span>            :       else
+<span class="lineNum">     600 </span>            :         {
+<span class="lineNum">     601 </span><span class="lineCov">      63336 :           catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     602 </span><span class="lineCov">      63336 :           idx++;</span>
+<span class="lineNum">     603 </span>            :         }
+<span class="lineNum">     604 </span>            :     }
+<span class="lineNum">     605 </span>            : 
+<span class="lineNum">     606 </span><span class="lineCov">         16 :   overwrite_string (tos, &amp;out);</span>
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span><span class="lineCov">         16 :   pc++;</span>
+<span class="lineNum">     609 </span><span class="lineCov">         16 : }</span>
+<span class="lineNum">     610 </span>            : 
+<a name="611"><span class="lineNum">     611 </span>            : /* Mod tos so that only lines with leading dots remain */</a>
+<span class="lineNum">     612 </span>            : static void
+<span class="lineNum">     613 </span><span class="lineNoCov">          0 : outputdots ()</span>
+<span class="lineNum">     614 </span>            : {
+<span class="lineNum">     615 </span><span class="lineNoCov">          0 :   unsigned int idx = 0;</span>
+<span class="lineNum">     616 </span>            :   string_type out;
+<span class="lineNum">     617 </span><span class="lineNoCov">          0 :   init_string (&amp;out);</span>
+<span class="lineNum">     618 </span>            : 
+<span class="lineNum">     619 </span><span class="lineNoCov">          0 :   while (at (tos, idx))</span>
+<span class="lineNum">     620 </span>            :     {
+<span class="lineNum">     621 </span>            :       /* Every iteration begins at the start of a line.  */
+<span class="lineNum">     622 </span><span class="lineNoCov">          0 :       if (at (tos, idx) == '.')</span>
+<span class="lineNum">     623 </span>            :         {
+<span class="lineNum">     624 </span>            :           char c;
+<span class="lineNum">     625 </span>            : 
+<span class="lineNum">     626 </span><span class="lineNoCov">          0 :           idx++;</span>
+<span class="lineNum">     627 </span>            : 
+<span class="lineNum">     628 </span><span class="lineNoCov">          0 :           while ((c = at (tos, idx)) &amp;&amp; c != '\n')</span>
+<span class="lineNum">     629 </span>            :             {
+<span class="lineNum">     630 </span><span class="lineNoCov">          0 :               if (c == '{' &amp;&amp; at (tos, idx + 1) == '*')</span>
+<span class="lineNum">     631 </span>            :                 {
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :                   cattext (&amp;out, &quot;/*&quot;);</span>
+<span class="lineNum">     633 </span><span class="lineNoCov">          0 :                   idx += 2;</span>
+<span class="lineNum">     634 </span>            :                 }
+<span class="lineNum">     635 </span><span class="lineNoCov">          0 :               else if (c == '*' &amp;&amp; at (tos, idx + 1) == '}')</span>
+<span class="lineNum">     636 </span>            :                 {
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :                   cattext (&amp;out, &quot;*/&quot;);</span>
+<span class="lineNum">     638 </span><span class="lineNoCov">          0 :                   idx += 2;</span>
+<span class="lineNum">     639 </span>            :                 }
+<span class="lineNum">     640 </span>            :               else
+<span class="lineNum">     641 </span>            :                 {
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :                   catchar (&amp;out, c);</span>
+<span class="lineNum">     643 </span><span class="lineNoCov">          0 :                   idx++;</span>
+<span class="lineNum">     644 </span>            :                 }
+<span class="lineNum">     645 </span>            :             }
+<span class="lineNum">     646 </span><span class="lineNoCov">          0 :           if (c == '\n')</span>
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :             idx++;</span>
+<span class="lineNum">     648 </span><span class="lineNoCov">          0 :           catchar (&amp;out, '\n');</span>
+<span class="lineNum">     649 </span>            :         }
+<span class="lineNum">     650 </span>            :       else
+<span class="lineNum">     651 </span>            :         {
+<span class="lineNum">     652 </span><span class="lineNoCov">          0 :           idx = skip_past_newline_1 (tos, idx);</span>
+<span class="lineNum">     653 </span>            :         }
+<span class="lineNum">     654 </span>            :     }
+<span class="lineNum">     655 </span>            : 
+<span class="lineNum">     656 </span><span class="lineNoCov">          0 :   overwrite_string (tos, &amp;out);</span>
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">     658 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     659 </span>            : 
+<a name="660"><span class="lineNum">     660 </span>            : /* Find lines starting with . and | and put example around them on tos */</a>
+<span class="lineNum">     661 </span>            : static void
+<span class="lineNum">     662 </span><span class="lineCov">        310 : courierize ()</span>
+<span class="lineNum">     663 </span>            : {
+<span class="lineNum">     664 </span>            :   string_type out;
+<span class="lineNum">     665 </span><span class="lineCov">        310 :   unsigned int idx = 0;</span>
+<span class="lineNum">     666 </span><span class="lineCov">        310 :   int command = 0;</span>
+<span class="lineNum">     667 </span>            : 
+<span class="lineNum">     668 </span><span class="lineCov">        310 :   init_string (&amp;out);</span>
+<span class="lineNum">     669 </span>            : 
+<span class="lineNum">     670 </span><span class="lineCov">     119046 :   while (at (tos, idx))</span>
+<span class="lineNum">     671 </span>            :     {
+<span class="lineNum">     672 </span><span class="lineCov">     118426 :       if (at (tos, idx) == '\n'</span>
+<span class="lineNum">     673 </span><span class="lineCov">       2701 :           &amp;&amp; (at (tos, idx +1 ) == '.'</span>
+<span class="lineNum">     674 </span><span class="lineCov">       2654 :               || at (tos, idx + 1) == '|'))</span>
+<span class="lineNum">     675 </span>            :         {
+<span class="lineNum">     676 </span><span class="lineCov">         76 :           cattext (&amp;out, &quot;\n@example\n&quot;);</span>
+<span class="lineNum">     677 </span>            :           do
+<span class="lineNum">     678 </span>            :             {
+<span class="lineNum">     679 </span><span class="lineCov">       3133 :               idx += 2;</span>
+<span class="lineNum">     680 </span>            : 
+<span class="lineNum">     681 </span><span class="lineCov">     119362 :               while (at (tos, idx) &amp;&amp; at (tos, idx) != '\n')</span>
+<span class="lineNum">     682 </span>            :                 {
+<span class="lineNum">     683 </span><span class="lineCov">     113096 :                   if (command &gt; 1)</span>
+<span class="lineNum">     684 </span>            :                     {
+<span class="lineNum">     685 </span>            :                       /* We are inside {} parameters of some command;
+<span class="lineNum">     686 </span>            :                          Just pass through until matching brace.  */
+<span class="lineNum">     687 </span><span class="lineCov">        353 :                       if (at (tos, idx) == '{')</span>
+<span class="lineNum">     688 </span><span class="lineNoCov">          0 :                         ++command;</span>
+<span class="lineNum">     689 </span><span class="lineCov">        353 :                       else if (at (tos, idx) == '}')</span>
+<span class="lineNum">     690 </span><span class="lineCov">         36 :                         --command;</span>
+<span class="lineNum">     691 </span>            :                     }
+<span class="lineNum">     692 </span><span class="lineCov">     112743 :                   else if (command != 0)</span>
+<span class="lineNum">     693 </span>            :                     {
+<span class="lineNum">     694 </span><span class="lineCov">        211 :                       if (at (tos, idx) == '{')</span>
+<span class="lineNum">     695 </span><span class="lineCov">         36 :                         ++command;</span>
+<span class="lineNum">     696 </span><span class="lineCov">        175 :                       else if (!islower ((unsigned char) at (tos, idx)))</span>
+<span class="lineNum">     697 </span><span class="lineCov">         36 :                         --command;</span>
+<span class="lineNum">     698 </span>            :                     }
+<span class="lineNum">     699 </span><span class="lineCov">     112532 :                   else if (at (tos, idx) == '@'</span>
+<span class="lineNum">     700 </span><span class="lineCov">         40 :                            &amp;&amp; islower ((unsigned char) at (tos, idx + 1)))</span>
+<span class="lineNum">     701 </span>            :                     {
+<span class="lineNum">     702 </span><span class="lineCov">         36 :                       ++command;</span>
+<span class="lineNum">     703 </span>            :                     }
+<span class="lineNum">     704 </span><span class="lineCov">     112496 :                   else if (at (tos, idx) == '{' &amp;&amp; at (tos, idx + 1) == '*')</span>
+<span class="lineNum">     705 </span>            :                     {
+<span class="lineNum">     706 </span><span class="lineCov">        181 :                       cattext (&amp;out, &quot;/*&quot;);</span>
+<span class="lineNum">     707 </span><span class="lineCov">        181 :                       idx += 2;</span>
+<span class="lineNum">     708 </span><span class="lineCov">        181 :                       continue;</span>
+<span class="lineNum">     709 </span>            :                     }
+<span class="lineNum">     710 </span><span class="lineCov">     112315 :                   else if (at (tos, idx) == '*' &amp;&amp; at (tos, idx + 1) == '}')</span>
+<span class="lineNum">     711 </span>            :                     {
+<span class="lineNum">     712 </span><span class="lineCov">        181 :                       cattext (&amp;out, &quot;*/&quot;);</span>
+<span class="lineNum">     713 </span><span class="lineCov">        181 :                       idx += 2;</span>
+<span class="lineNum">     714 </span><span class="lineCov">        181 :                       continue;</span>
+<span class="lineNum">     715 </span>            :                     }
+<span class="lineNum">     716 </span><span class="lineCov">     112134 :                   else if (at (tos, idx) == '{'</span>
+<span class="lineNum">     717 </span><span class="lineCov">     112080 :                            || at (tos, idx) == '}')</span>
+<span class="lineNum">     718 </span>            :                     {
+<span class="lineNum">     719 </span><span class="lineCov">        108 :                       catchar (&amp;out, '@');</span>
+<span class="lineNum">     720 </span>            :                     }
+<span class="lineNum">     721 </span>            : 
+<span class="lineNum">     722 </span><span class="lineCov">     112734 :                   catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     723 </span><span class="lineCov">     112734 :                   idx++;</span>
+<span class="lineNum">     724 </span>            :                 }
+<span class="lineNum">     725 </span><span class="lineCov">       3133 :               catchar (&amp;out, '\n');</span>
+<span class="lineNum">     726 </span>            :             }
+<span class="lineNum">     727 </span><span class="lineCov">       3133 :           while (at (tos, idx) == '\n'</span>
+<span class="lineNum">     728 </span><span class="lineCov">       3133 :                  &amp;&amp; ((at (tos, idx + 1) == '.')</span>
+<span class="lineNum">     729 </span><span class="lineCov">        299 :                      || (at (tos, idx + 1) == '|')))</span>
+<span class="lineNum">     730 </span><span class="lineCov">       3133 :             ;</span>
+<span class="lineNum">     731 </span><span class="lineCov">         76 :           cattext (&amp;out, &quot;@end example&quot;);</span>
+<span class="lineNum">     732 </span>            :         }
+<span class="lineNum">     733 </span>            :       else
+<span class="lineNum">     734 </span>            :         {
+<span class="lineNum">     735 </span><span class="lineCov">     118350 :           catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     736 </span><span class="lineCov">     118350 :           idx++;</span>
+<span class="lineNum">     737 </span>            :         }
+<span class="lineNum">     738 </span>            :     }
+<span class="lineNum">     739 </span>            : 
+<span class="lineNum">     740 </span><span class="lineCov">        310 :   overwrite_string (tos, &amp;out);</span>
+<span class="lineNum">     741 </span><span class="lineCov">        310 :   pc++;</span>
+<span class="lineNum">     742 </span><span class="lineCov">        310 : }</span>
+<span class="lineNum">     743 </span>            : 
+<span class="lineNum">     744 </span>            : /* Finds any lines starting with &quot;o &quot;, if there are any, then turns
+<span class="lineNum">     745 </span>            :    on @itemize @bullet, and @items each of them. Then ends with @end
+<span class="lineNum">     746 </span>            :    itemize, inplace at TOS*/
+<a name="747"><span class="lineNum">     747 </span>            : </a>
+<span class="lineNum">     748 </span>            : static void
+<span class="lineNum">     749 </span><span class="lineCov">        294 : bulletize ()</span>
+<span class="lineNum">     750 </span>            : {
+<span class="lineNum">     751 </span><span class="lineCov">        294 :   unsigned int idx = 0;</span>
+<span class="lineNum">     752 </span><span class="lineCov">        294 :   int on = 0;</span>
+<span class="lineNum">     753 </span>            :   string_type out;
+<span class="lineNum">     754 </span><span class="lineCov">        294 :   init_string (&amp;out);</span>
+<span class="lineNum">     755 </span>            : 
+<span class="lineNum">     756 </span><span class="lineCov">     172085 :   while (at (tos, idx))</span>
+<span class="lineNum">     757 </span>            :     {
+<span class="lineNum">     758 </span><span class="lineCov">     171497 :       if (at (tos, idx) == '@'</span>
+<span class="lineNum">     759 </span><span class="lineCov">        624 :           &amp;&amp; at (tos, idx + 1) == '*')</span>
+<span class="lineNum">     760 </span>            :         {
+<span class="lineNum">     761 </span><span class="lineCov">         31 :           cattext (&amp;out, &quot;*&quot;);</span>
+<span class="lineNum">     762 </span><span class="lineCov">         31 :           idx += 2;</span>
+<span class="lineNum">     763 </span>            :         }
+<span class="lineNum">     764 </span><span class="lineCov">     171466 :       else if (at (tos, idx) == '\n'</span>
+<span class="lineNum">     765 </span><span class="lineCov">       4329 :                &amp;&amp; at (tos, idx + 1) == 'o'</span>
+<span class="lineNum">     766 </span><span class="lineCov">        105 :                &amp;&amp; isspace ((unsigned char) at (tos, idx + 2)))</span>
+<span class="lineNum">     767 </span>            :         {
+<span class="lineNum">     768 </span><span class="lineCov">         42 :           if (!on)</span>
+<span class="lineNum">     769 </span>            :             {
+<span class="lineNum">     770 </span><span class="lineCov">         25 :               cattext (&amp;out, &quot;\n@itemize @bullet\n&quot;);</span>
+<span class="lineNum">     771 </span><span class="lineCov">         25 :               on = 1;</span>
+<span class="lineNum">     772 </span>            : 
+<span class="lineNum">     773 </span>            :             }
+<span class="lineNum">     774 </span><span class="lineCov">         42 :           cattext (&amp;out, &quot;\n@item\n&quot;);</span>
+<span class="lineNum">     775 </span><span class="lineCov">         42 :           idx += 3;</span>
+<span class="lineNum">     776 </span>            :         }
+<span class="lineNum">     777 </span>            :       else
+<span class="lineNum">     778 </span>            :         {
+<span class="lineNum">     779 </span><span class="lineCov">     171424 :           catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     780 </span><span class="lineCov">     171424 :           if (on &amp;&amp; at (tos, idx) == '\n'</span>
+<span class="lineNum">     781 </span><span class="lineCov">         80 :               &amp;&amp; at (tos, idx + 1) == '\n'</span>
+<span class="lineNum">     782 </span><span class="lineCov">         36 :               &amp;&amp; at (tos, idx + 2) != 'o')</span>
+<span class="lineNum">     783 </span>            :             {
+<span class="lineNum">     784 </span><span class="lineCov">         25 :               cattext (&amp;out, &quot;@end itemize&quot;);</span>
+<span class="lineNum">     785 </span><span class="lineCov">         25 :               on = 0;</span>
+<span class="lineNum">     786 </span>            :             }
+<span class="lineNum">     787 </span><span class="lineCov">     171424 :           idx++;</span>
+<span class="lineNum">     788 </span>            : 
+<span class="lineNum">     789 </span>            :         }
+<span class="lineNum">     790 </span>            :     }
+<span class="lineNum">     791 </span><span class="lineCov">        294 :   if (on)</span>
+<span class="lineNum">     792 </span>            :     {
+<span class="lineNum">     793 </span><span class="lineNoCov">          0 :       cattext (&amp;out, &quot;@end itemize\n&quot;);</span>
+<span class="lineNum">     794 </span>            :     }
+<span class="lineNum">     795 </span>            : 
+<span class="lineNum">     796 </span><span class="lineCov">        294 :   delete_string (tos);</span>
+<span class="lineNum">     797 </span><span class="lineCov">        294 :   *tos = out;</span>
+<span class="lineNum">     798 </span><span class="lineCov">        294 :   pc++;</span>
+<span class="lineNum">     799 </span><span class="lineCov">        294 : }</span>
+<span class="lineNum">     800 </span>            : 
+<span class="lineNum">     801 </span>            : /* Turn &lt;&lt;foo&gt;&gt; into @code{foo} in place at TOS*/
+<a name="802"><span class="lineNum">     802 </span>            : </a>
+<span class="lineNum">     803 </span>            : static void
+<span class="lineNum">     804 </span><span class="lineCov">        390 : do_fancy_stuff ()</span>
+<span class="lineNum">     805 </span>            : {
+<span class="lineNum">     806 </span><span class="lineCov">        390 :   unsigned int idx = 0;</span>
+<span class="lineNum">     807 </span>            :   string_type out;
+<span class="lineNum">     808 </span><span class="lineCov">        390 :   init_string (&amp;out);</span>
+<span class="lineNum">     809 </span><span class="lineCov">     230302 :   while (at (tos, idx))</span>
+<span class="lineNum">     810 </span>            :     {
+<span class="lineNum">     811 </span><span class="lineCov">     229522 :       if (at (tos, idx) == '&lt;'</span>
+<span class="lineNum">     812 </span><span class="lineCov">        621 :           &amp;&amp; at (tos, idx + 1) == '&lt;'</span>
+<span class="lineNum">     813 </span><span class="lineCov">        581 :           &amp;&amp; !isspace ((unsigned char) at (tos, idx + 2)))</span>
+<span class="lineNum">     814 </span>            :         {
+<span class="lineNum">     815 </span>            :           /* This qualifies as a &lt;&lt; startup.  */
+<span class="lineNum">     816 </span><span class="lineCov">        548 :           idx += 2;</span>
+<span class="lineNum">     817 </span><span class="lineCov">        548 :           cattext (&amp;out, &quot;@code{&quot;);</span>
+<span class="lineNum">     818 </span><span class="lineCov">       7960 :           while (at (tos, idx)</span>
+<span class="lineNum">     819 </span><span class="lineCov">       7412 :                  &amp;&amp; at (tos, idx) != '&gt;' )</span>
+<span class="lineNum">     820 </span>            :             {
+<span class="lineNum">     821 </span><span class="lineCov">       6864 :               catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     822 </span><span class="lineCov">       6864 :               idx++;</span>
+<span class="lineNum">     823 </span>            : 
+<span class="lineNum">     824 </span>            :             }
+<span class="lineNum">     825 </span><span class="lineCov">        548 :           cattext (&amp;out, &quot;}&quot;);</span>
+<span class="lineNum">     826 </span><span class="lineCov">        548 :           idx += 2;</span>
+<span class="lineNum">     827 </span>            :         }
+<span class="lineNum">     828 </span>            :       else
+<span class="lineNum">     829 </span>            :         {
+<span class="lineNum">     830 </span><span class="lineCov">     228974 :           catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">     831 </span><span class="lineCov">     228974 :           idx++;</span>
+<span class="lineNum">     832 </span>            :         }
+<span class="lineNum">     833 </span>            :     }
+<span class="lineNum">     834 </span><span class="lineCov">        390 :   delete_string (tos);</span>
+<span class="lineNum">     835 </span><span class="lineCov">        390 :   *tos = out;</span>
+<span class="lineNum">     836 </span><span class="lineCov">        390 :   pc++;</span>
+<span class="lineNum">     837 </span>            : 
+<span class="lineNum">     838 </span><span class="lineCov">        390 : }</span>
+<span class="lineNum">     839 </span>            : 
+<span class="lineNum">     840 </span>            : /* A command is all upper case,and alone on a line.  */
+<a name="841"><span class="lineNum">     841 </span>            : </a>
+<span class="lineNum">     842 </span>            : static int
+<span class="lineNum">     843 </span><span class="lineCov">      15003 : iscommand (ptr, idx)</span>
+<span class="lineNum">     844 </span>            :      string_type *ptr;
+<span class="lineNum">     845 </span>            :      unsigned int idx;
+<span class="lineNum">     846 </span>            : {
+<span class="lineNum">     847 </span><span class="lineCov">      15003 :   unsigned int len = 0;</span>
+<span class="lineNum">     848 </span><span class="lineCov">      64818 :   while (at (ptr, idx))</span>
+<span class="lineNum">     849 </span>            :     {
+<span class="lineNum">     850 </span><span class="lineCov">      49815 :       if (isupper ((unsigned char) at (ptr, idx))</span>
+<span class="lineNum">     851 </span><span class="lineCov">      15390 :           || at (ptr, idx) == ' ' || at (ptr, idx) == '_')</span>
+<span class="lineNum">     852 </span>            :         {
+<span class="lineNum">     853 </span><span class="lineCov">      34812 :           len++;</span>
+<span class="lineNum">     854 </span><span class="lineCov">      34812 :           idx++;</span>
+<span class="lineNum">     855 </span>            :         }
+<span class="lineNum">     856 </span><span class="lineCov">      15003 :       else if (at (ptr, idx) == '\n')</span>
+<span class="lineNum">     857 </span>            :         {
+<span class="lineNum">     858 </span><span class="lineCov">       6767 :           if (len &gt; 3)</span>
+<span class="lineNum">     859 </span><span class="lineCov">       5342 :             return 1;</span>
+<span class="lineNum">     860 </span><span class="lineCov">       1425 :           return 0;</span>
+<span class="lineNum">     861 </span>            :         }
+<span class="lineNum">     862 </span>            :       else
+<span class="lineNum">     863 </span><span class="lineCov">       8236 :         return 0;</span>
+<span class="lineNum">     864 </span>            :     }
+<span class="lineNum">     865 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     866 </span>            : }
+<a name="867"><span class="lineNum">     867 </span>            : </a>
+<span class="lineNum">     868 </span>            : static int
+<span class="lineNum">     869 </span><span class="lineCov">      10163 : copy_past_newline (ptr, idx, dst)</span>
+<span class="lineNum">     870 </span>            :      string_type *ptr;
+<span class="lineNum">     871 </span>            :      unsigned int idx;
+<span class="lineNum">     872 </span>            :      string_type *dst;
+<span class="lineNum">     873 </span>            : {
+<span class="lineNum">     874 </span><span class="lineCov">      10163 :   int column = 0;</span>
+<span class="lineNum">     875 </span>            : 
+<span class="lineNum">     876 </span><span class="lineCov">     362884 :   while (at (ptr, idx) &amp;&amp; at (ptr, idx) != '\n')</span>
+<span class="lineNum">     877 </span>            :     {
+<span class="lineNum">     878 </span><span class="lineCov">     342558 :       if (at (ptr, idx) == '\t')</span>
+<span class="lineNum">     879 </span>            :         {
+<span class="lineNum">     880 </span>            :           /* Expand tabs.  Neither makeinfo nor TeX can cope well with
+<span class="lineNum">     881 </span>            :              them.  */
+<span class="lineNum">     882 </span>            :           do
+<span class="lineNum">     883 </span><span class="lineCov">       6723 :             catchar (dst, ' ');</span>
+<span class="lineNum">     884 </span><span class="lineCov">       6723 :           while (++column &amp; 7);</span>
+<span class="lineNum">     885 </span>            :         }
+<span class="lineNum">     886 </span>            :       else
+<span class="lineNum">     887 </span>            :         {
+<span class="lineNum">     888 </span><span class="lineCov">     341562 :           catchar (dst, at (ptr, idx));</span>
+<span class="lineNum">     889 </span><span class="lineCov">     341562 :           column++;</span>
+<span class="lineNum">     890 </span>            :         }
+<span class="lineNum">     891 </span><span class="lineCov">     342558 :       idx++;</span>
+<span class="lineNum">     892 </span>            : 
+<span class="lineNum">     893 </span>            :     }
+<span class="lineNum">     894 </span><span class="lineCov">      10163 :   catchar (dst, at (ptr, idx));</span>
+<span class="lineNum">     895 </span><span class="lineCov">      10163 :   idx++;</span>
+<span class="lineNum">     896 </span><span class="lineCov">      10163 :   return idx;</span>
+<span class="lineNum">     897 </span>            : 
+<span class="lineNum">     898 </span>            : }
+<a name="899"><span class="lineNum">     899 </span>            : </a>
+<span class="lineNum">     900 </span>            : static void
+<span class="lineNum">     901 </span><span class="lineCov">       2529 : icopy_past_newline ()</span>
+<span class="lineNum">     902 </span>            : {
+<span class="lineNum">     903 </span><span class="lineCov">       2529 :   tos++;</span>
+<span class="lineNum">     904 </span><span class="lineCov">       2529 :   check_range ();</span>
+<span class="lineNum">     905 </span><span class="lineCov">       2529 :   init_string (tos);</span>
+<span class="lineNum">     906 </span><span class="lineCov">       2529 :   idx = copy_past_newline (ptr, idx, tos);</span>
+<span class="lineNum">     907 </span><span class="lineCov">       2529 :   pc++;</span>
+<span class="lineNum">     908 </span><span class="lineCov">       2529 : }</span>
+<span class="lineNum">     909 </span>            : 
+<span class="lineNum">     910 </span>            : /* indent
+<span class="lineNum">     911 </span>            :    Take the string at the top of the stack, do some prettying.  */
+<a name="912"><span class="lineNum">     912 </span>            : </a>
+<span class="lineNum">     913 </span>            : static void
+<span class="lineNum">     914 </span><span class="lineCov">        484 : kill_bogus_lines ()</span>
+<span class="lineNum">     915 </span>            : {
+<span class="lineNum">     916 </span>            :   int sl;
+<span class="lineNum">     917 </span>            : 
+<span class="lineNum">     918 </span><span class="lineCov">        484 :   int idx = 0;</span>
+<span class="lineNum">     919 </span>            :   int c;
+<span class="lineNum">     920 </span><span class="lineCov">        484 :   int dot = 0;</span>
+<span class="lineNum">     921 </span>            : 
+<span class="lineNum">     922 </span>            :   string_type out;
+<span class="lineNum">     923 </span><span class="lineCov">        484 :   init_string (&amp;out);</span>
+<span class="lineNum">     924 </span>            :   /* Drop leading nl.  */
+<span class="lineNum">     925 </span><span class="lineCov">       1065 :   while (at (tos, idx) == '\n')</span>
+<span class="lineNum">     926 </span>            :     {
+<span class="lineNum">     927 </span><span class="lineCov">         97 :       idx++;</span>
+<span class="lineNum">     928 </span>            :     }
+<span class="lineNum">     929 </span><span class="lineCov">        484 :   c = idx;</span>
+<span class="lineNum">     930 </span>            : 
+<span class="lineNum">     931 </span>            :   /* If the first char is a '.' prepend a newline so that it is
+<span class="lineNum">     932 </span>            :      recognized properly later.  */
+<span class="lineNum">     933 </span><span class="lineCov">        484 :   if (at (tos, idx) == '.')</span>
+<span class="lineNum">     934 </span><span class="lineCov">         14 :     catchar (&amp;out, '\n');</span>
+<span class="lineNum">     935 </span>            : 
+<span class="lineNum">     936 </span>            :   /* Find the last char.  */
+<span class="lineNum">     937 </span><span class="lineCov">     250652 :   while (at (tos, idx))</span>
+<span class="lineNum">     938 </span>            :     {
+<span class="lineNum">     939 </span><span class="lineCov">     249684 :       idx++;</span>
+<span class="lineNum">     940 </span>            :     }
+<span class="lineNum">     941 </span>            : 
+<span class="lineNum">     942 </span>            :   /* Find the last non white before the nl.  */
+<span class="lineNum">     943 </span><span class="lineCov">        484 :   idx--;</span>
+<span class="lineNum">     944 </span>            : 
+<span class="lineNum">     945 </span><span class="lineCov">       1919 :   while (idx &amp;&amp; isspace ((unsigned char) at (tos, idx)))</span>
+<span class="lineNum">     946 </span><span class="lineCov">        951 :     idx--;</span>
+<span class="lineNum">     947 </span><span class="lineCov">        484 :   idx++;</span>
+<span class="lineNum">     948 </span>            : 
+<span class="lineNum">     949 </span>            :   /* Copy buffer upto last char, but blank lines before and after
+<span class="lineNum">     950 </span>            :      dots don't count.  */
+<span class="lineNum">     951 </span><span class="lineCov">        484 :   sl = 1;</span>
+<span class="lineNum">     952 </span>            : 
+<span class="lineNum">     953 </span><span class="lineCov">     249673 :   while (c &lt; idx)</span>
+<span class="lineNum">     954 </span>            :     {
+<span class="lineNum">     955 </span><span class="lineCov">     248705 :       if (at (tos, c) == '\n'</span>
+<span class="lineNum">     956 </span><span class="lineCov">       5574 :           &amp;&amp; at (tos, c + 1) == '\n'</span>
+<span class="lineNum">     957 </span><span class="lineCov">        345 :           &amp;&amp; at (tos, c + 2) == '.')</span>
+<span class="lineNum">     958 </span>            :         {
+<span class="lineNum">     959 </span>            :           /* Ignore two newlines before a dot.  */
+<span class="lineNum">     960 </span><span class="lineCov">         26 :           c++;</span>
+<span class="lineNum">     961 </span>            :         }
+<span class="lineNum">     962 </span><span class="lineCov">     248679 :       else if (at (tos, c) == '.' &amp;&amp; sl)</span>
+<span class="lineNum">     963 </span>            :         {
+<span class="lineNum">     964 </span>            :           /* remember that this line started with a dot.  */
+<span class="lineNum">     965 </span><span class="lineCov">       2881 :           dot = 2;</span>
+<span class="lineNum">     966 </span>            :         }
+<span class="lineNum">     967 </span><span class="lineCov">     245798 :       else if (at (tos, c) == '\n'</span>
+<span class="lineNum">     968 </span><span class="lineCov">       5548 :                &amp;&amp; at (tos, c + 1) == '\n'</span>
+<span class="lineNum">     969 </span><span class="lineCov">        319 :                &amp;&amp; dot)</span>
+<span class="lineNum">     970 </span>            :         {
+<span class="lineNum">     971 </span><span class="lineCov">          2 :           c++;</span>
+<span class="lineNum">     972 </span>            :           /* Ignore two newlines when last line was dot.  */
+<span class="lineNum">     973 </span>            :         }
+<span class="lineNum">     974 </span>            : 
+<span class="lineNum">     975 </span><span class="lineCov">     248705 :       catchar (&amp;out, at (tos, c));</span>
+<span class="lineNum">     976 </span><span class="lineCov">     248705 :       if (at (tos, c) == '\n')</span>
+<span class="lineNum">     977 </span>            :         {
+<span class="lineNum">     978 </span><span class="lineCov">       5574 :           sl = 1;</span>
+<span class="lineNum">     979 </span>            : 
+<span class="lineNum">     980 </span><span class="lineCov">       5574 :           if (dot == 2)</span>
+<span class="lineNum">     981 </span><span class="lineCov">       2839 :             dot = 1;</span>
+<span class="lineNum">     982 </span>            :           else
+<span class="lineNum">     983 </span><span class="lineCov">       2735 :             dot = 0;</span>
+<span class="lineNum">     984 </span>            :         }
+<span class="lineNum">     985 </span>            :       else
+<span class="lineNum">     986 </span><span class="lineCov">     243131 :         sl = 0;</span>
+<span class="lineNum">     987 </span>            : 
+<span class="lineNum">     988 </span><span class="lineCov">     248705 :       c++;</span>
+<span class="lineNum">     989 </span>            : 
+<span class="lineNum">     990 </span>            :     }
+<span class="lineNum">     991 </span>            : 
+<span class="lineNum">     992 </span>            :   /* Append nl.  */
+<span class="lineNum">     993 </span><span class="lineCov">        484 :   catchar (&amp;out, '\n');</span>
+<span class="lineNum">     994 </span><span class="lineCov">        484 :   pc++;</span>
+<span class="lineNum">     995 </span><span class="lineCov">        484 :   delete_string (tos);</span>
+<span class="lineNum">     996 </span><span class="lineCov">        484 :   *tos = out;</span>
+<span class="lineNum">     997 </span>            : 
+<span class="lineNum">     998 </span><span class="lineCov">        484 : }</span>
+<a name="999"><span class="lineNum">     999 </span>            : </a>
+<span class="lineNum">    1000 </span>            : static void
+<span class="lineNum">    1001 </span><span class="lineCov">        167 : indent ()</span>
+<span class="lineNum">    1002 </span>            : {
+<span class="lineNum">    1003 </span>            :   string_type out;
+<span class="lineNum">    1004 </span><span class="lineCov">        167 :   int tab = 0;</span>
+<span class="lineNum">    1005 </span><span class="lineCov">        167 :   int idx = 0;</span>
+<span class="lineNum">    1006 </span><span class="lineCov">        167 :   int ol = 0;</span>
+<span class="lineNum">    1007 </span><span class="lineCov">        167 :   init_string (&amp;out);</span>
+<span class="lineNum">    1008 </span><span class="lineCov">      13088 :   while (at (tos, idx))</span>
+<span class="lineNum">    1009 </span>            :     {
+<span class="lineNum">    1010 </span><span class="lineCov">      12754 :       switch (at (tos, idx))</span>
+<span class="lineNum">    1011 </span>            :         {
+<span class="lineNum">    1012 </span><span class="lineCov">        307 :         case '\n':</span>
+<span class="lineNum">    1013 </span><span class="lineCov">        307 :           cattext (&amp;out, &quot;\n&quot;);</span>
+<span class="lineNum">    1014 </span><span class="lineCov">        307 :           idx++;</span>
+<span class="lineNum">    1015 </span><span class="lineCov">        307 :           if (tab &amp;&amp; at (tos, idx))</span>
+<span class="lineNum">    1016 </span>            :             {
+<span class="lineNum">    1017 </span><span class="lineCov">         73 :               cattext (&amp;out, &quot;    &quot;);</span>
+<span class="lineNum">    1018 </span>            :             }
+<span class="lineNum">    1019 </span><span class="lineCov">        307 :           ol = 0;</span>
+<span class="lineNum">    1020 </span><span class="lineCov">        307 :           break;</span>
+<span class="lineNum">    1021 </span><span class="lineCov">        186 :         case '(':</span>
+<span class="lineNum">    1022 </span><span class="lineCov">        186 :           tab++;</span>
+<span class="lineNum">    1023 </span><span class="lineCov">        186 :           if (ol == 0)</span>
+<span class="lineNum">    1024 </span><span class="lineCov">         66 :             cattext (&amp;out, &quot;   &quot;);</span>
+<span class="lineNum">    1025 </span><span class="lineCov">        186 :           idx++;</span>
+<span class="lineNum">    1026 </span><span class="lineCov">        186 :           cattext (&amp;out, &quot;(&quot;);</span>
+<span class="lineNum">    1027 </span><span class="lineCov">        186 :           ol = 1;</span>
+<span class="lineNum">    1028 </span><span class="lineCov">        186 :           break;</span>
+<span class="lineNum">    1029 </span><span class="lineCov">        186 :         case ')':</span>
+<span class="lineNum">    1030 </span><span class="lineCov">        186 :           tab--;</span>
+<span class="lineNum">    1031 </span><span class="lineCov">        186 :           cattext (&amp;out, &quot;)&quot;);</span>
+<span class="lineNum">    1032 </span><span class="lineCov">        186 :           idx++;</span>
+<span class="lineNum">    1033 </span><span class="lineCov">        186 :           ol = 1;</span>
+<span class="lineNum">    1034 </span>            : 
+<span class="lineNum">    1035 </span><span class="lineCov">        186 :           break;</span>
+<span class="lineNum">    1036 </span><span class="lineCov">      12075 :         default:</span>
+<span class="lineNum">    1037 </span><span class="lineCov">      12075 :           catchar (&amp;out, at (tos, idx));</span>
+<span class="lineNum">    1038 </span><span class="lineCov">      12075 :           ol = 1;</span>
+<span class="lineNum">    1039 </span>            : 
+<span class="lineNum">    1040 </span><span class="lineCov">      12075 :           idx++;</span>
+<span class="lineNum">    1041 </span><span class="lineCov">      12075 :           break;</span>
+<span class="lineNum">    1042 </span>            :         }
+<span class="lineNum">    1043 </span>            :     }
+<span class="lineNum">    1044 </span>            : 
+<span class="lineNum">    1045 </span><span class="lineCov">        167 :   pc++;</span>
+<span class="lineNum">    1046 </span><span class="lineCov">        167 :   delete_string (tos);</span>
+<span class="lineNum">    1047 </span><span class="lineCov">        167 :   *tos = out;</span>
+<span class="lineNum">    1048 </span>            : 
+<span class="lineNum">    1049 </span><span class="lineCov">        167 : }</span>
+<a name="1050"><span class="lineNum">    1050 </span>            : </a>
+<span class="lineNum">    1051 </span>            : static void
+<span class="lineNum">    1052 </span><span class="lineCov">       1067 : get_stuff_in_command ()</span>
+<span class="lineNum">    1053 </span>            : {
+<span class="lineNum">    1054 </span><span class="lineCov">       1067 :   tos++;</span>
+<span class="lineNum">    1055 </span><span class="lineCov">       1067 :   check_range ();</span>
+<span class="lineNum">    1056 </span><span class="lineCov">       1067 :   init_string (tos);</span>
+<span class="lineNum">    1057 </span>            : 
+<span class="lineNum">    1058 </span><span class="lineCov">       9768 :   while (at (ptr, idx))</span>
+<span class="lineNum">    1059 </span>            :     {
+<span class="lineNum">    1060 </span><span class="lineCov">       8701 :       if (iscommand (ptr, idx))</span>
+<span class="lineNum">    1061 </span><span class="lineCov">       1067 :         break;</span>
+<span class="lineNum">    1062 </span><span class="lineCov">       7634 :       idx = copy_past_newline (ptr, idx, tos);</span>
+<span class="lineNum">    1063 </span>            :     }
+<span class="lineNum">    1064 </span><span class="lineCov">       1067 :   pc++;</span>
+<span class="lineNum">    1065 </span><span class="lineCov">       1067 : }</span>
+<a name="1066"><span class="lineNum">    1066 </span>            : </a>
+<span class="lineNum">    1067 </span>            : static void
+<span class="lineNum">    1068 </span><span class="lineCov">        183 : swap ()</span>
+<span class="lineNum">    1069 </span>            : {
+<span class="lineNum">    1070 </span>            :   string_type t;
+<span class="lineNum">    1071 </span>            : 
+<span class="lineNum">    1072 </span><span class="lineCov">        183 :   t = tos[0];</span>
+<span class="lineNum">    1073 </span><span class="lineCov">        183 :   tos[0] = tos[-1];</span>
+<span class="lineNum">    1074 </span><span class="lineCov">        183 :   tos[-1] = t;</span>
+<span class="lineNum">    1075 </span><span class="lineCov">        183 :   pc++;</span>
+<span class="lineNum">    1076 </span><span class="lineCov">        183 : }</span>
+<a name="1077"><span class="lineNum">    1077 </span>            : </a>
+<span class="lineNum">    1078 </span>            : static void
+<span class="lineNum">    1079 </span><span class="lineCov">        183 : other_dup ()</span>
+<span class="lineNum">    1080 </span>            : {
+<span class="lineNum">    1081 </span><span class="lineCov">        183 :   tos++;</span>
+<span class="lineNum">    1082 </span><span class="lineCov">        183 :   check_range ();</span>
+<span class="lineNum">    1083 </span><span class="lineCov">        183 :   init_string (tos);</span>
+<span class="lineNum">    1084 </span><span class="lineCov">        183 :   catstr (tos, tos - 1);</span>
+<span class="lineNum">    1085 </span><span class="lineCov">        183 :   pc++;</span>
+<span class="lineNum">    1086 </span><span class="lineCov">        183 : }</span>
+<a name="1087"><span class="lineNum">    1087 </span>            : </a>
+<span class="lineNum">    1088 </span>            : static void
+<span class="lineNum">    1089 </span><span class="lineCov">          9 : drop ()</span>
+<span class="lineNum">    1090 </span>            : {
+<span class="lineNum">    1091 </span><span class="lineCov">          9 :   tos--;</span>
+<span class="lineNum">    1092 </span><span class="lineCov">          9 :   check_range ();</span>
+<span class="lineNum">    1093 </span><span class="lineCov">          9 :   delete_string (tos + 1);</span>
+<span class="lineNum">    1094 </span><span class="lineCov">          9 :   pc++;</span>
+<span class="lineNum">    1095 </span><span class="lineCov">          9 : }</span>
+<a name="1096"><span class="lineNum">    1096 </span>            : </a>
+<span class="lineNum">    1097 </span>            : static void
+<span class="lineNum">    1098 </span><span class="lineNoCov">          0 : idrop ()</span>
+<span class="lineNum">    1099 </span>            : {
+<span class="lineNum">    1100 </span><span class="lineNoCov">          0 :   isp--;</span>
+<span class="lineNum">    1101 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1102 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1103 </span><span class="lineNoCov">          0 : }</span>
+<a name="1104"><span class="lineNum">    1104 </span>            : </a>
+<span class="lineNum">    1105 </span>            : static void
+<span class="lineNum">    1106 </span><span class="lineCov">       8249 : icatstr ()</span>
+<span class="lineNum">    1107 </span>            : {
+<span class="lineNum">    1108 </span><span class="lineCov">       8249 :   tos--;</span>
+<span class="lineNum">    1109 </span><span class="lineCov">       8249 :   check_range ();</span>
+<span class="lineNum">    1110 </span><span class="lineCov">       8249 :   catstr (tos, tos + 1);</span>
+<span class="lineNum">    1111 </span><span class="lineCov">       8249 :   delete_string (tos + 1);</span>
+<span class="lineNum">    1112 </span><span class="lineCov">       8249 :   pc++;</span>
+<span class="lineNum">    1113 </span><span class="lineCov">       8249 : }</span>
+<a name="1114"><span class="lineNum">    1114 </span>            : </a>
+<span class="lineNum">    1115 </span>            : static void
+<span class="lineNum">    1116 </span><span class="lineCov">       6304 : skip_past_newline ()</span>
+<span class="lineNum">    1117 </span>            : {
+<span class="lineNum">    1118 </span><span class="lineCov">       6304 :   idx = skip_past_newline_1 (ptr, idx);</span>
+<span class="lineNum">    1119 </span><span class="lineCov">       6304 :   pc++;</span>
+<span class="lineNum">    1120 </span><span class="lineCov">       6304 : }</span>
+<a name="1121"><span class="lineNum">    1121 </span>            : </a>
+<span class="lineNum">    1122 </span>            : static void
+<span class="lineNum">    1123 </span><span class="lineNoCov">          0 : internalmode ()</span>
+<span class="lineNum">    1124 </span>            : {
+<span class="lineNum">    1125 </span><span class="lineNoCov">          0 :   internal_mode = *(isp);</span>
+<span class="lineNum">    1126 </span><span class="lineNoCov">          0 :   isp--;</span>
+<span class="lineNum">    1127 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1128 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1129 </span><span class="lineNoCov">          0 : }</span>
+<a name="1130"><span class="lineNum">    1130 </span>            : </a>
+<span class="lineNum">    1131 </span>            : static void
+<span class="lineNum">    1132 </span><span class="lineNoCov">          0 : maybecatstr ()</span>
+<span class="lineNum">    1133 </span>            : {
+<span class="lineNum">    1134 </span><span class="lineNoCov">          0 :   if (internal_wanted == internal_mode)</span>
+<span class="lineNum">    1135 </span>            :     {
+<span class="lineNum">    1136 </span><span class="lineNoCov">          0 :       catstr (tos - 1, tos);</span>
+<span class="lineNum">    1137 </span>            :     }
+<span class="lineNum">    1138 </span><span class="lineNoCov">          0 :   delete_string (tos);</span>
+<span class="lineNum">    1139 </span><span class="lineNoCov">          0 :   tos--;</span>
+<span class="lineNum">    1140 </span><span class="lineNoCov">          0 :   check_range ();</span>
+<span class="lineNum">    1141 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1142 </span><span class="lineNoCov">          0 : }</span>
+<a name="1143"><span class="lineNum">    1143 </span>            : </a>
+<span class="lineNum">    1144 </span>            : char *
+<span class="lineNum">    1145 </span><span class="lineCov">       8851 : nextword (string, word)</span>
+<span class="lineNum">    1146 </span>            :      char *string;
+<span class="lineNum">    1147 </span>            :      char **word;
+<span class="lineNum">    1148 </span>            : {
+<span class="lineNum">    1149 </span>            :   char *word_start;
+<span class="lineNum">    1150 </span>            :   int idx;
+<span class="lineNum">    1151 </span>            :   char *dst;
+<span class="lineNum">    1152 </span>            :   char *src;
+<span class="lineNum">    1153 </span>            : 
+<span class="lineNum">    1154 </span><span class="lineCov">       8851 :   int length = 0;</span>
+<span class="lineNum">    1155 </span>            : 
+<span class="lineNum">    1156 </span><span class="lineCov">      22146 :   while (isspace ((unsigned char) *string) || *string == '-')</span>
+<span class="lineNum">    1157 </span>            :     {
+<span class="lineNum">    1158 </span><span class="lineCov">       4444 :       if (*string == '-')</span>
+<span class="lineNum">    1159 </span>            :         {
+<span class="lineNum">    1160 </span><span class="lineCov">       1760 :           while (*string &amp;&amp; *string != '\n')</span>
+<span class="lineNum">    1161 </span><span class="lineCov">       1408 :             string++;</span>
+<span class="lineNum">    1162 </span>            : 
+<span class="lineNum">    1163 </span>            :         }
+<span class="lineNum">    1164 </span>            :       else
+<span class="lineNum">    1165 </span>            :         {
+<span class="lineNum">    1166 </span><span class="lineCov">       4268 :           string++;</span>
+<span class="lineNum">    1167 </span>            :         }
+<span class="lineNum">    1168 </span>            :     }
+<span class="lineNum">    1169 </span><span class="lineCov">       8851 :   if (!*string)</span>
+<span class="lineNum">    1170 </span><span class="lineCov">         22 :     return 0;</span>
+<span class="lineNum">    1171 </span>            : 
+<span class="lineNum">    1172 </span><span class="lineCov">       8829 :   word_start = string;</span>
+<span class="lineNum">    1173 </span><span class="lineCov">       8829 :   if (*string == '&quot;')</span>
+<span class="lineNum">    1174 </span>            :     {
+<span class="lineNum">    1175 </span>            :       do
+<span class="lineNum">    1176 </span>            :         {
+<span class="lineNum">    1177 </span><span class="lineCov">       6644 :           string++;</span>
+<span class="lineNum">    1178 </span><span class="lineCov">       6644 :           length++;</span>
+<span class="lineNum">    1179 </span><span class="lineCov">       6644 :           if (*string == '\\')</span>
+<span class="lineNum">    1180 </span>            :             {
+<span class="lineNum">    1181 </span><span class="lineCov">        242 :               string += 2;</span>
+<span class="lineNum">    1182 </span><span class="lineCov">        242 :               length += 2;</span>
+<span class="lineNum">    1183 </span>            :             }
+<span class="lineNum">    1184 </span>            :         }
+<span class="lineNum">    1185 </span><span class="lineCov">       6644 :       while (*string != '&quot;');</span>
+<span class="lineNum">    1186 </span>            :     }
+<span class="lineNum">    1187 </span>            :   else
+<span class="lineNum">    1188 </span>            :     {
+<span class="lineNum">    1189 </span><span class="lineCov">      71897 :       while (!isspace ((unsigned char) *string))</span>
+<span class="lineNum">    1190 </span>            :         {
+<span class="lineNum">    1191 </span><span class="lineCov">      55251 :           string++;</span>
+<span class="lineNum">    1192 </span><span class="lineCov">      55251 :           length++;</span>
+<span class="lineNum">    1193 </span>            : 
+<span class="lineNum">    1194 </span>            :         }
+<span class="lineNum">    1195 </span>            :     }
+<span class="lineNum">    1196 </span>            : 
+<span class="lineNum">    1197 </span><span class="lineCov">       8829 :   *word = (char *) malloc (length + 1);</span>
+<span class="lineNum">    1198 </span>            : 
+<span class="lineNum">    1199 </span><span class="lineCov">       8829 :   dst = *word;</span>
+<span class="lineNum">    1200 </span><span class="lineCov">       8829 :   src = word_start;</span>
+<span class="lineNum">    1201 </span>            : 
+<span class="lineNum">    1202 </span><span class="lineCov">      70944 :   for (idx = 0; idx &lt; length; idx++)</span>
+<span class="lineNum">    1203 </span>            :     {
+<span class="lineNum">    1204 </span><span class="lineCov">      62115 :       if (src[idx] == '\\')</span>
+<span class="lineNum">    1205 </span><span class="lineCov">        264 :         switch (src[idx + 1])</span>
+<span class="lineNum">    1206 </span>            :           {
+<span class="lineNum">    1207 </span><span class="lineCov">        264 :           case 'n':</span>
+<span class="lineNum">    1208 </span><span class="lineCov">        264 :             *dst++ = '\n';</span>
+<span class="lineNum">    1209 </span><span class="lineCov">        264 :             idx++;</span>
+<span class="lineNum">    1210 </span><span class="lineCov">        264 :             break;</span>
+<span class="lineNum">    1211 </span><span class="lineNoCov">          0 :           case '&quot;':</span>
+<span class="lineNum">    1212 </span>            :           case '\\':
+<span class="lineNum">    1213 </span><span class="lineNoCov">          0 :             *dst++ = src[idx + 1];</span>
+<span class="lineNum">    1214 </span><span class="lineNoCov">          0 :             idx++;</span>
+<span class="lineNum">    1215 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">    1216 </span><span class="lineNoCov">          0 :           default:</span>
+<span class="lineNum">    1217 </span><span class="lineNoCov">          0 :             *dst++ = '\\';</span>
+<span class="lineNum">    1218 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">    1219 </span>            :           }
+<span class="lineNum">    1220 </span>            :       else
+<span class="lineNum">    1221 </span><span class="lineCov">      61851 :         *dst++ = src[idx];</span>
+<span class="lineNum">    1222 </span>            :     }
+<span class="lineNum">    1223 </span><span class="lineCov">       8829 :   *dst++ = 0;</span>
+<span class="lineNum">    1224 </span>            : 
+<span class="lineNum">    1225 </span><span class="lineCov">       8829 :   if (*string)</span>
+<span class="lineNum">    1226 </span><span class="lineCov">       8829 :     return string + 1;</span>
+<span class="lineNum">    1227 </span>            :   else
+<span class="lineNum">    1228 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">    1229 </span>            : }
+<span class="lineNum">    1230 </span>            : 
+<span class="lineNum">    1231 </span>            : dict_type *root;
+<a name="1232"><span class="lineNum">    1232 </span>            : </a>
+<span class="lineNum">    1233 </span>            : dict_type *
+<span class="lineNum">    1234 </span><span class="lineCov">       6541 : lookup_word (word)</span>
+<span class="lineNum">    1235 </span>            :      char *word;
+<span class="lineNum">    1236 </span>            : {
+<span class="lineNum">    1237 </span><span class="lineCov">       6541 :   dict_type *ptr = root;</span>
+<span class="lineNum">    1238 </span><span class="lineCov">     112735 :   while (ptr)</span>
+<span class="lineNum">    1239 </span>            :     {
+<span class="lineNum">    1240 </span><span class="lineCov">     106191 :       if (strcmp (ptr-&gt;word, word) == 0)</span>
+<span class="lineNum">    1241 </span><span class="lineCov">       6538 :         return ptr;</span>
+<span class="lineNum">    1242 </span><span class="lineCov">      99653 :       ptr = ptr-&gt;next;</span>
+<span class="lineNum">    1243 </span>            :     }
+<span class="lineNum">    1244 </span><span class="lineCov">          3 :   if (warning)</span>
+<span class="lineNum">    1245 </span><span class="lineNoCov">          0 :     fprintf (stderr, &quot;Can't find %s\n&quot;, word);</span>
+<span class="lineNum">    1246 </span><span class="lineCov">          3 :   return 0;</span>
+<span class="lineNum">    1247 </span>            : }
+<a name="1248"><span class="lineNum">    1248 </span>            : </a>
+<span class="lineNum">    1249 </span>            : static void
+<span class="lineNum">    1250 </span><span class="lineCov">         22 : free_words (void)</span>
+<span class="lineNum">    1251 </span>            : {
+<span class="lineNum">    1252 </span><span class="lineCov">         22 :   dict_type *ptr = root;</span>
+<span class="lineNum">    1253 </span>            : 
+<span class="lineNum">    1254 </span><span class="lineCov">       1276 :   while (ptr)</span>
+<span class="lineNum">    1255 </span>            :     {
+<span class="lineNum">    1256 </span>            :       dict_type *next;
+<span class="lineNum">    1257 </span>            : 
+<span class="lineNum">    1258 </span><span class="lineCov">       1232 :       if (ptr-&gt;word)</span>
+<span class="lineNum">    1259 </span><span class="lineCov">       1232 :         free (ptr-&gt;word);</span>
+<span class="lineNum">    1260 </span><span class="lineCov">       1232 :       if (ptr-&gt;code)</span>
+<span class="lineNum">    1261 </span>            :         {
+<span class="lineNum">    1262 </span>            :           int i;
+<span class="lineNum">    1263 </span><span class="lineCov">       8778 :           for (i = 0; i &lt; ptr-&gt;code_length; i ++)</span>
+<span class="lineNum">    1264 </span><span class="lineCov">       7546 :             if (ptr-&gt;code[i] == push_text</span>
+<span class="lineNum">    1265 </span><span class="lineCov">        528 :                 &amp;&amp; ptr-&gt;code[i + 1])</span>
+<span class="lineNum">    1266 </span>            :               {
+<span class="lineNum">    1267 </span><span class="lineCov">        506 :                 free (ptr-&gt;code[i + 1] - 1);</span>
+<span class="lineNum">    1268 </span><span class="lineCov">        506 :                 ++ i;</span>
+<span class="lineNum">    1269 </span>            :               }
+<span class="lineNum">    1270 </span><span class="lineCov">       1232 :           free (ptr-&gt;code);</span>
+<span class="lineNum">    1271 </span>            :         }
+<span class="lineNum">    1272 </span><span class="lineCov">       1232 :       next = ptr-&gt;next;</span>
+<span class="lineNum">    1273 </span><span class="lineCov">       1232 :       free (ptr);</span>
+<span class="lineNum">    1274 </span><span class="lineCov">       1232 :       ptr = next;</span>
+<span class="lineNum">    1275 </span>            :     }
+<span class="lineNum">    1276 </span><span class="lineCov">         22 : }</span>
+<a name="1277"><span class="lineNum">    1277 </span>            : </a>
+<span class="lineNum">    1278 </span>            : static void
+<span class="lineNum">    1279 </span><span class="lineCov">         22 : perform ()</span>
+<span class="lineNum">    1280 </span>            : {
+<span class="lineNum">    1281 </span><span class="lineCov">         22 :   tos = stack;</span>
+<span class="lineNum">    1282 </span>            : 
+<span class="lineNum">    1283 </span><span class="lineCov">       6346 :   while (at (ptr, idx))</span>
+<span class="lineNum">    1284 </span>            :     {
+<span class="lineNum">    1285 </span>            :       /* It's worth looking through the command list.  */
+<span class="lineNum">    1286 </span><span class="lineCov">       6302 :       if (iscommand (ptr, idx))</span>
+<span class="lineNum">    1287 </span>            :         {
+<span class="lineNum">    1288 </span>            :           char *next;
+<span class="lineNum">    1289 </span>            :           dict_type *word;
+<span class="lineNum">    1290 </span>            : 
+<span class="lineNum">    1291 </span><span class="lineCov">       4275 :           (void) nextword (addr (ptr, idx), &amp;next);</span>
+<span class="lineNum">    1292 </span>            : 
+<span class="lineNum">    1293 </span><span class="lineCov">       4275 :           word = lookup_word (next);</span>
+<span class="lineNum">    1294 </span>            : 
+<span class="lineNum">    1295 </span><span class="lineCov">       4275 :           if (word)</span>
+<span class="lineNum">    1296 </span>            :             {
+<span class="lineNum">    1297 </span><span class="lineCov">       4272 :               exec (word);</span>
+<span class="lineNum">    1298 </span>            :             }
+<span class="lineNum">    1299 </span>            :           else
+<span class="lineNum">    1300 </span>            :             {
+<span class="lineNum">    1301 </span><span class="lineCov">          3 :               if (warning)</span>
+<span class="lineNum">    1302 </span><span class="lineNoCov">          0 :                 fprintf (stderr, &quot;warning, %s is not recognised\n&quot;, next);</span>
+<span class="lineNum">    1303 </span><span class="lineCov">          3 :               skip_past_newline ();</span>
+<span class="lineNum">    1304 </span>            :             }
+<span class="lineNum">    1305 </span><span class="lineCov">       4275 :           free (next);</span>
+<span class="lineNum">    1306 </span>            :         }
+<span class="lineNum">    1307 </span>            :       else
+<span class="lineNum">    1308 </span><span class="lineCov">       2027 :         skip_past_newline ();</span>
+<span class="lineNum">    1309 </span>            :     }
+<span class="lineNum">    1310 </span><span class="lineCov">         22 : }</span>
+<a name="1311"><span class="lineNum">    1311 </span>            : </a>
+<span class="lineNum">    1312 </span>            : dict_type *
+<span class="lineNum">    1313 </span><span class="lineCov">       1232 : newentry (word)</span>
+<span class="lineNum">    1314 </span>            :      char *word;
+<span class="lineNum">    1315 </span>            : {
+<span class="lineNum">    1316 </span><span class="lineCov">       1232 :   dict_type *new_d = (dict_type *) malloc (sizeof (dict_type));</span>
+<span class="lineNum">    1317 </span><span class="lineCov">       1232 :   new_d-&gt;word = word;</span>
+<span class="lineNum">    1318 </span><span class="lineCov">       1232 :   new_d-&gt;next = root;</span>
+<span class="lineNum">    1319 </span><span class="lineCov">       1232 :   root = new_d;</span>
+<span class="lineNum">    1320 </span><span class="lineCov">       1232 :   new_d-&gt;code = (stinst_type *) malloc (sizeof (stinst_type));</span>
+<span class="lineNum">    1321 </span><span class="lineCov">       1232 :   new_d-&gt;code_length = 1;</span>
+<span class="lineNum">    1322 </span><span class="lineCov">       1232 :   new_d-&gt;code_end = 0;</span>
+<span class="lineNum">    1323 </span><span class="lineCov">       1232 :   return new_d;</span>
+<span class="lineNum">    1324 </span>            : }
+<a name="1325"><span class="lineNum">    1325 </span>            : </a>
+<span class="lineNum">    1326 </span>            : unsigned int
+<span class="lineNum">    1327 </span><span class="lineCov">       7414 : add_to_definition (entry, word)</span>
+<span class="lineNum">    1328 </span>            :      dict_type *entry;
+<span class="lineNum">    1329 </span>            :      stinst_type word;
+<span class="lineNum">    1330 </span>            : {
+<span class="lineNum">    1331 </span><span class="lineCov">       7414 :   if (entry-&gt;code_end == entry-&gt;code_length)</span>
+<span class="lineNum">    1332 </span>            :     {
+<span class="lineNum">    1333 </span><span class="lineCov">       3410 :       entry-&gt;code_length += 2;</span>
+<span class="lineNum">    1334 </span><span class="lineCov">       3410 :       entry-&gt;code =</span>
+<span class="lineNum">    1335 </span><span class="lineCov">       3410 :         (stinst_type *) realloc ((char *) (entry-&gt;code),</span>
+<span class="lineNum">    1336 </span><span class="lineCov">       3410 :                                  entry-&gt;code_length * sizeof (word_type));</span>
+<span class="lineNum">    1337 </span>            :     }
+<span class="lineNum">    1338 </span><span class="lineCov">       7414 :   entry-&gt;code[entry-&gt;code_end] = word;</span>
+<span class="lineNum">    1339 </span>            : 
+<span class="lineNum">    1340 </span><span class="lineCov">       7414 :   return entry-&gt;code_end++;</span>
+<span class="lineNum">    1341 </span>            : }
+<a name="1342"><span class="lineNum">    1342 </span>            : </a>
+<span class="lineNum">    1343 </span>            : void
+<span class="lineNum">    1344 </span><span class="lineCov">        638 : add_intrinsic (name, func)</span>
+<span class="lineNum">    1345 </span>            :      char *name;
+<span class="lineNum">    1346 </span>            :      void (*func) ();
+<span class="lineNum">    1347 </span>            : {
+<span class="lineNum">    1348 </span><span class="lineCov">        638 :   dict_type *new_d = newentry (strdup (name));</span>
+<span class="lineNum">    1349 </span><span class="lineCov">        638 :   add_to_definition (new_d, func);</span>
+<span class="lineNum">    1350 </span><span class="lineCov">        638 :   add_to_definition (new_d, 0);</span>
+<span class="lineNum">    1351 </span><span class="lineCov">        638 : }</span>
+<a name="1352"><span class="lineNum">    1352 </span>            : </a>
+<span class="lineNum">    1353 </span>            : void
+<span class="lineNum">    1354 </span><span class="lineNoCov">          0 : add_var (name)</span>
+<span class="lineNum">    1355 </span>            :      char *name;
+<span class="lineNum">    1356 </span>            : {
+<span class="lineNum">    1357 </span><span class="lineNoCov">          0 :   dict_type *new_d = newentry (name);</span>
+<span class="lineNum">    1358 </span><span class="lineNoCov">          0 :   add_to_definition (new_d, push_number);</span>
+<span class="lineNum">    1359 </span><span class="lineNoCov">          0 :   add_to_definition (new_d, (stinst_type) (&amp;(new_d-&gt;var)));</span>
+<span class="lineNum">    1360 </span><span class="lineNoCov">          0 :   add_to_definition (new_d, 0);</span>
+<span class="lineNum">    1361 </span><span class="lineNoCov">          0 : }</span>
+<a name="1362"><span class="lineNum">    1362 </span>            : </a>
+<span class="lineNum">    1363 </span>            : void
+<span class="lineNum">    1364 </span><span class="lineCov">         22 : compile (string)</span>
+<span class="lineNum">    1365 </span>            :      char *string;
+<span class="lineNum">    1366 </span>            : {
+<span class="lineNum">    1367 </span>            :   /* Add words to the dictionary.  */
+<span class="lineNum">    1368 </span>            :   char *word;
+<span class="lineNum">    1369 </span>            : 
+<span class="lineNum">    1370 </span><span class="lineCov">         22 :   string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1371 </span><span class="lineCov">        638 :   while (string &amp;&amp; *string &amp;&amp; word[0])</span>
+<span class="lineNum">    1372 </span>            :     {
+<span class="lineNum">    1373 </span><span class="lineCov">        594 :       if (strcmp (word, &quot;var&quot;) == 0)</span>
+<span class="lineNum">    1374 </span>            :         {
+<span class="lineNum">    1375 </span><span class="lineNoCov">          0 :           free (word);</span>
+<span class="lineNum">    1376 </span><span class="lineNoCov">          0 :           string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1377 </span><span class="lineNoCov">          0 :           add_var (word);</span>
+<span class="lineNum">    1378 </span><span class="lineNoCov">          0 :           string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1379 </span>            :         }
+<span class="lineNum">    1380 </span><span class="lineCov">        594 :       else if (word[0] == ':')</span>
+<span class="lineNum">    1381 </span>            :         {
+<span class="lineNum">    1382 </span>            :           dict_type *ptr;
+<span class="lineNum">    1383 </span>            : 
+<span class="lineNum">    1384 </span>            :           /* Compile a word and add to dictionary.  */
+<span class="lineNum">    1385 </span><span class="lineCov">        594 :           free (word);</span>
+<span class="lineNum">    1386 </span><span class="lineCov">        594 :           string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1387 </span><span class="lineCov">        594 :           ptr = newentry (word);</span>
+<span class="lineNum">    1388 </span><span class="lineCov">        594 :           string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1389 </span>            :           
+<span class="lineNum">    1390 </span><span class="lineCov">       3960 :           while (word[0] != ';')</span>
+<span class="lineNum">    1391 </span>            :             {
+<span class="lineNum">    1392 </span><span class="lineCov">       2772 :               switch (word[0])</span>
+<span class="lineNum">    1393 </span>            :                 {
+<span class="lineNum">    1394 </span><span class="lineCov">        506 :                 case '&quot;':</span>
+<span class="lineNum">    1395 </span>            :                   /* got a string, embed magic push string
+<span class="lineNum">    1396 </span>            :                      function */
+<span class="lineNum">    1397 </span><span class="lineCov">        506 :                   add_to_definition (ptr, push_text);</span>
+<span class="lineNum">    1398 </span><span class="lineCov">        506 :                   add_to_definition (ptr, (stinst_type) (word + 1));</span>
+<span class="lineNum">    1399 </span><span class="lineCov">        506 :                   break;</span>
+<span class="lineNum">    1400 </span><span class="lineNoCov">          0 :                 case '0':</span>
+<span class="lineNum">    1401 </span>            :                 case '1':
+<span class="lineNum">    1402 </span>            :                 case '2':
+<span class="lineNum">    1403 </span>            :                 case '3':
+<span class="lineNum">    1404 </span>            :                 case '4':
+<span class="lineNum">    1405 </span>            :                 case '5':
+<span class="lineNum">    1406 </span>            :                 case '6':
+<span class="lineNum">    1407 </span>            :                 case '7':
+<span class="lineNum">    1408 </span>            :                 case '8':
+<span class="lineNum">    1409 </span>            :                 case '9':
+<span class="lineNum">    1410 </span>            :                   /* Got a number, embedd the magic push number
+<span class="lineNum">    1411 </span>            :                      function */
+<span class="lineNum">    1412 </span><span class="lineNoCov">          0 :                   add_to_definition (ptr, push_number);</span>
+<span class="lineNum">    1413 </span><span class="lineNoCov">          0 :                   add_to_definition (ptr, (stinst_type) atol (word));</span>
+<span class="lineNum">    1414 </span><span class="lineNoCov">          0 :                   free (word);</span>
+<span class="lineNum">    1415 </span><span class="lineNoCov">          0 :                   break;</span>
+<span class="lineNum">    1416 </span><span class="lineCov">       2266 :                 default:</span>
+<span class="lineNum">    1417 </span><span class="lineCov">       2266 :                   add_to_definition (ptr, call);</span>
+<span class="lineNum">    1418 </span><span class="lineCov">       2266 :                   add_to_definition (ptr, (stinst_type) lookup_word (word));</span>
+<span class="lineNum">    1419 </span><span class="lineCov">       2266 :                   free (word);</span>
+<span class="lineNum">    1420 </span>            :                 }
+<span class="lineNum">    1421 </span>            : 
+<span class="lineNum">    1422 </span><span class="lineCov">       2772 :               string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1423 </span>            :             }
+<span class="lineNum">    1424 </span><span class="lineCov">        594 :           add_to_definition (ptr, 0);</span>
+<span class="lineNum">    1425 </span><span class="lineCov">        594 :           free (word);</span>
+<span class="lineNum">    1426 </span><span class="lineCov">        594 :           word = NULL;</span>
+<span class="lineNum">    1427 </span><span class="lineCov">        594 :           string = nextword (string, &amp;word);</span>
+<span class="lineNum">    1428 </span>            :         }
+<span class="lineNum">    1429 </span>            :       else
+<span class="lineNum">    1430 </span>            :         {
+<span class="lineNum">    1431 </span><span class="lineNoCov">          0 :           fprintf (stderr, &quot;syntax error at %s\n&quot;, string - 1);</span>
+<span class="lineNum">    1432 </span>            :         }
+<span class="lineNum">    1433 </span>            :     }
+<span class="lineNum">    1434 </span><span class="lineCov">         22 :   if (word)</span>
+<span class="lineNum">    1435 </span><span class="lineNoCov">          0 :     free (word);</span>
+<span class="lineNum">    1436 </span><span class="lineCov">         22 : }</span>
+<a name="1437"><span class="lineNum">    1437 </span>            : </a>
+<span class="lineNum">    1438 </span>            : static void
+<span class="lineNum">    1439 </span><span class="lineNoCov">          0 : bang ()</span>
+<span class="lineNum">    1440 </span>            : {
+<span class="lineNum">    1441 </span><span class="lineNoCov">          0 :   *(long *) ((isp[0])) = isp[-1];</span>
+<span class="lineNum">    1442 </span><span class="lineNoCov">          0 :   isp -= 2;</span>
+<span class="lineNum">    1443 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1444 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1445 </span><span class="lineNoCov">          0 : }</span>
+<a name="1446"><span class="lineNum">    1446 </span>            : </a>
+<span class="lineNum">    1447 </span>            : static void
+<span class="lineNum">    1448 </span><span class="lineNoCov">          0 : atsign ()</span>
+<span class="lineNum">    1449 </span>            : {
+<span class="lineNum">    1450 </span><span class="lineNoCov">          0 :   isp[0] = *(long *) (isp[0]);</span>
+<span class="lineNum">    1451 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1452 </span><span class="lineNoCov">          0 : }</span>
+<a name="1453"><span class="lineNum">    1453 </span>            : </a>
+<span class="lineNum">    1454 </span>            : static void
+<span class="lineNum">    1455 </span><span class="lineNoCov">          0 : hello ()</span>
+<span class="lineNum">    1456 </span>            : {
+<span class="lineNum">    1457 </span><span class="lineNoCov">          0 :   printf (&quot;hello\n&quot;);</span>
+<span class="lineNum">    1458 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1459 </span><span class="lineNoCov">          0 : }</span>
+<a name="1460"><span class="lineNum">    1460 </span>            : </a>
+<span class="lineNum">    1461 </span>            : static void
+<span class="lineNum">    1462 </span><span class="lineNoCov">          0 : stdout_ ()</span>
+<span class="lineNum">    1463 </span>            : {
+<span class="lineNum">    1464 </span><span class="lineNoCov">          0 :   isp++;</span>
+<span class="lineNum">    1465 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1466 </span><span class="lineNoCov">          0 :   *isp = 1;</span>
+<span class="lineNum">    1467 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1468 </span><span class="lineNoCov">          0 : }</span>
+<a name="1469"><span class="lineNum">    1469 </span>            : </a>
+<span class="lineNum">    1470 </span>            : static void
+<span class="lineNum">    1471 </span><span class="lineNoCov">          0 : stderr_ ()</span>
+<span class="lineNum">    1472 </span>            : {
+<span class="lineNum">    1473 </span><span class="lineNoCov">          0 :   isp++;</span>
+<span class="lineNum">    1474 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1475 </span><span class="lineNoCov">          0 :   *isp = 2;</span>
+<span class="lineNum">    1476 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1477 </span><span class="lineNoCov">          0 : }</span>
+<a name="1478"><span class="lineNum">    1478 </span>            : </a>
+<span class="lineNum">    1479 </span>            : static void
+<span class="lineNum">    1480 </span><span class="lineNoCov">          0 : print ()</span>
+<span class="lineNum">    1481 </span>            : {
+<span class="lineNum">    1482 </span><span class="lineNoCov">          0 :   if (*isp == 1)</span>
+<span class="lineNum">    1483 </span><span class="lineNoCov">          0 :     write_buffer (tos, stdout);</span>
+<span class="lineNum">    1484 </span><span class="lineNoCov">          0 :   else if (*isp == 2)</span>
+<span class="lineNum">    1485 </span><span class="lineNoCov">          0 :     write_buffer (tos, stderr);</span>
+<span class="lineNum">    1486 </span>            :   else
+<span class="lineNum">    1487 </span><span class="lineNoCov">          0 :     fprintf (stderr, &quot;print: illegal print destination `%ld'\n&quot;, *isp);</span>
+<span class="lineNum">    1488 </span><span class="lineNoCov">          0 :   isp--;</span>
+<span class="lineNum">    1489 </span><span class="lineNoCov">          0 :   tos--;</span>
+<span class="lineNum">    1490 </span><span class="lineNoCov">          0 :   icheck_range ();</span>
+<span class="lineNum">    1491 </span><span class="lineNoCov">          0 :   check_range ();</span>
+<span class="lineNum">    1492 </span><span class="lineNoCov">          0 :   pc++;</span>
+<span class="lineNum">    1493 </span><span class="lineNoCov">          0 : }</span>
+<a name="1494"><span class="lineNum">    1494 </span>            : </a>
+<span class="lineNum">    1495 </span>            : static void
+<span class="lineNum">    1496 </span><span class="lineCov">        240 : read_in (str, file)</span>
+<span class="lineNum">    1497 </span>            :      string_type *str;
+<span class="lineNum">    1498 </span>            :      FILE *file;
+<span class="lineNum">    1499 </span>            : {
+<span class="lineNum">    1500 </span>            :   char buff[10000];
+<span class="lineNum">    1501 </span>            :   unsigned int r;
+<span class="lineNum">    1502 </span>            :   do
+<span class="lineNum">    1503 </span>            :     {
+<span class="lineNum">    1504 </span><span class="lineCov">        240 :       r = fread (buff, 1, sizeof (buff), file);</span>
+<span class="lineNum">    1505 </span><span class="lineCov">        240 :       catbuf (str, buff, r);</span>
+<span class="lineNum">    1506 </span>            :     }
+<span class="lineNum">    1507 </span><span class="lineCov">        240 :   while (r);</span>
+<span class="lineNum">    1508 </span><span class="lineCov">         44 :   buff[0] = 0;</span>
+<span class="lineNum">    1509 </span>            : 
+<span class="lineNum">    1510 </span><span class="lineCov">         44 :   catbuf (str, buff, 1);</span>
+<span class="lineNum">    1511 </span><span class="lineCov">         44 : }</span>
+<a name="1512"><span class="lineNum">    1512 </span>            : </a>
+<span class="lineNum">    1513 </span>            : static void
+<span class="lineNum">    1514 </span><span class="lineNoCov">          0 : usage ()</span>
+<span class="lineNum">    1515 </span>            : {
+<span class="lineNum">    1516 </span><span class="lineNoCov">          0 :   fprintf (stderr, &quot;usage: -[d|i|g] &lt;file &gt;file\n&quot;);</span>
+<span class="lineNum">    1517 </span><span class="lineNoCov">          0 :   exit (33);</span>
+<span class="lineNum">    1518 </span>            : }
+<span class="lineNum">    1519 </span>            : 
+<span class="lineNum">    1520 </span>            : /* There is no reliable way to declare exit.  Sometimes it returns
+<span class="lineNum">    1521 </span>            :    int, and sometimes it returns void.  Sometimes it changes between
+<span class="lineNum">    1522 </span>            :    OS releases.  Trying to get it declared correctly in the hosts file
+<span class="lineNum">    1523 </span>            :    is a pointless waste of time.  */
+<a name="1524"><span class="lineNum">    1524 </span>            : </a>
+<span class="lineNum">    1525 </span>            : static void
+<span class="lineNum">    1526 </span><span class="lineNoCov">          0 : chew_exit ()</span>
+<span class="lineNum">    1527 </span>            : {
+<span class="lineNum">    1528 </span><span class="lineNoCov">          0 :   exit (0);</span>
+<span class="lineNum">    1529 </span>            : }
+<a name="1530"><span class="lineNum">    1530 </span>            : </a>
+<span class="lineNum">    1531 </span>            : int
+<span class="lineNum">    1532 </span><span class="lineCov">         22 : main (ac, av)</span>
+<span class="lineNum">    1533 </span>            :      int ac;
+<span class="lineNum">    1534 </span>            :      char *av[];
+<span class="lineNum">    1535 </span>            : {
+<span class="lineNum">    1536 </span>            :   unsigned int i;
+<span class="lineNum">    1537 </span>            :   string_type buffer;
+<span class="lineNum">    1538 </span>            :   string_type pptr;
+<span class="lineNum">    1539 </span>            : 
+<span class="lineNum">    1540 </span><span class="lineCov">         22 :   init_string (&amp;buffer);</span>
+<span class="lineNum">    1541 </span><span class="lineCov">         22 :   init_string (&amp;pptr);</span>
+<span class="lineNum">    1542 </span><span class="lineCov">         22 :   init_string (stack + 0);</span>
+<span class="lineNum">    1543 </span><span class="lineCov">         22 :   tos = stack + 1;</span>
+<span class="lineNum">    1544 </span><span class="lineCov">         22 :   ptr = &amp;pptr;</span>
+<span class="lineNum">    1545 </span>            : 
+<span class="lineNum">    1546 </span><span class="lineCov">         22 :   add_intrinsic (&quot;push_text&quot;, push_text);</span>
+<span class="lineNum">    1547 </span><span class="lineCov">         22 :   add_intrinsic (&quot;!&quot;, bang);</span>
+<span class="lineNum">    1548 </span><span class="lineCov">         22 :   add_intrinsic (&quot;@&quot;, atsign);</span>
+<span class="lineNum">    1549 </span><span class="lineCov">         22 :   add_intrinsic (&quot;hello&quot;, hello);</span>
+<span class="lineNum">    1550 </span><span class="lineCov">         22 :   add_intrinsic (&quot;stdout&quot;, stdout_);</span>
+<span class="lineNum">    1551 </span><span class="lineCov">         22 :   add_intrinsic (&quot;stderr&quot;, stderr_);</span>
+<span class="lineNum">    1552 </span><span class="lineCov">         22 :   add_intrinsic (&quot;print&quot;, print);</span>
+<span class="lineNum">    1553 </span><span class="lineCov">         22 :   add_intrinsic (&quot;skip_past_newline&quot;, skip_past_newline);</span>
+<span class="lineNum">    1554 </span><span class="lineCov">         22 :   add_intrinsic (&quot;catstr&quot;, icatstr);</span>
+<span class="lineNum">    1555 </span><span class="lineCov">         22 :   add_intrinsic (&quot;copy_past_newline&quot;, icopy_past_newline);</span>
+<span class="lineNum">    1556 </span><span class="lineCov">         22 :   add_intrinsic (&quot;dup&quot;, other_dup);</span>
+<span class="lineNum">    1557 </span><span class="lineCov">         22 :   add_intrinsic (&quot;drop&quot;, drop);</span>
+<span class="lineNum">    1558 </span><span class="lineCov">         22 :   add_intrinsic (&quot;idrop&quot;, idrop);</span>
+<span class="lineNum">    1559 </span><span class="lineCov">         22 :   add_intrinsic (&quot;remchar&quot;, remchar);</span>
+<span class="lineNum">    1560 </span><span class="lineCov">         22 :   add_intrinsic (&quot;get_stuff_in_command&quot;, get_stuff_in_command);</span>
+<span class="lineNum">    1561 </span><span class="lineCov">         22 :   add_intrinsic (&quot;do_fancy_stuff&quot;, do_fancy_stuff);</span>
+<span class="lineNum">    1562 </span><span class="lineCov">         22 :   add_intrinsic (&quot;bulletize&quot;, bulletize);</span>
+<span class="lineNum">    1563 </span><span class="lineCov">         22 :   add_intrinsic (&quot;courierize&quot;, courierize);</span>
+<span class="lineNum">    1564 </span>            :   /* If the following line gives an error, exit() is not declared in the
+<span class="lineNum">    1565 </span>            :      ../hosts/foo.h file for this host.  Fix it there, not here!  */
+<span class="lineNum">    1566 </span>            :   /* No, don't fix it anywhere; see comment on chew_exit--Ian Taylor.  */
+<span class="lineNum">    1567 </span><span class="lineCov">         22 :   add_intrinsic (&quot;exit&quot;, chew_exit);</span>
+<span class="lineNum">    1568 </span><span class="lineCov">         22 :   add_intrinsic (&quot;swap&quot;, swap);</span>
+<span class="lineNum">    1569 </span><span class="lineCov">         22 :   add_intrinsic (&quot;outputdots&quot;, outputdots);</span>
+<span class="lineNum">    1570 </span><span class="lineCov">         22 :   add_intrinsic (&quot;paramstuff&quot;, paramstuff);</span>
+<span class="lineNum">    1571 </span><span class="lineCov">         22 :   add_intrinsic (&quot;maybecatstr&quot;, maybecatstr);</span>
+<span class="lineNum">    1572 </span><span class="lineCov">         22 :   add_intrinsic (&quot;translatecomments&quot;, translatecomments);</span>
+<span class="lineNum">    1573 </span><span class="lineCov">         22 :   add_intrinsic (&quot;kill_bogus_lines&quot;, kill_bogus_lines);</span>
+<span class="lineNum">    1574 </span><span class="lineCov">         22 :   add_intrinsic (&quot;indent&quot;, indent);</span>
+<span class="lineNum">    1575 </span><span class="lineCov">         22 :   add_intrinsic (&quot;internalmode&quot;, internalmode);</span>
+<span class="lineNum">    1576 </span><span class="lineCov">         22 :   add_intrinsic (&quot;print_stack_level&quot;, print_stack_level);</span>
+<span class="lineNum">    1577 </span><span class="lineCov">         22 :   add_intrinsic (&quot;strip_trailing_newlines&quot;, strip_trailing_newlines);</span>
+<span class="lineNum">    1578 </span>            : 
+<span class="lineNum">    1579 </span>            :   /* Put a nl at the start.  */
+<span class="lineNum">    1580 </span><span class="lineCov">         22 :   catchar (&amp;buffer, '\n');</span>
+<span class="lineNum">    1581 </span>            : 
+<span class="lineNum">    1582 </span><span class="lineCov">         22 :   read_in (&amp;buffer, stdin);</span>
+<span class="lineNum">    1583 </span><span class="lineCov">         22 :   remove_noncomments (&amp;buffer, ptr);</span>
+<span class="lineNum">    1584 </span><span class="lineCov">         66 :   for (i = 1; i &lt; (unsigned int) ac; i++)</span>
+<span class="lineNum">    1585 </span>            :     {
+<span class="lineNum">    1586 </span><span class="lineCov">         44 :       if (av[i][0] == '-')</span>
+<span class="lineNum">    1587 </span>            :         {
+<span class="lineNum">    1588 </span><span class="lineCov">         22 :           if (av[i][1] == 'f')</span>
+<span class="lineNum">    1589 </span>            :             {
+<span class="lineNum">    1590 </span>            :               string_type b;
+<span class="lineNum">    1591 </span>            :               FILE *f;
+<span class="lineNum">    1592 </span><span class="lineCov">         22 :               init_string (&amp;b);</span>
+<span class="lineNum">    1593 </span>            : 
+<span class="lineNum">    1594 </span><span class="lineCov">         22 :               f = fopen (av[i + 1], &quot;r&quot;);</span>
+<span class="lineNum">    1595 </span><span class="lineCov">         22 :               if (!f)</span>
+<span class="lineNum">    1596 </span>            :                 {
+<span class="lineNum">    1597 </span><span class="lineNoCov">          0 :                   fprintf (stderr, &quot;Can't open the input file %s\n&quot;,</span>
+<span class="lineNum">    1598 </span><span class="lineNoCov">          0 :                            av[i + 1]);</span>
+<span class="lineNum">    1599 </span><span class="lineNoCov">          0 :                   return 33;</span>
+<span class="lineNum">    1600 </span>            :                 }
+<span class="lineNum">    1601 </span>            : 
+<span class="lineNum">    1602 </span><span class="lineCov">         22 :               read_in (&amp;b, f);</span>
+<span class="lineNum">    1603 </span><span class="lineCov">         22 :               compile (b.ptr);</span>
+<span class="lineNum">    1604 </span><span class="lineCov">         22 :               perform ();</span>
+<span class="lineNum">    1605 </span><span class="lineCov">         22 :               delete_string (&amp;b);</span>
+<span class="lineNum">    1606 </span>            :             }
+<span class="lineNum">    1607 </span><span class="lineNoCov">          0 :           else if (av[i][1] == 'i')</span>
+<span class="lineNum">    1608 </span>            :             {
+<span class="lineNum">    1609 </span><span class="lineNoCov">          0 :               internal_wanted = 1;</span>
+<span class="lineNum">    1610 </span>            :             }
+<span class="lineNum">    1611 </span><span class="lineNoCov">          0 :           else if (av[i][1] == 'w')</span>
+<span class="lineNum">    1612 </span>            :             {
+<span class="lineNum">    1613 </span><span class="lineNoCov">          0 :               warning = 1;</span>
+<span class="lineNum">    1614 </span>            :             }
+<span class="lineNum">    1615 </span>            :           else
+<span class="lineNum">    1616 </span><span class="lineNoCov">          0 :             usage ();</span>
+<span class="lineNum">    1617 </span>            :         }
+<span class="lineNum">    1618 </span>            :     }
+<span class="lineNum">    1619 </span><span class="lineCov">         22 :   write_buffer (stack + 0, stdout);</span>
+<span class="lineNum">    1620 </span><span class="lineCov">         22 :   free_words ();</span>
+<span class="lineNum">    1621 </span><span class="lineCov">         22 :   delete_string (&amp;pptr);</span>
+<span class="lineNum">    1622 </span><span class="lineCov">         22 :   delete_string (&amp;buffer);</span>
+<span class="lineNum">    1623 </span><span class="lineCov">         22 :   if (tos != stack)</span>
+<span class="lineNum">    1624 </span>            :     {
+<span class="lineNum">    1625 </span><span class="lineNoCov">          0 :       fprintf (stderr, &quot;finishing with current stack level %ld\n&quot;,</span>
+<span class="lineNum">    1626 </span><span class="lineNoCov">          0 :                (long) (tos - stack));</span>
+<span class="lineNum">    1627 </span><span class="lineNoCov">          0 :       return 1;</span>
+<span class="lineNum">    1628 </span>            :     }
+<span class="lineNum">    1629 </span><span class="lineCov">         22 :   return 0;</span>
+<span class="lineNum">    1630 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

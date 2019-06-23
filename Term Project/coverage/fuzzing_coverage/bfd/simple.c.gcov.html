@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/simple.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - simple.c<span style="font-size: 80%;"> (source / <a href="simple.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">92</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* simple.c -- BFD simple client routines</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Contributed by MontaVista Software, Inc.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;bfdlink.h&quot;
+<a name="26"><span class="lineNum">      26 </span>            : </a>
+<span class="lineNum">      27 </span>            : static void
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 : simple_dummy_warning (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      29 </span>            :                       const char *warning ATTRIBUTE_UNUSED,
+<span class="lineNum">      30 </span>            :                       const char *symbol ATTRIBUTE_UNUSED,
+<span class="lineNum">      31 </span>            :                       bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      32 </span>            :                       asection *section ATTRIBUTE_UNUSED,
+<span class="lineNum">      33 </span>            :                       bfd_vma address ATTRIBUTE_UNUSED)
+<span class="lineNum">      34 </span>            : {
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 : }</span>
+<a name="36"><span class="lineNum">      36 </span>            : </a>
+<span class="lineNum">      37 </span>            : static void
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 : simple_dummy_undefined_symbol (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      39 </span>            :                                const char *name ATTRIBUTE_UNUSED,
+<span class="lineNum">      40 </span>            :                                bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      41 </span>            :                                asection *section ATTRIBUTE_UNUSED,
+<span class="lineNum">      42 </span>            :                                bfd_vma address ATTRIBUTE_UNUSED,
+<span class="lineNum">      43 </span>            :                                bfd_boolean fatal ATTRIBUTE_UNUSED)
+<span class="lineNum">      44 </span>            : {
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 : }</span>
+<a name="46"><span class="lineNum">      46 </span>            : </a>
+<span class="lineNum">      47 </span>            : static void
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 : simple_dummy_reloc_overflow (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      49 </span>            :                              struct bfd_link_hash_entry *entry ATTRIBUTE_UNUSED,
+<span class="lineNum">      50 </span>            :                              const char *name ATTRIBUTE_UNUSED,
+<span class="lineNum">      51 </span>            :                              const char *reloc_name ATTRIBUTE_UNUSED,
+<span class="lineNum">      52 </span>            :                              bfd_vma addend ATTRIBUTE_UNUSED,
+<span class="lineNum">      53 </span>            :                              bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      54 </span>            :                              asection *section ATTRIBUTE_UNUSED,
+<span class="lineNum">      55 </span>            :                              bfd_vma address ATTRIBUTE_UNUSED)
+<span class="lineNum">      56 </span>            : {
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 : }</span>
+<a name="58"><span class="lineNum">      58 </span>            : </a>
+<span class="lineNum">      59 </span>            : static void
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 : simple_dummy_reloc_dangerous (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      61 </span>            :                               const char *message ATTRIBUTE_UNUSED,
+<span class="lineNum">      62 </span>            :                               bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      63 </span>            :                               asection *section ATTRIBUTE_UNUSED,
+<span class="lineNum">      64 </span>            :                               bfd_vma address ATTRIBUTE_UNUSED)
+<span class="lineNum">      65 </span>            : {
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 : }</span>
+<a name="67"><span class="lineNum">      67 </span>            : </a>
+<span class="lineNum">      68 </span>            : static void
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 : simple_dummy_unattached_reloc (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      70 </span>            :                                const char *name ATTRIBUTE_UNUSED,
+<span class="lineNum">      71 </span>            :                                bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      72 </span>            :                                asection *section ATTRIBUTE_UNUSED,
+<span class="lineNum">      73 </span>            :                                bfd_vma address ATTRIBUTE_UNUSED)
+<span class="lineNum">      74 </span>            : {
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 : }</span>
+<a name="76"><span class="lineNum">      76 </span>            : </a>
+<span class="lineNum">      77 </span>            : static void
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 : simple_dummy_multiple_definition (struct bfd_link_info *link_info ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">      79 </span>            :                                   struct bfd_link_hash_entry *h ATTRIBUTE_UNUSED,
+<span class="lineNum">      80 </span>            :                                   bfd *nbfd ATTRIBUTE_UNUSED,
+<span class="lineNum">      81 </span>            :                                   asection *nsec ATTRIBUTE_UNUSED,
+<span class="lineNum">      82 </span>            :                                   bfd_vma nval ATTRIBUTE_UNUSED)
+<span class="lineNum">      83 </span>            : {
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 : }</span>
+<a name="85"><span class="lineNum">      85 </span>            : </a>
+<span class="lineNum">      86 </span>            : static void
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 : simple_dummy_einfo (const char *fmt ATTRIBUTE_UNUSED, ...)</span>
+<span class="lineNum">      88 </span>            : {
+<span class="lineNum">      89 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            : struct saved_output_info
+<span class="lineNum">      92 </span>            : {
+<span class="lineNum">      93 </span>            :   bfd_vma offset;
+<span class="lineNum">      94 </span>            :   asection *section;
+<span class="lineNum">      95 </span>            : };
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            : struct saved_offsets
+<span class="lineNum">      98 </span>            : {
+<span class="lineNum">      99 </span>            :   unsigned int section_count;
+<span class="lineNum">     100 </span>            :   struct saved_output_info *sections;
+<span class="lineNum">     101 </span>            : };
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span>            : /* The sections in ABFD may already have output sections and offsets
+<span class="lineNum">     104 </span>            :    set if we are here during linking.
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            :    DWARF-2 specifies offsets into debug sections in many cases and
+<span class="lineNum">     107 </span>            :    bfd_simple_get_relocated_section_contents is called to relocate
+<span class="lineNum">     108 </span>            :    debug info for a single relocatable object file.  So we want
+<span class="lineNum">     109 </span>            :    offsets relative to that object file's sections, not offsets in the
+<span class="lineNum">     110 </span>            :    output file.  For that reason, reset a debug section-&gt;output_offset
+<span class="lineNum">     111 </span>            :    to zero.
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            :    If not called during linking then set section-&gt;output_section to
+<span class="lineNum">     114 </span>            :    point back to the input section, because output_section must not be
+<span class="lineNum">     115 </span>            :    NULL when calling the relocation routines.
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            :    Save the original output offset and section to restore later.  */
+<a name="118"><span class="lineNum">     118 </span>            : </a>
+<span class="lineNum">     119 </span>            : static void
+<span class="lineNum">     120 </span><span class="lineNoCov">          0 : simple_save_output_info (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     121 </span>            :                          asection *section,
+<span class="lineNum">     122 </span>            :                          void *ptr)
+<span class="lineNum">     123 </span>            : {
+<span class="lineNum">     124 </span><span class="lineNoCov">          0 :   struct saved_offsets *saved_offsets = (struct saved_offsets *) ptr;</span>
+<span class="lineNum">     125 </span>            :   struct saved_output_info *output_info;
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :   output_info = &amp;saved_offsets-&gt;sections[section-&gt;index];</span>
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :   output_info-&gt;offset = section-&gt;output_offset;</span>
+<span class="lineNum">     129 </span><span class="lineNoCov">          0 :   output_info-&gt;section = section-&gt;output_section;</span>
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :   if ((section-&gt;flags &amp; SEC_DEBUGGING) != 0</span>
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :       || section-&gt;output_section == NULL)</span>
+<span class="lineNum">     132 </span>            :     {
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :       section-&gt;output_offset = 0;</span>
+<span class="lineNum">     134 </span><span class="lineNoCov">          0 :       section-&gt;output_section = section;</span>
+<span class="lineNum">     135 </span>            :     }
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 : }</span>
+<a name="137"><span class="lineNum">     137 </span>            : </a>
+<span class="lineNum">     138 </span>            : static void
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 : simple_restore_output_info (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     140 </span>            :                             asection *section,
+<span class="lineNum">     141 </span>            :                             void *ptr)
+<span class="lineNum">     142 </span>            : {
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :   struct saved_offsets *saved_offsets = (struct saved_offsets *) ptr;</span>
+<span class="lineNum">     144 </span>            :   struct saved_output_info *output_info;
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :   if (section-&gt;index &gt;= saved_offsets-&gt;section_count)</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :     return;</span>
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :   output_info = &amp;saved_offsets-&gt;sections[section-&gt;index];</span>
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :   section-&gt;output_offset = output_info-&gt;offset;</span>
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :   section-&gt;output_section = output_info-&gt;section;</span>
+<span class="lineNum">     152 </span>            : }
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span>            : /*
+<span class="lineNum">     155 </span>            : FUNCTION
+<span class="lineNum">     156 </span>            :         bfd_simple_relocate_secton
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            : SYNOPSIS
+<span class="lineNum">     159 </span>            :         bfd_byte *bfd_simple_get_relocated_section_contents
+<span class="lineNum">     160 </span>            :           (bfd *abfd, asection *sec, bfd_byte *outbuf, asymbol **symbol_table);
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : DESCRIPTION
+<span class="lineNum">     163 </span>            :         Returns the relocated contents of section @var{sec}.  The symbols in
+<span class="lineNum">     164 </span>            :         @var{symbol_table} will be used, or the symbols from @var{abfd} if
+<span class="lineNum">     165 </span>            :         @var{symbol_table} is NULL.  The output offsets for debug sections will
+<span class="lineNum">     166 </span>            :         be temporarily reset to 0.  The result will be stored at @var{outbuf}
+<span class="lineNum">     167 </span>            :         or allocated with @code{bfd_malloc} if @var{outbuf} is @code{NULL}.
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            :         Returns @code{NULL} on a fatal error; ignores errors applying
+<span class="lineNum">     170 </span>            :         particular relocations.
+<span class="lineNum">     171 </span>            : */
+<a name="172"><span class="lineNum">     172 </span>            : </a>
+<span class="lineNum">     173 </span>            : bfd_byte *
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 : bfd_simple_get_relocated_section_contents (bfd *abfd,</span>
+<span class="lineNum">     175 </span>            :                                            asection *sec,
+<span class="lineNum">     176 </span>            :                                            bfd_byte *outbuf,
+<span class="lineNum">     177 </span>            :                                            asymbol **symbol_table)
+<span class="lineNum">     178 </span>            : {
+<span class="lineNum">     179 </span>            :   struct bfd_link_info link_info;
+<span class="lineNum">     180 </span>            :   struct bfd_link_order link_order;
+<span class="lineNum">     181 </span>            :   struct bfd_link_callbacks callbacks;
+<span class="lineNum">     182 </span>            :   bfd_byte *contents, *data;
+<span class="lineNum">     183 </span>            :   int storage_needed;
+<span class="lineNum">     184 </span>            :   struct saved_offsets saved_offsets;
+<span class="lineNum">     185 </span>            :   bfd *link_next;
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            :   /* Don't apply relocation on executable and shared library.  See
+<span class="lineNum">     188 </span>            :      PR 4756.  */
+<span class="lineNum">     189 </span><span class="lineNoCov">          0 :   if ((abfd-&gt;flags &amp; (HAS_RELOC | EXEC_P | DYNAMIC)) != HAS_RELOC</span>
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :       || ! (sec-&gt;flags &amp; SEC_RELOC))</span>
+<span class="lineNum">     191 </span>            :     {
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :       contents = outbuf;</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :       if (!bfd_get_full_section_contents (abfd, sec, &amp;contents))</span>
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :         return NULL;</span>
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :       return contents;</span>
+<span class="lineNum">     196 </span>            :     }
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span>            :   /* In order to use bfd_get_relocated_section_contents, we need
+<span class="lineNum">     199 </span>            :      to forge some data structures that it expects.  */
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            :   /* Fill in the bare minimum number of fields for our purposes.  */
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :   memset (&amp;link_info, 0, sizeof (link_info));</span>
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :   link_info.output_bfd = abfd;</span>
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 :   link_info.input_bfds = abfd;</span>
+<span class="lineNum">     205 </span><span class="lineNoCov">          0 :   link_info.input_bfds_tail = &amp;abfd-&gt;link.next;</span>
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span><span class="lineNoCov">          0 :   link_next = abfd-&gt;link.next;</span>
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 :   abfd-&gt;link.next = NULL;</span>
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 :   link_info.hash = _bfd_generic_link_hash_table_create (abfd);</span>
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 :   link_info.callbacks = &amp;callbacks;</span>
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :   callbacks.warning = simple_dummy_warning;</span>
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :   callbacks.undefined_symbol = simple_dummy_undefined_symbol;</span>
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :   callbacks.reloc_overflow = simple_dummy_reloc_overflow;</span>
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :   callbacks.reloc_dangerous = simple_dummy_reloc_dangerous;</span>
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 :   callbacks.unattached_reloc = simple_dummy_unattached_reloc;</span>
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :   callbacks.multiple_definition = simple_dummy_multiple_definition;</span>
+<span class="lineNum">     217 </span><span class="lineNoCov">          0 :   callbacks.einfo = simple_dummy_einfo;</span>
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :   memset (&amp;link_order, 0, sizeof (link_order));</span>
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :   link_order.next = NULL;</span>
+<span class="lineNum">     221 </span><span class="lineNoCov">          0 :   link_order.type = bfd_indirect_link_order;</span>
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :   link_order.offset = 0;</span>
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 :   link_order.size = sec-&gt;size;</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :   link_order.u.indirect.section = sec;</span>
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :   data = NULL;</span>
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :   if (outbuf == NULL)</span>
+<span class="lineNum">     228 </span>            :     {
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :       bfd_size_type amt = sec-&gt;rawsize &gt; sec-&gt;size ? sec-&gt;rawsize : sec-&gt;size;</span>
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 :       data = (bfd_byte *) bfd_malloc (amt);</span>
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :       if (data == NULL)</span>
+<span class="lineNum">     232 </span>            :         {
+<span class="lineNum">     233 </span><span class="lineNoCov">          0 :           _bfd_generic_link_hash_table_free (abfd);</span>
+<span class="lineNum">     234 </span><span class="lineNoCov">          0 :           abfd-&gt;link.next = link_next;</span>
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :           return NULL;</span>
+<span class="lineNum">     236 </span>            :         }
+<span class="lineNum">     237 </span><span class="lineNoCov">          0 :       outbuf = data;</span>
+<span class="lineNum">     238 </span>            :     }
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :   saved_offsets.section_count = abfd-&gt;section_count;</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :   saved_offsets.sections = malloc (sizeof (*saved_offsets.sections)</span>
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 :                                    * saved_offsets.section_count);</span>
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   if (saved_offsets.sections == NULL)</span>
+<span class="lineNum">     244 </span>            :     {
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :       if (data)</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :         free (data);</span>
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :       _bfd_generic_link_hash_table_free (abfd);</span>
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :       abfd-&gt;link.next = link_next;</span>
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     250 </span>            :     }
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :   bfd_map_over_sections (abfd, simple_save_output_info, &amp;saved_offsets);</span>
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :   if (symbol_table == NULL)</span>
+<span class="lineNum">     254 </span>            :     {
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :       _bfd_generic_link_add_symbols (abfd, &amp;link_info);</span>
+<span class="lineNum">     256 </span>            : 
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :       storage_needed = bfd_get_symtab_upper_bound (abfd);</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :       symbol_table = (asymbol **) bfd_malloc (storage_needed);</span>
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :       bfd_canonicalize_symtab (abfd, symbol_table);</span>
+<span class="lineNum">     260 </span>            :     }
+<span class="lineNum">     261 </span>            :   else
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 :     storage_needed = 0;</span>
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :   contents = bfd_get_relocated_section_contents (abfd,</span>
+<span class="lineNum">     265 </span>            :                                                  &amp;link_info,
+<span class="lineNum">     266 </span>            :                                                  &amp;link_order,
+<span class="lineNum">     267 </span>            :                                                  outbuf,
+<span class="lineNum">     268 </span>            :                                                  0,
+<span class="lineNum">     269 </span>            :                                                  symbol_table);
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :   if (contents == NULL &amp;&amp; data != NULL)</span>
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 :     free (data);</span>
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :   bfd_map_over_sections (abfd, simple_restore_output_info, &amp;saved_offsets);</span>
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :   free (saved_offsets.sections);</span>
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 :   _bfd_generic_link_hash_table_free (abfd);</span>
+<span class="lineNum">     277 </span><span class="lineNoCov">          0 :   abfd-&gt;link.next = link_next;</span>
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 :   return contents;</span>
+<span class="lineNum">     279 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

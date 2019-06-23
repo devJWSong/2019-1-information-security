@@ -1,0 +1,1505 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/syms.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - syms.c<span style="font-size: 80%;"> (source / <a href="syms.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntry">398</td>
+            <td class="headerCovTableEntryLo">4.8 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryLo">7.7 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Generic symbol-table support for the BFD library.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Written by Cygnus Support.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /*
+<span class="lineNum">      23 </span>            : SECTION
+<span class="lineNum">      24 </span>            :         Symbols
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :         BFD tries to maintain as much symbol information as it can when
+<span class="lineNum">      27 </span>            :         it moves information from file to file. BFD passes information
+<span class="lineNum">      28 </span>            :         to applications though the &lt;&lt;asymbol&gt;&gt; structure. When the
+<span class="lineNum">      29 </span>            :         application requests the symbol table, BFD reads the table in
+<span class="lineNum">      30 </span>            :         the native form and translates parts of it into the internal
+<span class="lineNum">      31 </span>            :         format. To maintain more than the information passed to
+<span class="lineNum">      32 </span>            :         applications, some targets keep some information ``behind the
+<span class="lineNum">      33 </span>            :         scenes'' in a structure only the particular back end knows
+<span class="lineNum">      34 </span>            :         about. For example, the coff back end keeps the original
+<span class="lineNum">      35 </span>            :         symbol table structure as well as the canonical structure when
+<span class="lineNum">      36 </span>            :         a BFD is read in. On output, the coff back end can reconstruct
+<span class="lineNum">      37 </span>            :         the output symbol table so that no information is lost, even
+<span class="lineNum">      38 </span>            :         information unique to coff which BFD doesn't know or
+<span class="lineNum">      39 </span>            :         understand. If a coff symbol table were read, but were written
+<span class="lineNum">      40 </span>            :         through an a.out back end, all the coff specific information
+<span class="lineNum">      41 </span>            :         would be lost. The symbol table of a BFD
+<span class="lineNum">      42 </span>            :         is not necessarily read in until a canonicalize request is
+<span class="lineNum">      43 </span>            :         made. Then the BFD back end fills in a table provided by the
+<span class="lineNum">      44 </span>            :         application with pointers to the canonical information.  To
+<span class="lineNum">      45 </span>            :         output symbols, the application provides BFD with a table of
+<span class="lineNum">      46 </span>            :         pointers to pointers to &lt;&lt;asymbol&gt;&gt;s. This allows applications
+<span class="lineNum">      47 </span>            :         like the linker to output a symbol as it was read, since the ``behind
+<span class="lineNum">      48 </span>            :         the scenes'' information will be still available.
+<span class="lineNum">      49 </span>            : @menu
+<span class="lineNum">      50 </span>            : @* Reading Symbols::
+<span class="lineNum">      51 </span>            : @* Writing Symbols::
+<span class="lineNum">      52 </span>            : @* Mini Symbols::
+<span class="lineNum">      53 </span>            : @* typedef asymbol::
+<span class="lineNum">      54 </span>            : @* symbol handling functions::
+<span class="lineNum">      55 </span>            : @end menu
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            : INODE
+<span class="lineNum">      58 </span>            : Reading Symbols, Writing Symbols, Symbols, Symbols
+<span class="lineNum">      59 </span>            : SUBSECTION
+<span class="lineNum">      60 </span>            :         Reading symbols
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            :         There are two stages to reading a symbol table from a BFD:
+<span class="lineNum">      63 </span>            :         allocating storage, and the actual reading process. This is an
+<span class="lineNum">      64 </span>            :         excerpt from an application which reads the symbol table:
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            : |         long storage_needed;
+<span class="lineNum">      67 </span>            : |         asymbol **symbol_table;
+<span class="lineNum">      68 </span>            : |         long number_of_symbols;
+<span class="lineNum">      69 </span>            : |         long i;
+<span class="lineNum">      70 </span>            : |
+<span class="lineNum">      71 </span>            : |         storage_needed = bfd_get_symtab_upper_bound (abfd);
+<span class="lineNum">      72 </span>            : |
+<span class="lineNum">      73 </span>            : |         if (storage_needed &lt; 0)
+<span class="lineNum">      74 </span>            : |           FAIL
+<span class="lineNum">      75 </span>            : |
+<span class="lineNum">      76 </span>            : |         if (storage_needed == 0)
+<span class="lineNum">      77 </span>            : |           return;
+<span class="lineNum">      78 </span>            : |
+<span class="lineNum">      79 </span>            : |         symbol_table = xmalloc (storage_needed);
+<span class="lineNum">      80 </span>            : |           ...
+<span class="lineNum">      81 </span>            : |         number_of_symbols =
+<span class="lineNum">      82 </span>            : |            bfd_canonicalize_symtab (abfd, symbol_table);
+<span class="lineNum">      83 </span>            : |
+<span class="lineNum">      84 </span>            : |         if (number_of_symbols &lt; 0)
+<span class="lineNum">      85 </span>            : |           FAIL
+<span class="lineNum">      86 </span>            : |
+<span class="lineNum">      87 </span>            : |         for (i = 0; i &lt; number_of_symbols; i++)
+<span class="lineNum">      88 </span>            : |           process_symbol (symbol_table[i]);
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :         All storage for the symbols themselves is in an objalloc
+<span class="lineNum">      91 </span>            :         connected to the BFD; it is freed when the BFD is closed.
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            : INODE
+<span class="lineNum">      94 </span>            : Writing Symbols, Mini Symbols, Reading Symbols, Symbols
+<span class="lineNum">      95 </span>            : SUBSECTION
+<span class="lineNum">      96 </span>            :         Writing symbols
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            :         Writing of a symbol table is automatic when a BFD open for
+<span class="lineNum">      99 </span>            :         writing is closed. The application attaches a vector of
+<span class="lineNum">     100 </span>            :         pointers to pointers to symbols to the BFD being written, and
+<span class="lineNum">     101 </span>            :         fills in the symbol count. The close and cleanup code reads
+<span class="lineNum">     102 </span>            :         through the table provided and performs all the necessary
+<span class="lineNum">     103 </span>            :         operations. The BFD output code must always be provided with an
+<span class="lineNum">     104 </span>            :         ``owned'' symbol: one which has come from another BFD, or one
+<span class="lineNum">     105 </span>            :         which has been created using &lt;&lt;bfd_make_empty_symbol&gt;&gt;.  Here is an
+<span class="lineNum">     106 </span>            :         example showing the creation of a symbol table with only one element:
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : |       #include &quot;sysdep.h&quot;
+<span class="lineNum">     109 </span>            : |       #include &quot;bfd.h&quot;
+<span class="lineNum">     110 </span>            : |       int main (void)
+<span class="lineNum">     111 </span>            : |       {
+<span class="lineNum">     112 </span>            : |         bfd *abfd;
+<span class="lineNum">     113 </span>            : |         asymbol *ptrs[2];
+<span class="lineNum">     114 </span>            : |         asymbol *new;
+<span class="lineNum">     115 </span>            : |
+<span class="lineNum">     116 </span>            : |         abfd = bfd_openw (&quot;foo&quot;,&quot;a.out-sunos-big&quot;);
+<span class="lineNum">     117 </span>            : |         bfd_set_format (abfd, bfd_object);
+<span class="lineNum">     118 </span>            : |         new = bfd_make_empty_symbol (abfd);
+<span class="lineNum">     119 </span>            : |         new-&gt;name = &quot;dummy_symbol&quot;;
+<span class="lineNum">     120 </span>            : |         new-&gt;section = bfd_make_section_old_way (abfd, &quot;.text&quot;);
+<span class="lineNum">     121 </span>            : |         new-&gt;flags = BSF_GLOBAL;
+<span class="lineNum">     122 </span>            : |         new-&gt;value = 0x12345;
+<span class="lineNum">     123 </span>            : |
+<span class="lineNum">     124 </span>            : |         ptrs[0] = new;
+<span class="lineNum">     125 </span>            : |         ptrs[1] = 0;
+<span class="lineNum">     126 </span>            : |
+<span class="lineNum">     127 </span>            : |         bfd_set_symtab (abfd, ptrs, 1);
+<span class="lineNum">     128 </span>            : |         bfd_close (abfd);
+<span class="lineNum">     129 </span>            : |         return 0;
+<span class="lineNum">     130 </span>            : |       }
+<span class="lineNum">     131 </span>            : |
+<span class="lineNum">     132 </span>            : |       ./makesym
+<span class="lineNum">     133 </span>            : |       nm foo
+<span class="lineNum">     134 </span>            : |       00012345 A dummy_symbol
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            :         Many formats cannot represent arbitrary symbol information; for
+<span class="lineNum">     137 </span>            :         instance, the &lt;&lt;a.out&gt;&gt; object format does not allow an
+<span class="lineNum">     138 </span>            :         arbitrary number of sections. A symbol pointing to a section
+<span class="lineNum">     139 </span>            :         which is not one  of &lt;&lt;.text&gt;&gt;, &lt;&lt;.data&gt;&gt; or &lt;&lt;.bss&gt;&gt; cannot
+<span class="lineNum">     140 </span>            :         be described.
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span>            : INODE
+<span class="lineNum">     143 </span>            : Mini Symbols, typedef asymbol, Writing Symbols, Symbols
+<span class="lineNum">     144 </span>            : SUBSECTION
+<span class="lineNum">     145 </span>            :         Mini Symbols
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            :         Mini symbols provide read-only access to the symbol table.
+<span class="lineNum">     148 </span>            :         They use less memory space, but require more time to access.
+<span class="lineNum">     149 </span>            :         They can be useful for tools like nm or objdump, which may
+<span class="lineNum">     150 </span>            :         have to handle symbol tables of extremely large executables.
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :         The &lt;&lt;bfd_read_minisymbols&gt;&gt; function will read the symbols
+<span class="lineNum">     153 </span>            :         into memory in an internal form.  It will return a &lt;&lt;void *&gt;&gt;
+<span class="lineNum">     154 </span>            :         pointer to a block of memory, a symbol count, and the size of
+<span class="lineNum">     155 </span>            :         each symbol.  The pointer is allocated using &lt;&lt;malloc&gt;&gt;, and
+<span class="lineNum">     156 </span>            :         should be freed by the caller when it is no longer needed.
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :         The function &lt;&lt;bfd_minisymbol_to_symbol&gt;&gt; will take a pointer
+<span class="lineNum">     159 </span>            :         to a minisymbol, and a pointer to a structure returned by
+<span class="lineNum">     160 </span>            :         &lt;&lt;bfd_make_empty_symbol&gt;&gt;, and return a &lt;&lt;asymbol&gt;&gt; structure.
+<span class="lineNum">     161 </span>            :         The return value may or may not be the same as the value from
+<span class="lineNum">     162 </span>            :         &lt;&lt;bfd_make_empty_symbol&gt;&gt; which was passed in.
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span>            : */
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            : /*
+<span class="lineNum">     167 </span>            : DOCDD
+<span class="lineNum">     168 </span>            : INODE
+<span class="lineNum">     169 </span>            : typedef asymbol, symbol handling functions, Mini Symbols, Symbols
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            : */
+<span class="lineNum">     172 </span>            : /*
+<span class="lineNum">     173 </span>            : SUBSECTION
+<span class="lineNum">     174 </span>            :         typedef asymbol
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span>            :         An &lt;&lt;asymbol&gt;&gt; has the form:
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            : */
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            : /*
+<span class="lineNum">     181 </span>            : CODE_FRAGMENT
+<span class="lineNum">     182 </span>            : 
+<span class="lineNum">     183 </span>            : .
+<span class="lineNum">     184 </span>            : .typedef struct bfd_symbol
+<span class="lineNum">     185 </span>            : .{
+<span class="lineNum">     186 </span>            : .  {* A pointer to the BFD which owns the symbol. This information
+<span class="lineNum">     187 </span>            : .     is necessary so that a back end can work out what additional
+<span class="lineNum">     188 </span>            : .     information (invisible to the application writer) is carried
+<span class="lineNum">     189 </span>            : .     with the symbol.
+<span class="lineNum">     190 </span>            : .
+<span class="lineNum">     191 </span>            : .     This field is *almost* redundant, since you can use section-&gt;owner
+<span class="lineNum">     192 </span>            : .     instead, except that some symbols point to the global sections
+<span class="lineNum">     193 </span>            : .     bfd_{abs,com,und}_section.  This could be fixed by making
+<span class="lineNum">     194 </span>            : .     these globals be per-bfd (or per-target-flavor).  FIXME.  *}
+<span class="lineNum">     195 </span>            : .  struct bfd *the_bfd; {* Use bfd_asymbol_bfd(sym) to access this field.  *}
+<span class="lineNum">     196 </span>            : .
+<span class="lineNum">     197 </span>            : .  {* The text of the symbol. The name is left alone, and not copied; the
+<span class="lineNum">     198 </span>            : .     application may not alter it.  *}
+<span class="lineNum">     199 </span>            : .  const char *name;
+<span class="lineNum">     200 </span>            : .
+<span class="lineNum">     201 </span>            : .  {* The value of the symbol.  This really should be a union of a
+<span class="lineNum">     202 </span>            : .     numeric value with a pointer, since some flags indicate that
+<span class="lineNum">     203 </span>            : .     a pointer to another symbol is stored here.  *}
+<span class="lineNum">     204 </span>            : .  symvalue value;
+<span class="lineNum">     205 </span>            : .
+<span class="lineNum">     206 </span>            : .  {* Attributes of a symbol.  *}
+<span class="lineNum">     207 </span>            : .#define BSF_NO_FLAGS           0x00
+<span class="lineNum">     208 </span>            : .
+<span class="lineNum">     209 </span>            : .  {* The symbol has local scope; &lt;&lt;static&gt;&gt; in &lt;&lt;C&gt;&gt;. The value
+<span class="lineNum">     210 </span>            : .     is the offset into the section of the data.  *}
+<span class="lineNum">     211 </span>            : .#define BSF_LOCAL              (1 &lt;&lt; 0)
+<span class="lineNum">     212 </span>            : .
+<span class="lineNum">     213 </span>            : .  {* The symbol has global scope; initialized data in &lt;&lt;C&gt;&gt;. The
+<span class="lineNum">     214 </span>            : .     value is the offset into the section of the data.  *}
+<span class="lineNum">     215 </span>            : .#define BSF_GLOBAL             (1 &lt;&lt; 1)
+<span class="lineNum">     216 </span>            : .
+<span class="lineNum">     217 </span>            : .  {* The symbol has global scope and is exported. The value is
+<span class="lineNum">     218 </span>            : .     the offset into the section of the data.  *}
+<span class="lineNum">     219 </span>            : .#define BSF_EXPORT     BSF_GLOBAL {* No real difference.  *}
+<span class="lineNum">     220 </span>            : .
+<span class="lineNum">     221 </span>            : .  {* A normal C symbol would be one of:
+<span class="lineNum">     222 </span>            : .     &lt;&lt;BSF_LOCAL&gt;&gt;, &lt;&lt;BSF_UNDEFINED&gt;&gt; or &lt;&lt;BSF_GLOBAL&gt;&gt;.  *}
+<span class="lineNum">     223 </span>            : .
+<span class="lineNum">     224 </span>            : .  {* The symbol is a debugging record. The value has an arbitrary
+<span class="lineNum">     225 </span>            : .     meaning, unless BSF_DEBUGGING_RELOC is also set.  *}
+<span class="lineNum">     226 </span>            : .#define BSF_DEBUGGING          (1 &lt;&lt; 2)
+<span class="lineNum">     227 </span>            : .
+<span class="lineNum">     228 </span>            : .  {* The symbol denotes a function entry point.  Used in ELF,
+<span class="lineNum">     229 </span>            : .     perhaps others someday.  *}
+<span class="lineNum">     230 </span>            : .#define BSF_FUNCTION           (1 &lt;&lt; 3)
+<span class="lineNum">     231 </span>            : .
+<span class="lineNum">     232 </span>            : .  {* Used by the linker.  *}
+<span class="lineNum">     233 </span>            : .#define BSF_KEEP               (1 &lt;&lt; 5)
+<span class="lineNum">     234 </span>            : .
+<span class="lineNum">     235 </span>            : .  {* An ELF common symbol.  *}
+<span class="lineNum">     236 </span>            : .#define BSF_ELF_COMMON         (1 &lt;&lt; 6)
+<span class="lineNum">     237 </span>            : .
+<span class="lineNum">     238 </span>            : .  {* A weak global symbol, overridable without warnings by
+<span class="lineNum">     239 </span>            : .     a regular global symbol of the same name.  *}
+<span class="lineNum">     240 </span>            : .#define BSF_WEAK               (1 &lt;&lt; 7)
+<span class="lineNum">     241 </span>            : .
+<span class="lineNum">     242 </span>            : .  {* This symbol was created to point to a section, e.g. ELF's
+<span class="lineNum">     243 </span>            : .     STT_SECTION symbols.  *}
+<span class="lineNum">     244 </span>            : .#define BSF_SECTION_SYM        (1 &lt;&lt; 8)
+<span class="lineNum">     245 </span>            : .
+<span class="lineNum">     246 </span>            : .  {* The symbol used to be a common symbol, but now it is
+<span class="lineNum">     247 </span>            : .     allocated.  *}
+<span class="lineNum">     248 </span>            : .#define BSF_OLD_COMMON         (1 &lt;&lt; 9)
+<span class="lineNum">     249 </span>            : .
+<span class="lineNum">     250 </span>            : .  {* In some files the type of a symbol sometimes alters its
+<span class="lineNum">     251 </span>            : .     location in an output file - ie in coff a &lt;&lt;ISFCN&gt;&gt; symbol
+<span class="lineNum">     252 </span>            : .     which is also &lt;&lt;C_EXT&gt;&gt; symbol appears where it was
+<span class="lineNum">     253 </span>            : .     declared and not at the end of a section.  This bit is set
+<span class="lineNum">     254 </span>            : .     by the target BFD part to convey this information.  *}
+<span class="lineNum">     255 </span>            : .#define BSF_NOT_AT_END         (1 &lt;&lt; 10)
+<span class="lineNum">     256 </span>            : .
+<span class="lineNum">     257 </span>            : .  {* Signal that the symbol is the label of constructor section.  *}
+<span class="lineNum">     258 </span>            : .#define BSF_CONSTRUCTOR        (1 &lt;&lt; 11)
+<span class="lineNum">     259 </span>            : .
+<span class="lineNum">     260 </span>            : .  {* Signal that the symbol is a warning symbol.  The name is a
+<span class="lineNum">     261 </span>            : .     warning.  The name of the next symbol is the one to warn about;
+<span class="lineNum">     262 </span>            : .     if a reference is made to a symbol with the same name as the next
+<span class="lineNum">     263 </span>            : .     symbol, a warning is issued by the linker.  *}
+<span class="lineNum">     264 </span>            : .#define BSF_WARNING            (1 &lt;&lt; 12)
+<span class="lineNum">     265 </span>            : .
+<span class="lineNum">     266 </span>            : .  {* Signal that the symbol is indirect.  This symbol is an indirect
+<span class="lineNum">     267 </span>            : .     pointer to the symbol with the same name as the next symbol.  *}
+<span class="lineNum">     268 </span>            : .#define BSF_INDIRECT           (1 &lt;&lt; 13)
+<span class="lineNum">     269 </span>            : .
+<span class="lineNum">     270 </span>            : .  {* BSF_FILE marks symbols that contain a file name.  This is used
+<span class="lineNum">     271 </span>            : .     for ELF STT_FILE symbols.  *}
+<span class="lineNum">     272 </span>            : .#define BSF_FILE               (1 &lt;&lt; 14)
+<span class="lineNum">     273 </span>            : .
+<span class="lineNum">     274 </span>            : .  {* Symbol is from dynamic linking information.  *}
+<span class="lineNum">     275 </span>            : .#define BSF_DYNAMIC            (1 &lt;&lt; 15)
+<span class="lineNum">     276 </span>            : .
+<span class="lineNum">     277 </span>            : .  {* The symbol denotes a data object.  Used in ELF, and perhaps
+<span class="lineNum">     278 </span>            : .     others someday.  *}
+<span class="lineNum">     279 </span>            : .#define BSF_OBJECT             (1 &lt;&lt; 16)
+<span class="lineNum">     280 </span>            : .
+<span class="lineNum">     281 </span>            : .  {* This symbol is a debugging symbol.  The value is the offset
+<span class="lineNum">     282 </span>            : .     into the section of the data.  BSF_DEBUGGING should be set
+<span class="lineNum">     283 </span>            : .     as well.  *}
+<span class="lineNum">     284 </span>            : .#define BSF_DEBUGGING_RELOC    (1 &lt;&lt; 17)
+<span class="lineNum">     285 </span>            : .
+<span class="lineNum">     286 </span>            : .  {* This symbol is thread local.  Used in ELF.  *}
+<span class="lineNum">     287 </span>            : .#define BSF_THREAD_LOCAL       (1 &lt;&lt; 18)
+<span class="lineNum">     288 </span>            : .
+<span class="lineNum">     289 </span>            : .  {* This symbol represents a complex relocation expression,
+<span class="lineNum">     290 </span>            : .     with the expression tree serialized in the symbol name.  *}
+<span class="lineNum">     291 </span>            : .#define BSF_RELC               (1 &lt;&lt; 19)
+<span class="lineNum">     292 </span>            : .
+<span class="lineNum">     293 </span>            : .  {* This symbol represents a signed complex relocation expression,
+<span class="lineNum">     294 </span>            : .     with the expression tree serialized in the symbol name.  *}
+<span class="lineNum">     295 </span>            : .#define BSF_SRELC              (1 &lt;&lt; 20)
+<span class="lineNum">     296 </span>            : .
+<span class="lineNum">     297 </span>            : .  {* This symbol was created by bfd_get_synthetic_symtab.  *}
+<span class="lineNum">     298 </span>            : .#define BSF_SYNTHETIC          (1 &lt;&lt; 21)
+<span class="lineNum">     299 </span>            : .
+<span class="lineNum">     300 </span>            : .  {* This symbol is an indirect code object.  Unrelated to BSF_INDIRECT.
+<span class="lineNum">     301 </span>            : .     The dynamic linker will compute the value of this symbol by
+<span class="lineNum">     302 </span>            : .     calling the function that it points to.  BSF_FUNCTION must
+<span class="lineNum">     303 </span>            : .     also be also set.  *}
+<span class="lineNum">     304 </span>            : .#define BSF_GNU_INDIRECT_FUNCTION (1 &lt;&lt; 22)
+<span class="lineNum">     305 </span>            : .  {* This symbol is a globally unique data object.  The dynamic linker
+<span class="lineNum">     306 </span>            : .     will make sure that in the entire process there is just one symbol
+<span class="lineNum">     307 </span>            : .     with this name and type in use.  BSF_OBJECT must also be set.  *}
+<span class="lineNum">     308 </span>            : .#define BSF_GNU_UNIQUE         (1 &lt;&lt; 23)
+<span class="lineNum">     309 </span>            : .
+<span class="lineNum">     310 </span>            : .  flagword flags;
+<span class="lineNum">     311 </span>            : .
+<span class="lineNum">     312 </span>            : .  {* A pointer to the section to which this symbol is
+<span class="lineNum">     313 </span>            : .     relative.  This will always be non NULL, there are special
+<span class="lineNum">     314 </span>            : .     sections for undefined and absolute symbols.  *}
+<span class="lineNum">     315 </span>            : .  struct bfd_section *section;
+<span class="lineNum">     316 </span>            : .
+<span class="lineNum">     317 </span>            : .  {* Back end special data.  *}
+<span class="lineNum">     318 </span>            : .  union
+<span class="lineNum">     319 </span>            : .    {
+<span class="lineNum">     320 </span>            : .      void *p;
+<span class="lineNum">     321 </span>            : .      bfd_vma i;
+<span class="lineNum">     322 </span>            : .    }
+<span class="lineNum">     323 </span>            : .  udata;
+<span class="lineNum">     324 </span>            : .}
+<span class="lineNum">     325 </span>            : .asymbol;
+<span class="lineNum">     326 </span>            : .
+<span class="lineNum">     327 </span>            : */
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">     330 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">     331 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">     332 </span>            : #include &quot;safe-ctype.h&quot;
+<span class="lineNum">     333 </span>            : #include &quot;bfdlink.h&quot;
+<span class="lineNum">     334 </span>            : #include &quot;aout/stab_gnu.h&quot;
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span>            : /*
+<span class="lineNum">     337 </span>            : DOCDD
+<span class="lineNum">     338 </span>            : INODE
+<span class="lineNum">     339 </span>            : symbol handling functions,  , typedef asymbol, Symbols
+<span class="lineNum">     340 </span>            : SUBSECTION
+<span class="lineNum">     341 </span>            :         Symbol handling functions
+<span class="lineNum">     342 </span>            : */
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span>            : /*
+<span class="lineNum">     345 </span>            : FUNCTION
+<span class="lineNum">     346 </span>            :         bfd_get_symtab_upper_bound
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span>            : DESCRIPTION
+<span class="lineNum">     349 </span>            :         Return the number of bytes required to store a vector of pointers
+<span class="lineNum">     350 </span>            :         to &lt;&lt;asymbols&gt;&gt; for all the symbols in the BFD @var{abfd},
+<span class="lineNum">     351 </span>            :         including a terminal NULL pointer. If there are no symbols in
+<span class="lineNum">     352 </span>            :         the BFD, then return 0.  If an error occurs, return -1.
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span>            : .#define bfd_get_symtab_upper_bound(abfd) \
+<span class="lineNum">     355 </span>            : .     BFD_SEND (abfd, _bfd_get_symtab_upper_bound, (abfd))
+<span class="lineNum">     356 </span>            : .
+<span class="lineNum">     357 </span>            : */
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            : /*
+<span class="lineNum">     360 </span>            : FUNCTION
+<span class="lineNum">     361 </span>            :         bfd_is_local_label
+<span class="lineNum">     362 </span>            : 
+<span class="lineNum">     363 </span>            : SYNOPSIS
+<span class="lineNum">     364 </span>            :         bfd_boolean bfd_is_local_label (bfd *abfd, asymbol *sym);
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span>            : DESCRIPTION
+<span class="lineNum">     367 </span>            :         Return TRUE if the given symbol @var{sym} in the BFD @var{abfd} is
+<span class="lineNum">     368 </span>            :         a compiler generated local label, else return FALSE.
+<span class="lineNum">     369 </span>            : */
+<a name="370"><span class="lineNum">     370 </span>            : </a>
+<span class="lineNum">     371 </span>            : bfd_boolean
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 : bfd_is_local_label (bfd *abfd, asymbol *sym)</span>
+<span class="lineNum">     373 </span>            : {
+<span class="lineNum">     374 </span>            :   /* The BSF_SECTION_SYM check is needed for IA-64, where every label that
+<span class="lineNum">     375 </span>            :      starts with '.' is local.  This would accidentally catch section names
+<span class="lineNum">     376 </span>            :      if we didn't reject them here.  */
+<span class="lineNum">     377 </span><span class="lineNoCov">          0 :   if ((sym-&gt;flags &amp; (BSF_GLOBAL | BSF_WEAK | BSF_FILE | BSF_SECTION_SYM)) != 0)</span>
+<span class="lineNum">     378 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     379 </span><span class="lineNoCov">          0 :   if (sym-&gt;name == NULL)</span>
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     381 </span><span class="lineNoCov">          0 :   return bfd_is_local_label_name (abfd, sym-&gt;name);</span>
+<span class="lineNum">     382 </span>            : }
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span>            : /*
+<span class="lineNum">     385 </span>            : FUNCTION
+<span class="lineNum">     386 </span>            :         bfd_is_local_label_name
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span>            : SYNOPSIS
+<span class="lineNum">     389 </span>            :         bfd_boolean bfd_is_local_label_name (bfd *abfd, const char *name);
+<span class="lineNum">     390 </span>            : 
+<span class="lineNum">     391 </span>            : DESCRIPTION
+<span class="lineNum">     392 </span>            :         Return TRUE if a symbol with the name @var{name} in the BFD
+<span class="lineNum">     393 </span>            :         @var{abfd} is a compiler generated local label, else return
+<span class="lineNum">     394 </span>            :         FALSE.  This just checks whether the name has the form of a
+<span class="lineNum">     395 </span>            :         local label.
+<span class="lineNum">     396 </span>            : 
+<span class="lineNum">     397 </span>            : .#define bfd_is_local_label_name(abfd, name) \
+<span class="lineNum">     398 </span>            : .  BFD_SEND (abfd, _bfd_is_local_label_name, (abfd, name))
+<span class="lineNum">     399 </span>            : .
+<span class="lineNum">     400 </span>            : */
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            : /*
+<span class="lineNum">     403 </span>            : FUNCTION
+<span class="lineNum">     404 </span>            :         bfd_is_target_special_symbol
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span>            : SYNOPSIS
+<span class="lineNum">     407 </span>            :         bfd_boolean bfd_is_target_special_symbol (bfd *abfd, asymbol *sym);
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            : DESCRIPTION
+<span class="lineNum">     410 </span>            :         Return TRUE iff a symbol @var{sym} in the BFD @var{abfd} is something
+<span class="lineNum">     411 </span>            :         special to the particular target represented by the BFD.  Such symbols
+<span class="lineNum">     412 </span>            :         should normally not be mentioned to the user.
+<span class="lineNum">     413 </span>            : 
+<span class="lineNum">     414 </span>            : .#define bfd_is_target_special_symbol(abfd, sym) \
+<span class="lineNum">     415 </span>            : .  BFD_SEND (abfd, _bfd_is_target_special_symbol, (abfd, sym))
+<span class="lineNum">     416 </span>            : .
+<span class="lineNum">     417 </span>            : */
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span>            : /*
+<span class="lineNum">     420 </span>            : FUNCTION
+<span class="lineNum">     421 </span>            :         bfd_canonicalize_symtab
+<span class="lineNum">     422 </span>            : 
+<span class="lineNum">     423 </span>            : DESCRIPTION
+<span class="lineNum">     424 </span>            :         Read the symbols from the BFD @var{abfd}, and fills in
+<span class="lineNum">     425 </span>            :         the vector @var{location} with pointers to the symbols and
+<span class="lineNum">     426 </span>            :         a trailing NULL.
+<span class="lineNum">     427 </span>            :         Return the actual number of symbol pointers, not
+<span class="lineNum">     428 </span>            :         including the NULL.
+<span class="lineNum">     429 </span>            : 
+<span class="lineNum">     430 </span>            : .#define bfd_canonicalize_symtab(abfd, location) \
+<span class="lineNum">     431 </span>            : .  BFD_SEND (abfd, _bfd_canonicalize_symtab, (abfd, location))
+<span class="lineNum">     432 </span>            : .
+<span class="lineNum">     433 </span>            : */
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            : /*
+<span class="lineNum">     436 </span>            : FUNCTION
+<span class="lineNum">     437 </span>            :         bfd_set_symtab
+<span class="lineNum">     438 </span>            : 
+<span class="lineNum">     439 </span>            : SYNOPSIS
+<span class="lineNum">     440 </span>            :         bfd_boolean bfd_set_symtab
+<span class="lineNum">     441 </span>            :           (bfd *abfd, asymbol **location, unsigned int count);
+<span class="lineNum">     442 </span>            : 
+<span class="lineNum">     443 </span>            : DESCRIPTION
+<span class="lineNum">     444 </span>            :         Arrange that when the output BFD @var{abfd} is closed,
+<span class="lineNum">     445 </span>            :         the table @var{location} of @var{count} pointers to symbols
+<span class="lineNum">     446 </span>            :         will be written.
+<span class="lineNum">     447 </span>            : */
+<a name="448"><span class="lineNum">     448 </span>            : </a>
+<span class="lineNum">     449 </span>            : bfd_boolean
+<span class="lineNum">     450 </span><span class="lineNoCov">          0 : bfd_set_symtab (bfd *abfd, asymbol **location, unsigned int symcount)</span>
+<span class="lineNum">     451 </span>            : {
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :   if (abfd-&gt;format != bfd_object || bfd_read_p (abfd))</span>
+<span class="lineNum">     453 </span>            :     {
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     455 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     456 </span>            :     }
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :   bfd_get_outsymbols (abfd) = location;</span>
+<span class="lineNum">     459 </span><span class="lineNoCov">          0 :   bfd_get_symcount (abfd) = symcount;</span>
+<span class="lineNum">     460 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     461 </span>            : }
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span>            : /*
+<span class="lineNum">     464 </span>            : FUNCTION
+<span class="lineNum">     465 </span>            :         bfd_print_symbol_vandf
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span>            : SYNOPSIS
+<span class="lineNum">     468 </span>            :         void bfd_print_symbol_vandf (bfd *abfd, void *file, asymbol *symbol);
+<span class="lineNum">     469 </span>            : 
+<span class="lineNum">     470 </span>            : DESCRIPTION
+<span class="lineNum">     471 </span>            :         Print the value and flags of the @var{symbol} supplied to the
+<span class="lineNum">     472 </span>            :         stream @var{file}.
+<a name="473"><span class="lineNum">     473 </span>            : */</a>
+<span class="lineNum">     474 </span>            : void
+<span class="lineNum">     475 </span><span class="lineCov">       4943 : bfd_print_symbol_vandf (bfd *abfd, void *arg, asymbol *symbol)</span>
+<span class="lineNum">     476 </span>            : {
+<span class="lineNum">     477 </span><span class="lineCov">       4943 :   FILE *file = (FILE *) arg;</span>
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span><span class="lineCov">       4943 :   flagword type = symbol-&gt;flags;</span>
+<span class="lineNum">     480 </span>            : 
+<span class="lineNum">     481 </span><span class="lineCov">       4943 :   if (symbol-&gt;section != NULL)</span>
+<span class="lineNum">     482 </span><span class="lineCov">       4943 :     bfd_fprintf_vma (abfd, file, symbol-&gt;value + symbol-&gt;section-&gt;vma);</span>
+<span class="lineNum">     483 </span>            :   else
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :     bfd_fprintf_vma (abfd, file, symbol-&gt;value);</span>
+<span class="lineNum">     485 </span>            : 
+<span class="lineNum">     486 </span>            :   /* This presumes that a symbol can not be both BSF_DEBUGGING and
+<span class="lineNum">     487 </span>            :      BSF_DYNAMIC, nor more than one of BSF_FUNCTION, BSF_FILE, and
+<span class="lineNum">     488 </span>            :      BSF_OBJECT.  */
+<span class="lineNum">     489 </span><span class="lineCov">      51580 :   fprintf (file, &quot; %c%c%c%c%c%c%c&quot;,</span>
+<span class="lineNum">     490 </span><span class="lineCov">       4943 :            ((type &amp; BSF_LOCAL)</span>
+<span class="lineNum">     491 </span><span class="lineCov">       3453 :             ? (type &amp; BSF_GLOBAL) ? '!' : 'l'</span>
+<span class="lineNum">     492 </span><span class="lineCov">       1490 :             : (type &amp; BSF_GLOBAL) ? 'g'</span>
+<span class="lineNum">     493 </span><span class="lineCov">       1490 :             : (type &amp; BSF_GNU_UNIQUE) ? 'u' : ' '),</span>
+<span class="lineNum">     494 </span><span class="lineCov">       4943 :            (type &amp; BSF_WEAK) ? 'w' : ' ',</span>
+<span class="lineNum">     495 </span><span class="lineCov">       4943 :            (type &amp; BSF_CONSTRUCTOR) ? 'C' : ' ',</span>
+<span class="lineNum">     496 </span><span class="lineCov">       4943 :            (type &amp; BSF_WARNING) ? 'W' : ' ',</span>
+<span class="lineNum">     497 </span><span class="lineCov">       9886 :            (type &amp; BSF_INDIRECT) ? 'I' : (type &amp; BSF_GNU_INDIRECT_FUNCTION) ? 'i' : ' ',</span>
+<span class="lineNum">     498 </span><span class="lineCov">       7764 :            (type &amp; BSF_DEBUGGING) ? 'd' : (type &amp; BSF_DYNAMIC) ? 'D' : ' ',</span>
+<span class="lineNum">     499 </span><span class="lineCov">       4943 :            ((type &amp; BSF_FUNCTION)</span>
+<span class="lineNum">     500 </span>            :             ? 'F'
+<span class="lineNum">     501 </span><span class="lineCov">       4272 :             : ((type &amp; BSF_FILE)</span>
+<span class="lineNum">     502 </span>            :                ? 'f'
+<span class="lineNum">     503 </span><span class="lineCov">       4272 :                : ((type &amp; BSF_OBJECT) ? 'O' : ' '))));</span>
+<span class="lineNum">     504 </span><span class="lineCov">       4943 : }</span>
+<span class="lineNum">     505 </span>            : 
+<span class="lineNum">     506 </span>            : /*
+<span class="lineNum">     507 </span>            : FUNCTION
+<span class="lineNum">     508 </span>            :         bfd_make_empty_symbol
+<span class="lineNum">     509 </span>            : 
+<span class="lineNum">     510 </span>            : DESCRIPTION
+<span class="lineNum">     511 </span>            :         Create a new &lt;&lt;asymbol&gt;&gt; structure for the BFD @var{abfd}
+<span class="lineNum">     512 </span>            :         and return a pointer to it.
+<span class="lineNum">     513 </span>            : 
+<span class="lineNum">     514 </span>            :         This routine is necessary because each back end has private
+<span class="lineNum">     515 </span>            :         information surrounding the &lt;&lt;asymbol&gt;&gt;. Building your own
+<span class="lineNum">     516 </span>            :         &lt;&lt;asymbol&gt;&gt; and pointing to it will not create the private
+<span class="lineNum">     517 </span>            :         information, and will cause problems later on.
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            : .#define bfd_make_empty_symbol(abfd) \
+<span class="lineNum">     520 </span>            : .  BFD_SEND (abfd, _bfd_make_empty_symbol, (abfd))
+<span class="lineNum">     521 </span>            : .
+<span class="lineNum">     522 </span>            : */
+<span class="lineNum">     523 </span>            : 
+<span class="lineNum">     524 </span>            : /*
+<span class="lineNum">     525 </span>            : FUNCTION
+<span class="lineNum">     526 </span>            :         _bfd_generic_make_empty_symbol
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span>            : SYNOPSIS
+<span class="lineNum">     529 </span>            :         asymbol *_bfd_generic_make_empty_symbol (bfd *);
+<span class="lineNum">     530 </span>            : 
+<span class="lineNum">     531 </span>            : DESCRIPTION
+<span class="lineNum">     532 </span>            :         Create a new &lt;&lt;asymbol&gt;&gt; structure for the BFD @var{abfd}
+<span class="lineNum">     533 </span>            :         and return a pointer to it.  Used by core file routines,
+<span class="lineNum">     534 </span>            :         binary back-end and anywhere else where no private info
+<span class="lineNum">     535 </span>            :         is needed.
+<span class="lineNum">     536 </span>            : */
+<a name="537"><span class="lineNum">     537 </span>            : </a>
+<span class="lineNum">     538 </span>            : asymbol *
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 : _bfd_generic_make_empty_symbol (bfd *abfd)</span>
+<span class="lineNum">     540 </span>            : {
+<span class="lineNum">     541 </span><span class="lineNoCov">          0 :   bfd_size_type amt = sizeof (asymbol);</span>
+<span class="lineNum">     542 </span><span class="lineNoCov">          0 :   asymbol *new_symbol = (asymbol *) bfd_zalloc (abfd, amt);</span>
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :   if (new_symbol)</span>
+<span class="lineNum">     544 </span><span class="lineNoCov">          0 :     new_symbol-&gt;the_bfd = abfd;</span>
+<span class="lineNum">     545 </span><span class="lineNoCov">          0 :   return new_symbol;</span>
+<span class="lineNum">     546 </span>            : }
+<span class="lineNum">     547 </span>            : 
+<span class="lineNum">     548 </span>            : /*
+<span class="lineNum">     549 </span>            : FUNCTION
+<span class="lineNum">     550 </span>            :         bfd_make_debug_symbol
+<span class="lineNum">     551 </span>            : 
+<span class="lineNum">     552 </span>            : DESCRIPTION
+<span class="lineNum">     553 </span>            :         Create a new &lt;&lt;asymbol&gt;&gt; structure for the BFD @var{abfd},
+<span class="lineNum">     554 </span>            :         to be used as a debugging symbol.  Further details of its use have
+<span class="lineNum">     555 </span>            :         yet to be worked out.
+<span class="lineNum">     556 </span>            : 
+<span class="lineNum">     557 </span>            : .#define bfd_make_debug_symbol(abfd,ptr,size) \
+<span class="lineNum">     558 </span>            : .  BFD_SEND (abfd, _bfd_make_debug_symbol, (abfd, ptr, size))
+<span class="lineNum">     559 </span>            : .
+<span class="lineNum">     560 </span>            : */
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span>            : struct section_to_type
+<span class="lineNum">     563 </span>            : {
+<span class="lineNum">     564 </span>            :   const char *section;
+<span class="lineNum">     565 </span>            :   char type;
+<span class="lineNum">     566 </span>            : };
+<span class="lineNum">     567 </span>            : 
+<span class="lineNum">     568 </span>            : /* Map section names to POSIX/BSD single-character symbol types.
+<span class="lineNum">     569 </span>            :    This table is probably incomplete.  It is sorted for convenience of
+<span class="lineNum">     570 </span>            :    adding entries.  Since it is so short, a linear search is used.  */
+<span class="lineNum">     571 </span>            : static const struct section_to_type stt[] =
+<span class="lineNum">     572 </span>            : {
+<span class="lineNum">     573 </span>            :   {&quot;.bss&quot;, 'b'},
+<span class="lineNum">     574 </span>            :   {&quot;code&quot;, 't'},              /* MRI .text */
+<span class="lineNum">     575 </span>            :   {&quot;.data&quot;, 'd'},
+<span class="lineNum">     576 </span>            :   {&quot;*DEBUG*&quot;, 'N'},
+<span class="lineNum">     577 </span>            :   {&quot;.debug&quot;, 'N'},              /* MSVC's .debug (non-standard debug syms) */
+<span class="lineNum">     578 </span>            :   {&quot;.drectve&quot;, 'i'},            /* MSVC's .drective section */
+<span class="lineNum">     579 </span>            :   {&quot;.edata&quot;, 'e'},              /* MSVC's .edata (export) section */
+<span class="lineNum">     580 </span>            :   {&quot;.fini&quot;, 't'},             /* ELF fini section */
+<span class="lineNum">     581 </span>            :   {&quot;.idata&quot;, 'i'},              /* MSVC's .idata (import) section */
+<span class="lineNum">     582 </span>            :   {&quot;.init&quot;, 't'},             /* ELF init section */
+<span class="lineNum">     583 </span>            :   {&quot;.pdata&quot;, 'p'},              /* MSVC's .pdata (stack unwind) section */
+<span class="lineNum">     584 </span>            :   {&quot;.rdata&quot;, 'r'},            /* Read only data.  */
+<span class="lineNum">     585 </span>            :   {&quot;.rodata&quot;, 'r'},           /* Read only data.  */
+<span class="lineNum">     586 </span>            :   {&quot;.sbss&quot;, 's'},             /* Small BSS (uninitialized data).  */
+<span class="lineNum">     587 </span>            :   {&quot;.scommon&quot;, 'c'},          /* Small common.  */
+<span class="lineNum">     588 </span>            :   {&quot;.sdata&quot;, 'g'},            /* Small initialized data.  */
+<span class="lineNum">     589 </span>            :   {&quot;.text&quot;, 't'},
+<span class="lineNum">     590 </span>            :   {&quot;vars&quot;, 'd'},              /* MRI .data */
+<span class="lineNum">     591 </span>            :   {&quot;zerovars&quot;, 'b'},          /* MRI .bss */
+<span class="lineNum">     592 </span>            :   {0, 0}
+<span class="lineNum">     593 </span>            : };
+<span class="lineNum">     594 </span>            : 
+<span class="lineNum">     595 </span>            : /* Return the single-character symbol type corresponding to
+<span class="lineNum">     596 </span>            :    section S, or '?' for an unknown COFF section.
+<span class="lineNum">     597 </span>            : 
+<span class="lineNum">     598 </span>            :    Check for any leading string which matches, so .text5 returns
+<span class="lineNum">     599 </span>            :    't' as well as .text */
+<a name="600"><span class="lineNum">     600 </span>            : </a>
+<span class="lineNum">     601 </span>            : static char
+<span class="lineNum">     602 </span><span class="lineNoCov">          0 : coff_section_type (const char *s)</span>
+<span class="lineNum">     603 </span>            : {
+<span class="lineNum">     604 </span>            :   const struct section_to_type *t;
+<span class="lineNum">     605 </span>            : 
+<span class="lineNum">     606 </span><span class="lineNoCov">          0 :   for (t = &amp;stt[0]; t-&gt;section; t++)</span>
+<span class="lineNum">     607 </span><span class="lineNoCov">          0 :     if (!strncmp (s, t-&gt;section, strlen (t-&gt;section)))</span>
+<span class="lineNum">     608 </span><span class="lineNoCov">          0 :       return t-&gt;type;</span>
+<span class="lineNum">     609 </span>            : 
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :   return '?';</span>
+<span class="lineNum">     611 </span>            : }
+<span class="lineNum">     612 </span>            : 
+<span class="lineNum">     613 </span>            : /* Return the single-character symbol type corresponding to section
+<span class="lineNum">     614 </span>            :    SECTION, or '?' for an unknown section.  This uses section flags to
+<span class="lineNum">     615 </span>            :    identify sections.
+<span class="lineNum">     616 </span>            : 
+<span class="lineNum">     617 </span>            :    FIXME These types are unhandled: c, i, e, p.  If we handled these also,
+<span class="lineNum">     618 </span>            :    we could perhaps obsolete coff_section_type.  */
+<a name="619"><span class="lineNum">     619 </span>            : </a>
+<span class="lineNum">     620 </span>            : static char
+<span class="lineNum">     621 </span><span class="lineNoCov">          0 : decode_section_type (const struct bfd_section *section)</span>
+<span class="lineNum">     622 </span>            : {
+<span class="lineNum">     623 </span><span class="lineNoCov">          0 :   if (section-&gt;flags &amp; SEC_CODE)</span>
+<span class="lineNum">     624 </span><span class="lineNoCov">          0 :     return 't';</span>
+<span class="lineNum">     625 </span><span class="lineNoCov">          0 :   if (section-&gt;flags &amp; SEC_DATA)</span>
+<span class="lineNum">     626 </span>            :     {
+<span class="lineNum">     627 </span><span class="lineNoCov">          0 :       if (section-&gt;flags &amp; SEC_READONLY)</span>
+<span class="lineNum">     628 </span><span class="lineNoCov">          0 :         return 'r';</span>
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 :       else if (section-&gt;flags &amp; SEC_SMALL_DATA)</span>
+<span class="lineNum">     630 </span><span class="lineNoCov">          0 :         return 'g';</span>
+<span class="lineNum">     631 </span>            :       else
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :         return 'd';</span>
+<span class="lineNum">     633 </span>            :     }
+<span class="lineNum">     634 </span><span class="lineNoCov">          0 :   if ((section-&gt;flags &amp; SEC_HAS_CONTENTS) == 0)</span>
+<span class="lineNum">     635 </span>            :     {
+<span class="lineNum">     636 </span><span class="lineNoCov">          0 :       if (section-&gt;flags &amp; SEC_SMALL_DATA)</span>
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :         return 's';</span>
+<span class="lineNum">     638 </span>            :       else
+<span class="lineNum">     639 </span><span class="lineNoCov">          0 :         return 'b';</span>
+<span class="lineNum">     640 </span>            :     }
+<span class="lineNum">     641 </span><span class="lineNoCov">          0 :   if (section-&gt;flags &amp; SEC_DEBUGGING)</span>
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :     return 'N';</span>
+<span class="lineNum">     643 </span><span class="lineNoCov">          0 :   if ((section-&gt;flags &amp; SEC_HAS_CONTENTS) &amp;&amp; (section-&gt;flags &amp; SEC_READONLY))</span>
+<span class="lineNum">     644 </span><span class="lineNoCov">          0 :     return 'n';</span>
+<span class="lineNum">     645 </span>            : 
+<span class="lineNum">     646 </span><span class="lineNoCov">          0 :   return '?';</span>
+<span class="lineNum">     647 </span>            : }
+<span class="lineNum">     648 </span>            : 
+<span class="lineNum">     649 </span>            : /*
+<span class="lineNum">     650 </span>            : FUNCTION
+<span class="lineNum">     651 </span>            :         bfd_decode_symclass
+<span class="lineNum">     652 </span>            : 
+<span class="lineNum">     653 </span>            : DESCRIPTION
+<span class="lineNum">     654 </span>            :         Return a character corresponding to the symbol
+<span class="lineNum">     655 </span>            :         class of @var{symbol}, or '?' for an unknown class.
+<span class="lineNum">     656 </span>            : 
+<span class="lineNum">     657 </span>            : SYNOPSIS
+<span class="lineNum">     658 </span>            :         int bfd_decode_symclass (asymbol *symbol);
+<a name="659"><span class="lineNum">     659 </span>            : */</a>
+<span class="lineNum">     660 </span>            : int
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 : bfd_decode_symclass (asymbol *symbol)</span>
+<span class="lineNum">     662 </span>            : {
+<span class="lineNum">     663 </span>            :   char c;
+<span class="lineNum">     664 </span>            : 
+<span class="lineNum">     665 </span><span class="lineNoCov">          0 :   if (symbol-&gt;section &amp;&amp; bfd_is_com_section (symbol-&gt;section))</span>
+<span class="lineNum">     666 </span><span class="lineNoCov">          0 :     return 'C';</span>
+<span class="lineNum">     667 </span><span class="lineNoCov">          0 :   if (bfd_is_und_section (symbol-&gt;section))</span>
+<span class="lineNum">     668 </span>            :     {
+<span class="lineNum">     669 </span><span class="lineNoCov">          0 :       if (symbol-&gt;flags &amp; BSF_WEAK)</span>
+<span class="lineNum">     670 </span>            :         {
+<span class="lineNum">     671 </span>            :           /* If weak, determine if it's specifically an object
+<span class="lineNum">     672 </span>            :              or non-object weak.  */
+<span class="lineNum">     673 </span><span class="lineNoCov">          0 :           if (symbol-&gt;flags &amp; BSF_OBJECT)</span>
+<span class="lineNum">     674 </span><span class="lineNoCov">          0 :             return 'v';</span>
+<span class="lineNum">     675 </span>            :           else
+<span class="lineNum">     676 </span><span class="lineNoCov">          0 :             return 'w';</span>
+<span class="lineNum">     677 </span>            :         }
+<span class="lineNum">     678 </span>            :       else
+<span class="lineNum">     679 </span><span class="lineNoCov">          0 :         return 'U';</span>
+<span class="lineNum">     680 </span>            :     }
+<span class="lineNum">     681 </span><span class="lineNoCov">          0 :   if (bfd_is_ind_section (symbol-&gt;section))</span>
+<span class="lineNum">     682 </span><span class="lineNoCov">          0 :     return 'I';</span>
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :   if (symbol-&gt;flags &amp; BSF_GNU_INDIRECT_FUNCTION)</span>
+<span class="lineNum">     684 </span><span class="lineNoCov">          0 :     return 'i';</span>
+<span class="lineNum">     685 </span><span class="lineNoCov">          0 :   if (symbol-&gt;flags &amp; BSF_WEAK)</span>
+<span class="lineNum">     686 </span>            :     {
+<span class="lineNum">     687 </span>            :       /* If weak, determine if it's specifically an object
+<span class="lineNum">     688 </span>            :          or non-object weak.  */
+<span class="lineNum">     689 </span><span class="lineNoCov">          0 :       if (symbol-&gt;flags &amp; BSF_OBJECT)</span>
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :         return 'V';</span>
+<span class="lineNum">     691 </span>            :       else
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 :         return 'W';</span>
+<span class="lineNum">     693 </span>            :     }
+<span class="lineNum">     694 </span><span class="lineNoCov">          0 :   if (symbol-&gt;flags &amp; BSF_GNU_UNIQUE)</span>
+<span class="lineNum">     695 </span><span class="lineNoCov">          0 :     return 'u';</span>
+<span class="lineNum">     696 </span><span class="lineNoCov">          0 :   if (!(symbol-&gt;flags &amp; (BSF_GLOBAL | BSF_LOCAL)))</span>
+<span class="lineNum">     697 </span><span class="lineNoCov">          0 :     return '?';</span>
+<span class="lineNum">     698 </span>            : 
+<span class="lineNum">     699 </span><span class="lineNoCov">          0 :   if (bfd_is_abs_section (symbol-&gt;section))</span>
+<span class="lineNum">     700 </span><span class="lineNoCov">          0 :     c = 'a';</span>
+<span class="lineNum">     701 </span><span class="lineNoCov">          0 :   else if (symbol-&gt;section)</span>
+<span class="lineNum">     702 </span>            :     {
+<span class="lineNum">     703 </span><span class="lineNoCov">          0 :       c = coff_section_type (symbol-&gt;section-&gt;name);</span>
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :       if (c == '?')</span>
+<span class="lineNum">     705 </span><span class="lineNoCov">          0 :         c = decode_section_type (symbol-&gt;section);</span>
+<span class="lineNum">     706 </span>            :     }
+<span class="lineNum">     707 </span>            :   else
+<span class="lineNum">     708 </span><span class="lineNoCov">          0 :     return '?';</span>
+<span class="lineNum">     709 </span><span class="lineNoCov">          0 :   if (symbol-&gt;flags &amp; BSF_GLOBAL)</span>
+<span class="lineNum">     710 </span><span class="lineNoCov">          0 :     c = TOUPPER (c);</span>
+<span class="lineNum">     711 </span><span class="lineNoCov">          0 :   return c;</span>
+<span class="lineNum">     712 </span>            : 
+<span class="lineNum">     713 </span>            :   /* We don't have to handle these cases just yet, but we will soon:
+<span class="lineNum">     714 </span>            :      N_SETV: 'v';
+<span class="lineNum">     715 </span>            :      N_SETA: 'l';
+<span class="lineNum">     716 </span>            :      N_SETT: 'x';
+<span class="lineNum">     717 </span>            :      N_SETD: 'z';
+<span class="lineNum">     718 </span>            :      N_SETB: 's';
+<span class="lineNum">     719 </span>            :      N_INDR: 'i';
+<span class="lineNum">     720 </span>            :      */
+<span class="lineNum">     721 </span>            : }
+<span class="lineNum">     722 </span>            : 
+<span class="lineNum">     723 </span>            : /*
+<span class="lineNum">     724 </span>            : FUNCTION
+<span class="lineNum">     725 </span>            :         bfd_is_undefined_symclass
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span>            : DESCRIPTION
+<span class="lineNum">     728 </span>            :         Returns non-zero if the class symbol returned by
+<span class="lineNum">     729 </span>            :         bfd_decode_symclass represents an undefined symbol.
+<span class="lineNum">     730 </span>            :         Returns zero otherwise.
+<span class="lineNum">     731 </span>            : 
+<span class="lineNum">     732 </span>            : SYNOPSIS
+<span class="lineNum">     733 </span>            :         bfd_boolean bfd_is_undefined_symclass (int symclass);
+<span class="lineNum">     734 </span>            : */
+<a name="735"><span class="lineNum">     735 </span>            : </a>
+<span class="lineNum">     736 </span>            : bfd_boolean
+<span class="lineNum">     737 </span><span class="lineNoCov">          0 : bfd_is_undefined_symclass (int symclass)</span>
+<span class="lineNum">     738 </span>            : {
+<span class="lineNum">     739 </span><span class="lineNoCov">          0 :   return symclass == 'U' || symclass == 'w' || symclass == 'v';</span>
+<span class="lineNum">     740 </span>            : }
+<span class="lineNum">     741 </span>            : 
+<span class="lineNum">     742 </span>            : /*
+<span class="lineNum">     743 </span>            : FUNCTION
+<span class="lineNum">     744 </span>            :         bfd_symbol_info
+<span class="lineNum">     745 </span>            : 
+<span class="lineNum">     746 </span>            : DESCRIPTION
+<span class="lineNum">     747 </span>            :         Fill in the basic info about symbol that nm needs.
+<span class="lineNum">     748 </span>            :         Additional info may be added by the back-ends after
+<span class="lineNum">     749 </span>            :         calling this function.
+<span class="lineNum">     750 </span>            : 
+<span class="lineNum">     751 </span>            : SYNOPSIS
+<span class="lineNum">     752 </span>            :         void bfd_symbol_info (asymbol *symbol, symbol_info *ret);
+<span class="lineNum">     753 </span>            : */
+<a name="754"><span class="lineNum">     754 </span>            : </a>
+<span class="lineNum">     755 </span>            : void
+<span class="lineNum">     756 </span><span class="lineNoCov">          0 : bfd_symbol_info (asymbol *symbol, symbol_info *ret)</span>
+<span class="lineNum">     757 </span>            : {
+<span class="lineNum">     758 </span><span class="lineNoCov">          0 :   ret-&gt;type = bfd_decode_symclass (symbol);</span>
+<span class="lineNum">     759 </span>            : 
+<span class="lineNum">     760 </span><span class="lineNoCov">          0 :   if (bfd_is_undefined_symclass (ret-&gt;type))</span>
+<span class="lineNum">     761 </span><span class="lineNoCov">          0 :     ret-&gt;value = 0;</span>
+<span class="lineNum">     762 </span>            :   else
+<span class="lineNum">     763 </span><span class="lineNoCov">          0 :     ret-&gt;value = symbol-&gt;value + symbol-&gt;section-&gt;vma;</span>
+<span class="lineNum">     764 </span>            : 
+<span class="lineNum">     765 </span><span class="lineNoCov">          0 :   ret-&gt;name = symbol-&gt;name;</span>
+<span class="lineNum">     766 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     767 </span>            : 
+<span class="lineNum">     768 </span>            : /*
+<span class="lineNum">     769 </span>            : FUNCTION
+<span class="lineNum">     770 </span>            :         bfd_copy_private_symbol_data
+<span class="lineNum">     771 </span>            : 
+<span class="lineNum">     772 </span>            : SYNOPSIS
+<span class="lineNum">     773 </span>            :         bfd_boolean bfd_copy_private_symbol_data
+<span class="lineNum">     774 </span>            :           (bfd *ibfd, asymbol *isym, bfd *obfd, asymbol *osym);
+<span class="lineNum">     775 </span>            : 
+<span class="lineNum">     776 </span>            : DESCRIPTION
+<span class="lineNum">     777 </span>            :         Copy private symbol information from @var{isym} in the BFD
+<span class="lineNum">     778 </span>            :         @var{ibfd} to the symbol @var{osym} in the BFD @var{obfd}.
+<span class="lineNum">     779 </span>            :         Return &lt;&lt;TRUE&gt;&gt; on success, &lt;&lt;FALSE&gt;&gt; on error.  Possible error
+<span class="lineNum">     780 </span>            :         returns are:
+<span class="lineNum">     781 </span>            : 
+<span class="lineNum">     782 </span>            :         o &lt;&lt;bfd_error_no_memory&gt;&gt; -
+<span class="lineNum">     783 </span>            :         Not enough memory exists to create private data for @var{osec}.
+<span class="lineNum">     784 </span>            : 
+<span class="lineNum">     785 </span>            : .#define bfd_copy_private_symbol_data(ibfd, isymbol, obfd, osymbol) \
+<span class="lineNum">     786 </span>            : .  BFD_SEND (obfd, _bfd_copy_private_symbol_data, \
+<span class="lineNum">     787 </span>            : .            (ibfd, isymbol, obfd, osymbol))
+<span class="lineNum">     788 </span>            : .
+<span class="lineNum">     789 </span>            : */
+<span class="lineNum">     790 </span>            : 
+<span class="lineNum">     791 </span>            : /* The generic version of the function which returns mini symbols.
+<span class="lineNum">     792 </span>            :    This is used when the backend does not provide a more efficient
+<span class="lineNum">     793 </span>            :    version.  It just uses BFD asymbol structures as mini symbols.  */
+<a name="794"><span class="lineNum">     794 </span>            : </a>
+<span class="lineNum">     795 </span>            : long
+<span class="lineNum">     796 </span><span class="lineNoCov">          0 : _bfd_generic_read_minisymbols (bfd *abfd,</span>
+<span class="lineNum">     797 </span>            :                                bfd_boolean dynamic,
+<span class="lineNum">     798 </span>            :                                void **minisymsp,
+<span class="lineNum">     799 </span>            :                                unsigned int *sizep)
+<span class="lineNum">     800 </span>            : {
+<span class="lineNum">     801 </span>            :   long storage;
+<span class="lineNum">     802 </span><span class="lineNoCov">          0 :   asymbol **syms = NULL;</span>
+<span class="lineNum">     803 </span>            :   long symcount;
+<span class="lineNum">     804 </span>            : 
+<span class="lineNum">     805 </span><span class="lineNoCov">          0 :   if (dynamic)</span>
+<span class="lineNum">     806 </span><span class="lineNoCov">          0 :     storage = bfd_get_dynamic_symtab_upper_bound (abfd);</span>
+<span class="lineNum">     807 </span>            :   else
+<span class="lineNum">     808 </span><span class="lineNoCov">          0 :     storage = bfd_get_symtab_upper_bound (abfd);</span>
+<span class="lineNum">     809 </span><span class="lineNoCov">          0 :   if (storage &lt; 0)</span>
+<span class="lineNum">     810 </span><span class="lineNoCov">          0 :     goto error_return;</span>
+<span class="lineNum">     811 </span><span class="lineNoCov">          0 :   if (storage == 0)</span>
+<span class="lineNum">     812 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     813 </span>            : 
+<span class="lineNum">     814 </span><span class="lineNoCov">          0 :   syms = (asymbol **) bfd_malloc (storage);</span>
+<span class="lineNum">     815 </span><span class="lineNoCov">          0 :   if (syms == NULL)</span>
+<span class="lineNum">     816 </span><span class="lineNoCov">          0 :     goto error_return;</span>
+<span class="lineNum">     817 </span>            : 
+<span class="lineNum">     818 </span><span class="lineNoCov">          0 :   if (dynamic)</span>
+<span class="lineNum">     819 </span><span class="lineNoCov">          0 :     symcount = bfd_canonicalize_dynamic_symtab (abfd, syms);</span>
+<span class="lineNum">     820 </span>            :   else
+<span class="lineNum">     821 </span><span class="lineNoCov">          0 :     symcount = bfd_canonicalize_symtab (abfd, syms);</span>
+<span class="lineNum">     822 </span><span class="lineNoCov">          0 :   if (symcount &lt; 0)</span>
+<span class="lineNum">     823 </span><span class="lineNoCov">          0 :     goto error_return;</span>
+<span class="lineNum">     824 </span>            : 
+<span class="lineNum">     825 </span><span class="lineNoCov">          0 :   *minisymsp = syms;</span>
+<span class="lineNum">     826 </span><span class="lineNoCov">          0 :   *sizep = sizeof (asymbol *);</span>
+<span class="lineNum">     827 </span>            : 
+<span class="lineNum">     828 </span><span class="lineNoCov">          0 :   return symcount;</span>
+<span class="lineNum">     829 </span>            : 
+<span class="lineNum">     830 </span><span class="lineNoCov">          0 :  error_return:</span>
+<span class="lineNum">     831 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_no_symbols);</span>
+<span class="lineNum">     832 </span><span class="lineNoCov">          0 :   if (syms != NULL)</span>
+<span class="lineNum">     833 </span><span class="lineNoCov">          0 :     free (syms);</span>
+<span class="lineNum">     834 </span><span class="lineNoCov">          0 :   return -1;</span>
+<span class="lineNum">     835 </span>            : }
+<span class="lineNum">     836 </span>            : 
+<span class="lineNum">     837 </span>            : /* The generic version of the function which converts a minisymbol to
+<span class="lineNum">     838 </span>            :    an asymbol.  We don't worry about the sym argument we are passed;
+<span class="lineNum">     839 </span>            :    we just return the asymbol the minisymbol points to.  */
+<a name="840"><span class="lineNum">     840 </span>            : </a>
+<span class="lineNum">     841 </span>            : asymbol *
+<span class="lineNum">     842 </span><span class="lineNoCov">          0 : _bfd_generic_minisymbol_to_symbol (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     843 </span>            :                                    bfd_boolean dynamic ATTRIBUTE_UNUSED,
+<span class="lineNum">     844 </span>            :                                    const void *minisym,
+<span class="lineNum">     845 </span>            :                                    asymbol *sym ATTRIBUTE_UNUSED)
+<span class="lineNum">     846 </span>            : {
+<span class="lineNum">     847 </span><span class="lineNoCov">          0 :   return *(asymbol **) minisym;</span>
+<span class="lineNum">     848 </span>            : }
+<span class="lineNum">     849 </span>            : 
+<span class="lineNum">     850 </span>            : /* Look through stabs debugging information in .stab and .stabstr
+<span class="lineNum">     851 </span>            :    sections to find the source file and line closest to a desired
+<span class="lineNum">     852 </span>            :    location.  This is used by COFF and ELF targets.  It sets *pfound
+<span class="lineNum">     853 </span>            :    to TRUE if it finds some information.  The *pinfo field is used to
+<span class="lineNum">     854 </span>            :    pass cached information in and out of this routine; this first time
+<span class="lineNum">     855 </span>            :    the routine is called for a BFD, *pinfo should be NULL.  The value
+<span class="lineNum">     856 </span>            :    placed in *pinfo should be saved with the BFD, and passed back each
+<span class="lineNum">     857 </span>            :    time this function is called.  */
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span>            : /* We use a cache by default.  */
+<span class="lineNum">     860 </span>            : 
+<span class="lineNum">     861 </span>            : #define ENABLE_CACHING
+<span class="lineNum">     862 </span>            : 
+<span class="lineNum">     863 </span>            : /* We keep an array of indexentry structures to record where in the
+<span class="lineNum">     864 </span>            :    stabs section we should look to find line number information for a
+<span class="lineNum">     865 </span>            :    particular address.  */
+<span class="lineNum">     866 </span>            : 
+<span class="lineNum">     867 </span>            : struct indexentry
+<span class="lineNum">     868 </span>            : {
+<span class="lineNum">     869 </span>            :   bfd_vma val;
+<span class="lineNum">     870 </span>            :   bfd_byte *stab;
+<span class="lineNum">     871 </span>            :   bfd_byte *str;
+<span class="lineNum">     872 </span>            :   char *directory_name;
+<span class="lineNum">     873 </span>            :   char *file_name;
+<span class="lineNum">     874 </span>            :   char *function_name;
+<span class="lineNum">     875 </span>            : };
+<span class="lineNum">     876 </span>            : 
+<span class="lineNum">     877 </span>            : /* Compare two indexentry structures.  This is called via qsort.  */
+<a name="878"><span class="lineNum">     878 </span>            : </a>
+<span class="lineNum">     879 </span>            : static int
+<span class="lineNum">     880 </span><span class="lineNoCov">          0 : cmpindexentry (const void *a, const void *b)</span>
+<span class="lineNum">     881 </span>            : {
+<span class="lineNum">     882 </span><span class="lineNoCov">          0 :   const struct indexentry *contestantA = (const struct indexentry *) a;</span>
+<span class="lineNum">     883 </span><span class="lineNoCov">          0 :   const struct indexentry *contestantB = (const struct indexentry *) b;</span>
+<span class="lineNum">     884 </span>            : 
+<span class="lineNum">     885 </span><span class="lineNoCov">          0 :   if (contestantA-&gt;val &lt; contestantB-&gt;val)</span>
+<span class="lineNum">     886 </span><span class="lineNoCov">          0 :     return -1;</span>
+<span class="lineNum">     887 </span><span class="lineNoCov">          0 :   else if (contestantA-&gt;val &gt; contestantB-&gt;val)</span>
+<span class="lineNum">     888 </span><span class="lineNoCov">          0 :     return 1;</span>
+<span class="lineNum">     889 </span>            :   else
+<span class="lineNum">     890 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     891 </span>            : }
+<span class="lineNum">     892 </span>            : 
+<span class="lineNum">     893 </span>            : /* A pointer to this structure is stored in *pinfo.  */
+<span class="lineNum">     894 </span>            : 
+<span class="lineNum">     895 </span>            : struct stab_find_info
+<span class="lineNum">     896 </span>            : {
+<span class="lineNum">     897 </span>            :   /* The .stab section.  */
+<span class="lineNum">     898 </span>            :   asection *stabsec;
+<span class="lineNum">     899 </span>            :   /* The .stabstr section.  */
+<span class="lineNum">     900 </span>            :   asection *strsec;
+<span class="lineNum">     901 </span>            :   /* The contents of the .stab section.  */
+<span class="lineNum">     902 </span>            :   bfd_byte *stabs;
+<span class="lineNum">     903 </span>            :   /* The contents of the .stabstr section.  */
+<span class="lineNum">     904 </span>            :   bfd_byte *strs;
+<span class="lineNum">     905 </span>            : 
+<span class="lineNum">     906 </span>            :   /* A table that indexes stabs by memory address.  */
+<span class="lineNum">     907 </span>            :   struct indexentry *indextable;
+<span class="lineNum">     908 </span>            :   /* The number of entries in indextable.  */
+<span class="lineNum">     909 </span>            :   int indextablesize;
+<span class="lineNum">     910 </span>            : 
+<span class="lineNum">     911 </span>            : #ifdef ENABLE_CACHING
+<span class="lineNum">     912 </span>            :   /* Cached values to restart quickly.  */
+<span class="lineNum">     913 </span>            :   struct indexentry *cached_indexentry;
+<span class="lineNum">     914 </span>            :   bfd_vma cached_offset;
+<span class="lineNum">     915 </span>            :   bfd_byte *cached_stab;
+<span class="lineNum">     916 </span>            :   char *cached_file_name;
+<span class="lineNum">     917 </span>            : #endif
+<span class="lineNum">     918 </span>            : 
+<span class="lineNum">     919 </span>            :   /* Saved ptr to malloc'ed filename.  */
+<span class="lineNum">     920 </span>            :   char *filename;
+<span class="lineNum">     921 </span>            : };
+<a name="922"><span class="lineNum">     922 </span>            : </a>
+<span class="lineNum">     923 </span>            : bfd_boolean
+<span class="lineNum">     924 </span><span class="lineNoCov">          0 : _bfd_stab_section_find_nearest_line (bfd *abfd,</span>
+<span class="lineNum">     925 </span>            :                                      asymbol **symbols,
+<span class="lineNum">     926 </span>            :                                      asection *section,
+<span class="lineNum">     927 </span>            :                                      bfd_vma offset,
+<span class="lineNum">     928 </span>            :                                      bfd_boolean *pfound,
+<span class="lineNum">     929 </span>            :                                      const char **pfilename,
+<span class="lineNum">     930 </span>            :                                      const char **pfnname,
+<span class="lineNum">     931 </span>            :                                      unsigned int *pline,
+<span class="lineNum">     932 </span>            :                                      void **pinfo)
+<span class="lineNum">     933 </span>            : {
+<span class="lineNum">     934 </span>            :   struct stab_find_info *info;
+<span class="lineNum">     935 </span>            :   bfd_size_type stabsize, strsize;
+<span class="lineNum">     936 </span>            :   bfd_byte *stab, *str;
+<span class="lineNum">     937 </span>            :   bfd_byte *nul_fun, *nul_str;
+<span class="lineNum">     938 </span>            :   bfd_size_type stroff;
+<span class="lineNum">     939 </span>            :   struct indexentry *indexentry;
+<span class="lineNum">     940 </span>            :   char *file_name;
+<span class="lineNum">     941 </span>            :   char *directory_name;
+<span class="lineNum">     942 </span>            :   bfd_boolean saw_line, saw_func;
+<span class="lineNum">     943 </span>            : 
+<span class="lineNum">     944 </span><span class="lineNoCov">          0 :   *pfound = FALSE;</span>
+<span class="lineNum">     945 </span><span class="lineNoCov">          0 :   *pfilename = bfd_get_filename (abfd);</span>
+<span class="lineNum">     946 </span><span class="lineNoCov">          0 :   *pfnname = NULL;</span>
+<span class="lineNum">     947 </span><span class="lineNoCov">          0 :   *pline = 0;</span>
+<span class="lineNum">     948 </span>            : 
+<span class="lineNum">     949 </span>            :   /* Stabs entries use a 12 byte format:
+<span class="lineNum">     950 </span>            :        4 byte string table index
+<span class="lineNum">     951 </span>            :        1 byte stab type
+<span class="lineNum">     952 </span>            :        1 byte stab other field
+<span class="lineNum">     953 </span>            :        2 byte stab desc field
+<span class="lineNum">     954 </span>            :        4 byte stab value
+<span class="lineNum">     955 </span>            :      FIXME: This will have to change for a 64 bit object format.
+<span class="lineNum">     956 </span>            : 
+<span class="lineNum">     957 </span>            :      The stabs symbols are divided into compilation units.  For the
+<span class="lineNum">     958 </span>            :      first entry in each unit, the type of 0, the value is the length
+<span class="lineNum">     959 </span>            :      of the string table for this unit, and the desc field is the
+<span class="lineNum">     960 </span>            :      number of stabs symbols for this unit.  */
+<span class="lineNum">     961 </span>            : 
+<span class="lineNum">     962 </span>            : #define STRDXOFF (0)
+<span class="lineNum">     963 </span>            : #define TYPEOFF (4)
+<span class="lineNum">     964 </span>            : #define OTHEROFF (5)
+<span class="lineNum">     965 </span>            : #define DESCOFF (6)
+<span class="lineNum">     966 </span>            : #define VALOFF (8)
+<span class="lineNum">     967 </span>            : #define STABSIZE (12)
+<span class="lineNum">     968 </span>            : 
+<span class="lineNum">     969 </span><span class="lineNoCov">          0 :   info = (struct stab_find_info *) *pinfo;</span>
+<span class="lineNum">     970 </span><span class="lineNoCov">          0 :   if (info != NULL)</span>
+<span class="lineNum">     971 </span>            :     {
+<span class="lineNum">     972 </span><span class="lineNoCov">          0 :       if (info-&gt;stabsec == NULL || info-&gt;strsec == NULL)</span>
+<span class="lineNum">     973 </span>            :         {
+<span class="lineNum">     974 </span>            :           /* No stabs debugging information.  */
+<span class="lineNum">     975 </span><span class="lineNoCov">          0 :           return TRUE;</span>
+<span class="lineNum">     976 </span>            :         }
+<span class="lineNum">     977 </span>            : 
+<span class="lineNum">     978 </span><span class="lineNoCov">          0 :       stabsize = (info-&gt;stabsec-&gt;rawsize</span>
+<span class="lineNum">     979 </span><span class="lineNoCov">          0 :                   ? info-&gt;stabsec-&gt;rawsize</span>
+<span class="lineNum">     980 </span><span class="lineNoCov">          0 :                   : info-&gt;stabsec-&gt;size);</span>
+<span class="lineNum">     981 </span><span class="lineNoCov">          0 :       strsize = (info-&gt;strsec-&gt;rawsize</span>
+<span class="lineNum">     982 </span><span class="lineNoCov">          0 :                  ? info-&gt;strsec-&gt;rawsize</span>
+<span class="lineNum">     983 </span><span class="lineNoCov">          0 :                  : info-&gt;strsec-&gt;size);</span>
+<span class="lineNum">     984 </span>            :     }
+<span class="lineNum">     985 </span>            :   else
+<span class="lineNum">     986 </span>            :     {
+<span class="lineNum">     987 </span>            :       long reloc_size, reloc_count;
+<span class="lineNum">     988 </span>            :       arelent **reloc_vector;
+<span class="lineNum">     989 </span>            :       int i;
+<span class="lineNum">     990 </span>            :       char *function_name;
+<span class="lineNum">     991 </span><span class="lineNoCov">          0 :       bfd_size_type amt = sizeof *info;</span>
+<span class="lineNum">     992 </span>            : 
+<span class="lineNum">     993 </span><span class="lineNoCov">          0 :       info = (struct stab_find_info *) bfd_zalloc (abfd, amt);</span>
+<span class="lineNum">     994 </span><span class="lineNoCov">          0 :       if (info == NULL)</span>
+<span class="lineNum">     995 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     996 </span>            : 
+<span class="lineNum">     997 </span>            :       /* FIXME: When using the linker --split-by-file or
+<span class="lineNum">     998 </span>            :          --split-by-reloc options, it is possible for the .stab and
+<span class="lineNum">     999 </span>            :          .stabstr sections to be split.  We should handle that.  */
+<span class="lineNum">    1000 </span>            : 
+<span class="lineNum">    1001 </span><span class="lineNoCov">          0 :       info-&gt;stabsec = bfd_get_section_by_name (abfd, &quot;.stab&quot;);</span>
+<span class="lineNum">    1002 </span><span class="lineNoCov">          0 :       info-&gt;strsec = bfd_get_section_by_name (abfd, &quot;.stabstr&quot;);</span>
+<span class="lineNum">    1003 </span>            : 
+<span class="lineNum">    1004 </span><span class="lineNoCov">          0 :       if (info-&gt;stabsec == NULL || info-&gt;strsec == NULL)</span>
+<span class="lineNum">    1005 </span>            :         {
+<span class="lineNum">    1006 </span>            :           /* Try SOM section names.  */
+<span class="lineNum">    1007 </span><span class="lineNoCov">          0 :           info-&gt;stabsec = bfd_get_section_by_name (abfd, &quot;$GDB_SYMBOLS$&quot;);</span>
+<span class="lineNum">    1008 </span><span class="lineNoCov">          0 :           info-&gt;strsec  = bfd_get_section_by_name (abfd, &quot;$GDB_STRINGS$&quot;);</span>
+<span class="lineNum">    1009 </span>            : 
+<span class="lineNum">    1010 </span><span class="lineNoCov">          0 :           if (info-&gt;stabsec == NULL || info-&gt;strsec == NULL)</span>
+<span class="lineNum">    1011 </span>            :             {
+<span class="lineNum">    1012 </span>            :               /* No stabs debugging information.  Set *pinfo so that we
+<span class="lineNum">    1013 </span>            :                  can return quickly in the info != NULL case above.  */
+<span class="lineNum">    1014 </span><span class="lineNoCov">          0 :               *pinfo = info;</span>
+<span class="lineNum">    1015 </span><span class="lineNoCov">          0 :               return TRUE;</span>
+<span class="lineNum">    1016 </span>            :             }
+<span class="lineNum">    1017 </span>            :         }
+<span class="lineNum">    1018 </span>            : 
+<span class="lineNum">    1019 </span><span class="lineNoCov">          0 :       stabsize = (info-&gt;stabsec-&gt;rawsize</span>
+<span class="lineNum">    1020 </span><span class="lineNoCov">          0 :                   ? info-&gt;stabsec-&gt;rawsize</span>
+<span class="lineNum">    1021 </span><span class="lineNoCov">          0 :                   : info-&gt;stabsec-&gt;size);</span>
+<span class="lineNum">    1022 </span><span class="lineNoCov">          0 :       stabsize = (stabsize / STABSIZE) * STABSIZE;</span>
+<span class="lineNum">    1023 </span><span class="lineNoCov">          0 :       strsize = (info-&gt;strsec-&gt;rawsize</span>
+<span class="lineNum">    1024 </span><span class="lineNoCov">          0 :                  ? info-&gt;strsec-&gt;rawsize</span>
+<span class="lineNum">    1025 </span><span class="lineNoCov">          0 :                  : info-&gt;strsec-&gt;size);</span>
+<span class="lineNum">    1026 </span>            : 
+<span class="lineNum">    1027 </span><span class="lineNoCov">          0 :       info-&gt;stabs = (bfd_byte *) bfd_alloc (abfd, stabsize);</span>
+<span class="lineNum">    1028 </span><span class="lineNoCov">          0 :       info-&gt;strs = (bfd_byte *) bfd_alloc (abfd, strsize);</span>
+<span class="lineNum">    1029 </span><span class="lineNoCov">          0 :       if (info-&gt;stabs == NULL || info-&gt;strs == NULL)</span>
+<span class="lineNum">    1030 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">    1031 </span>            : 
+<span class="lineNum">    1032 </span><span class="lineNoCov">          0 :       if (! bfd_get_section_contents (abfd, info-&gt;stabsec, info-&gt;stabs,</span>
+<span class="lineNum">    1033 </span>            :                                       0, stabsize)
+<span class="lineNum">    1034 </span><span class="lineNoCov">          0 :           || ! bfd_get_section_contents (abfd, info-&gt;strsec, info-&gt;strs,</span>
+<span class="lineNum">    1035 </span>            :                                          0, strsize))
+<span class="lineNum">    1036 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">    1037 </span>            : 
+<span class="lineNum">    1038 </span>            :       /* If this is a relocatable object file, we have to relocate
+<span class="lineNum">    1039 </span>            :          the entries in .stab.  This should always be simple 32 bit
+<span class="lineNum">    1040 </span>            :          relocations against symbols defined in this object file, so
+<span class="lineNum">    1041 </span>            :          this should be no big deal.  */
+<span class="lineNum">    1042 </span><span class="lineNoCov">          0 :       reloc_size = bfd_get_reloc_upper_bound (abfd, info-&gt;stabsec);</span>
+<span class="lineNum">    1043 </span><span class="lineNoCov">          0 :       if (reloc_size &lt; 0)</span>
+<span class="lineNum">    1044 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">    1045 </span><span class="lineNoCov">          0 :       reloc_vector = (arelent **) bfd_malloc (reloc_size);</span>
+<span class="lineNum">    1046 </span><span class="lineNoCov">          0 :       if (reloc_vector == NULL &amp;&amp; reloc_size != 0)</span>
+<span class="lineNum">    1047 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">    1048 </span><span class="lineNoCov">          0 :       reloc_count = bfd_canonicalize_reloc (abfd, info-&gt;stabsec, reloc_vector,</span>
+<span class="lineNum">    1049 </span>            :                                             symbols);
+<span class="lineNum">    1050 </span><span class="lineNoCov">          0 :       if (reloc_count &lt; 0)</span>
+<span class="lineNum">    1051 </span>            :         {
+<span class="lineNum">    1052 </span><span class="lineNoCov">          0 :           if (reloc_vector != NULL)</span>
+<span class="lineNum">    1053 </span><span class="lineNoCov">          0 :             free (reloc_vector);</span>
+<span class="lineNum">    1054 </span><span class="lineNoCov">          0 :           return FALSE;</span>
+<span class="lineNum">    1055 </span>            :         }
+<span class="lineNum">    1056 </span><span class="lineNoCov">          0 :       if (reloc_count &gt; 0)</span>
+<span class="lineNum">    1057 </span>            :         {
+<span class="lineNum">    1058 </span>            :           arelent **pr;
+<span class="lineNum">    1059 </span>            : 
+<span class="lineNum">    1060 </span><span class="lineNoCov">          0 :           for (pr = reloc_vector; *pr != NULL; pr++)</span>
+<span class="lineNum">    1061 </span>            :             {
+<span class="lineNum">    1062 </span>            :               arelent *r;
+<span class="lineNum">    1063 </span>            :               unsigned long val;
+<span class="lineNum">    1064 </span>            :               asymbol *sym;
+<span class="lineNum">    1065 </span>            : 
+<span class="lineNum">    1066 </span><span class="lineNoCov">          0 :               r = *pr;</span>
+<span class="lineNum">    1067 </span>            :               /* Ignore R_*_NONE relocs.  */
+<span class="lineNum">    1068 </span><span class="lineNoCov">          0 :               if (r-&gt;howto-&gt;dst_mask == 0)</span>
+<span class="lineNum">    1069 </span><span class="lineNoCov">          0 :                 continue;</span>
+<span class="lineNum">    1070 </span>            : 
+<span class="lineNum">    1071 </span><span class="lineNoCov">          0 :               if (r-&gt;howto-&gt;rightshift != 0</span>
+<span class="lineNum">    1072 </span><span class="lineNoCov">          0 :                   || r-&gt;howto-&gt;size != 2</span>
+<span class="lineNum">    1073 </span><span class="lineNoCov">          0 :                   || r-&gt;howto-&gt;bitsize != 32</span>
+<span class="lineNum">    1074 </span><span class="lineNoCov">          0 :                   || r-&gt;howto-&gt;pc_relative</span>
+<span class="lineNum">    1075 </span><span class="lineNoCov">          0 :                   || r-&gt;howto-&gt;bitpos != 0</span>
+<span class="lineNum">    1076 </span><span class="lineNoCov">          0 :                   || r-&gt;howto-&gt;dst_mask != 0xffffffff)</span>
+<span class="lineNum">    1077 </span>            :                 {
+<span class="lineNum">    1078 </span><span class="lineNoCov">          0 :                   _bfd_error_handler</span>
+<span class="lineNum">    1079 </span><span class="lineNoCov">          0 :                     (_(&quot;Unsupported .stab relocation&quot;));</span>
+<span class="lineNum">    1080 </span><span class="lineNoCov">          0 :                   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">    1081 </span><span class="lineNoCov">          0 :                   if (reloc_vector != NULL)</span>
+<span class="lineNum">    1082 </span><span class="lineNoCov">          0 :                     free (reloc_vector);</span>
+<span class="lineNum">    1083 </span><span class="lineNoCov">          0 :                   return FALSE;</span>
+<span class="lineNum">    1084 </span>            :                 }
+<span class="lineNum">    1085 </span>            : 
+<span class="lineNum">    1086 </span><span class="lineNoCov">          0 :               val = bfd_get_32 (abfd, info-&gt;stabs</span>
+<span class="lineNum">    1087 </span>            :                                 + r-&gt;address * bfd_octets_per_byte (abfd));
+<span class="lineNum">    1088 </span><span class="lineNoCov">          0 :               val &amp;= r-&gt;howto-&gt;src_mask;</span>
+<span class="lineNum">    1089 </span><span class="lineNoCov">          0 :               sym = *r-&gt;sym_ptr_ptr;</span>
+<span class="lineNum">    1090 </span><span class="lineNoCov">          0 :               val += sym-&gt;value + sym-&gt;section-&gt;vma + r-&gt;addend;</span>
+<span class="lineNum">    1091 </span><span class="lineNoCov">          0 :               bfd_put_32 (abfd, (bfd_vma) val, info-&gt;stabs</span>
+<span class="lineNum">    1092 </span>            :                           + r-&gt;address * bfd_octets_per_byte (abfd));
+<span class="lineNum">    1093 </span>            :             }
+<span class="lineNum">    1094 </span>            :         }
+<span class="lineNum">    1095 </span>            : 
+<span class="lineNum">    1096 </span><span class="lineNoCov">          0 :       if (reloc_vector != NULL)</span>
+<span class="lineNum">    1097 </span><span class="lineNoCov">          0 :         free (reloc_vector);</span>
+<span class="lineNum">    1098 </span>            : 
+<span class="lineNum">    1099 </span>            :       /* First time through this function, build a table matching
+<span class="lineNum">    1100 </span>            :          function VM addresses to stabs, then sort based on starting
+<span class="lineNum">    1101 </span>            :          VM address.  Do this in two passes: once to count how many
+<span class="lineNum">    1102 </span>            :          table entries we'll need, and a second to actually build the
+<span class="lineNum">    1103 </span>            :          table.  */
+<span class="lineNum">    1104 </span>            : 
+<span class="lineNum">    1105 </span><span class="lineNoCov">          0 :       info-&gt;indextablesize = 0;</span>
+<span class="lineNum">    1106 </span><span class="lineNoCov">          0 :       nul_fun = NULL;</span>
+<span class="lineNum">    1107 </span><span class="lineNoCov">          0 :       for (stab = info-&gt;stabs; stab &lt; info-&gt;stabs + stabsize; stab += STABSIZE)</span>
+<span class="lineNum">    1108 </span>            :         {
+<span class="lineNum">    1109 </span><span class="lineNoCov">          0 :           if (stab[TYPEOFF] == (bfd_byte) N_SO)</span>
+<span class="lineNum">    1110 </span>            :             {
+<span class="lineNum">    1111 </span>            :               /* if we did not see a function def, leave space for one.  */
+<span class="lineNum">    1112 </span><span class="lineNoCov">          0 :               if (nul_fun != NULL)</span>
+<span class="lineNum">    1113 </span><span class="lineNoCov">          0 :                 ++info-&gt;indextablesize;</span>
+<span class="lineNum">    1114 </span>            : 
+<span class="lineNum">    1115 </span>            :               /* N_SO with null name indicates EOF */
+<span class="lineNum">    1116 </span><span class="lineNoCov">          0 :               if (bfd_get_32 (abfd, stab + STRDXOFF) == 0)</span>
+<span class="lineNum">    1117 </span><span class="lineNoCov">          0 :                 nul_fun = NULL;</span>
+<span class="lineNum">    1118 </span>            :               else
+<span class="lineNum">    1119 </span>            :                 {
+<span class="lineNum">    1120 </span><span class="lineNoCov">          0 :                   nul_fun = stab;</span>
+<span class="lineNum">    1121 </span>            : 
+<span class="lineNum">    1122 </span>            :                   /* two N_SO's in a row is a filename and directory. Skip */
+<span class="lineNum">    1123 </span><span class="lineNoCov">          0 :                   if (stab + STABSIZE + TYPEOFF &lt; info-&gt;stabs + stabsize</span>
+<span class="lineNum">    1124 </span><span class="lineNoCov">          0 :                       &amp;&amp; *(stab + STABSIZE + TYPEOFF) == (bfd_byte) N_SO)</span>
+<span class="lineNum">    1125 </span><span class="lineNoCov">          0 :                     stab += STABSIZE;</span>
+<span class="lineNum">    1126 </span>            :                 }
+<span class="lineNum">    1127 </span>            :             }
+<span class="lineNum">    1128 </span><span class="lineNoCov">          0 :           else if (stab[TYPEOFF] == (bfd_byte) N_FUN</span>
+<span class="lineNum">    1129 </span><span class="lineNoCov">          0 :                    &amp;&amp; bfd_get_32 (abfd, stab + STRDXOFF) != 0)</span>
+<span class="lineNum">    1130 </span>            :             {
+<span class="lineNum">    1131 </span><span class="lineNoCov">          0 :               nul_fun = NULL;</span>
+<span class="lineNum">    1132 </span><span class="lineNoCov">          0 :               ++info-&gt;indextablesize;</span>
+<span class="lineNum">    1133 </span>            :             }
+<span class="lineNum">    1134 </span>            :         }
+<span class="lineNum">    1135 </span>            : 
+<span class="lineNum">    1136 </span><span class="lineNoCov">          0 :       if (nul_fun != NULL)</span>
+<span class="lineNum">    1137 </span><span class="lineNoCov">          0 :         ++info-&gt;indextablesize;</span>
+<span class="lineNum">    1138 </span>            : 
+<span class="lineNum">    1139 </span><span class="lineNoCov">          0 :       if (info-&gt;indextablesize == 0)</span>
+<span class="lineNum">    1140 </span><span class="lineNoCov">          0 :         return TRUE;</span>
+<span class="lineNum">    1141 </span><span class="lineNoCov">          0 :       ++info-&gt;indextablesize;</span>
+<span class="lineNum">    1142 </span>            : 
+<span class="lineNum">    1143 </span><span class="lineNoCov">          0 :       amt = info-&gt;indextablesize;</span>
+<span class="lineNum">    1144 </span><span class="lineNoCov">          0 :       amt *= sizeof (struct indexentry);</span>
+<span class="lineNum">    1145 </span><span class="lineNoCov">          0 :       info-&gt;indextable = (struct indexentry *) bfd_alloc (abfd, amt);</span>
+<span class="lineNum">    1146 </span><span class="lineNoCov">          0 :       if (info-&gt;indextable == NULL)</span>
+<span class="lineNum">    1147 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">    1148 </span>            : 
+<span class="lineNum">    1149 </span><span class="lineNoCov">          0 :       file_name = NULL;</span>
+<span class="lineNum">    1150 </span><span class="lineNoCov">          0 :       directory_name = NULL;</span>
+<span class="lineNum">    1151 </span><span class="lineNoCov">          0 :       nul_fun = NULL;</span>
+<span class="lineNum">    1152 </span><span class="lineNoCov">          0 :       stroff = 0;</span>
+<span class="lineNum">    1153 </span>            : 
+<span class="lineNum">    1154 </span><span class="lineNoCov">          0 :       for (i = 0, stab = info-&gt;stabs, nul_str = str = info-&gt;strs;</span>
+<span class="lineNum">    1155 </span><span class="lineNoCov">          0 :            i &lt; info-&gt;indextablesize &amp;&amp; stab &lt; info-&gt;stabs + stabsize;</span>
+<span class="lineNum">    1156 </span><span class="lineNoCov">          0 :            stab += STABSIZE)</span>
+<span class="lineNum">    1157 </span>            :         {
+<span class="lineNum">    1158 </span><span class="lineNoCov">          0 :           switch (stab[TYPEOFF])</span>
+<span class="lineNum">    1159 </span>            :             {
+<span class="lineNum">    1160 </span><span class="lineNoCov">          0 :             case 0:</span>
+<span class="lineNum">    1161 </span>            :               /* This is the first entry in a compilation unit.  */
+<span class="lineNum">    1162 </span><span class="lineNoCov">          0 :               if ((bfd_size_type) ((info-&gt;strs + strsize) - str) &lt; stroff)</span>
+<span class="lineNum">    1163 </span><span class="lineNoCov">          0 :                 break;</span>
+<span class="lineNum">    1164 </span><span class="lineNoCov">          0 :               str += stroff;</span>
+<span class="lineNum">    1165 </span><span class="lineNoCov">          0 :               stroff = bfd_get_32 (abfd, stab + VALOFF);</span>
+<span class="lineNum">    1166 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">    1167 </span>            : 
+<span class="lineNum">    1168 </span><span class="lineNoCov">          0 :             case N_SO:</span>
+<span class="lineNum">    1169 </span>            :               /* The main file name.  */
+<span class="lineNum">    1170 </span>            : 
+<span class="lineNum">    1171 </span>            :               /* The following code creates a new indextable entry with
+<span class="lineNum">    1172 </span>            :                  a NULL function name if there were no N_FUNs in a file.
+<span class="lineNum">    1173 </span>            :                  Note that a N_SO without a file name is an EOF and
+<span class="lineNum">    1174 </span>            :                  there could be 2 N_SO following it with the new filename
+<span class="lineNum">    1175 </span>            :                  and directory.  */
+<span class="lineNum">    1176 </span><span class="lineNoCov">          0 :               if (nul_fun != NULL)</span>
+<span class="lineNum">    1177 </span>            :                 {
+<span class="lineNum">    1178 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].val = bfd_get_32 (abfd, nul_fun + VALOFF);</span>
+<span class="lineNum">    1179 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].stab = nul_fun;</span>
+<span class="lineNum">    1180 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].str = nul_str;</span>
+<span class="lineNum">    1181 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].directory_name = directory_name;</span>
+<span class="lineNum">    1182 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].file_name = file_name;</span>
+<span class="lineNum">    1183 </span><span class="lineNoCov">          0 :                   info-&gt;indextable[i].function_name = NULL;</span>
+<span class="lineNum">    1184 </span><span class="lineNoCov">          0 :                   ++i;</span>
+<span class="lineNum">    1185 </span>            :                 }
+<span class="lineNum">    1186 </span>            : 
+<span class="lineNum">    1187 </span><span class="lineNoCov">          0 :               directory_name = NULL;</span>
+<span class="lineNum">    1188 </span><span class="lineNoCov">          0 :               file_name = (char *) str + bfd_get_32 (abfd, stab + STRDXOFF);</span>
+<span class="lineNum">    1189 </span><span class="lineNoCov">          0 :               if (file_name == (char *) str)</span>
+<span class="lineNum">    1190 </span>            :                 {
+<span class="lineNum">    1191 </span><span class="lineNoCov">          0 :                   file_name = NULL;</span>
+<span class="lineNum">    1192 </span><span class="lineNoCov">          0 :                   nul_fun = NULL;</span>
+<span class="lineNum">    1193 </span>            :                 }
+<span class="lineNum">    1194 </span>            :               else
+<span class="lineNum">    1195 </span>            :                 {
+<span class="lineNum">    1196 </span><span class="lineNoCov">          0 :                   nul_fun = stab;</span>
+<span class="lineNum">    1197 </span><span class="lineNoCov">          0 :                   nul_str = str;</span>
+<span class="lineNum">    1198 </span><span class="lineNoCov">          0 :                   if (file_name &gt;= (char *) info-&gt;strs + strsize || file_name &lt; (char *) str)</span>
+<span class="lineNum">    1199 </span><span class="lineNoCov">          0 :                     file_name = NULL;</span>
+<span class="lineNum">    1200 </span><span class="lineNoCov">          0 :                   if (stab + STABSIZE + TYPEOFF &lt; info-&gt;stabs + stabsize</span>
+<span class="lineNum">    1201 </span><span class="lineNoCov">          0 :                       &amp;&amp; *(stab + STABSIZE + TYPEOFF) == (bfd_byte) N_SO)</span>
+<span class="lineNum">    1202 </span>            :                     {
+<span class="lineNum">    1203 </span>            :                       /* Two consecutive N_SOs are a directory and a
+<span class="lineNum">    1204 </span>            :                          file name.  */
+<span class="lineNum">    1205 </span><span class="lineNoCov">          0 :                       stab += STABSIZE;</span>
+<span class="lineNum">    1206 </span><span class="lineNoCov">          0 :                       directory_name = file_name;</span>
+<span class="lineNum">    1207 </span><span class="lineNoCov">          0 :                       file_name = ((char *) str</span>
+<span class="lineNum">    1208 </span><span class="lineNoCov">          0 :                                    + bfd_get_32 (abfd, stab + STRDXOFF));</span>
+<span class="lineNum">    1209 </span><span class="lineNoCov">          0 :                       if (file_name &gt;= (char *) info-&gt;strs + strsize || file_name &lt; (char *) str)</span>
+<span class="lineNum">    1210 </span><span class="lineNoCov">          0 :                         file_name = NULL;</span>
+<span class="lineNum">    1211 </span>            :                     }
+<span class="lineNum">    1212 </span>            :                 }
+<span class="lineNum">    1213 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">    1214 </span>            : 
+<span class="lineNum">    1215 </span><span class="lineNoCov">          0 :             case N_SOL:</span>
+<span class="lineNum">    1216 </span>            :               /* The name of an include file.  */
+<span class="lineNum">    1217 </span><span class="lineNoCov">          0 :               file_name = (char *) str + bfd_get_32 (abfd, stab + STRDXOFF);</span>
+<span class="lineNum">    1218 </span>            :               /* PR 17512: file: 0c680a1f.  */
+<span class="lineNum">    1219 </span>            :               /* PR 17512: file: 5da8aec4.  */
+<span class="lineNum">    1220 </span><span class="lineNoCov">          0 :               if (file_name &gt;= (char *) info-&gt;strs + strsize || file_name &lt; (char *) str)</span>
+<span class="lineNum">    1221 </span><span class="lineNoCov">          0 :                 file_name = NULL;</span>
+<span class="lineNum">    1222 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">    1223 </span>            : 
+<span class="lineNum">    1224 </span><span class="lineNoCov">          0 :             case N_FUN:</span>
+<span class="lineNum">    1225 </span>            :               /* A function name.  */
+<span class="lineNum">    1226 </span><span class="lineNoCov">          0 :               function_name = (char *) str + bfd_get_32 (abfd, stab + STRDXOFF);</span>
+<span class="lineNum">    1227 </span><span class="lineNoCov">          0 :               if (function_name == (char *) str)</span>
+<span class="lineNum">    1228 </span><span class="lineNoCov">          0 :                 continue;</span>
+<span class="lineNum">    1229 </span><span class="lineNoCov">          0 :               if (function_name &gt;= (char *) info-&gt;strs + strsize)</span>
+<span class="lineNum">    1230 </span><span class="lineNoCov">          0 :                 function_name = NULL;</span>
+<span class="lineNum">    1231 </span>            : 
+<span class="lineNum">    1232 </span><span class="lineNoCov">          0 :               nul_fun = NULL;</span>
+<span class="lineNum">    1233 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].val = bfd_get_32 (abfd, stab + VALOFF);</span>
+<span class="lineNum">    1234 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].stab = stab;</span>
+<span class="lineNum">    1235 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].str = str;</span>
+<span class="lineNum">    1236 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].directory_name = directory_name;</span>
+<span class="lineNum">    1237 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].file_name = file_name;</span>
+<span class="lineNum">    1238 </span><span class="lineNoCov">          0 :               info-&gt;indextable[i].function_name = function_name;</span>
+<span class="lineNum">    1239 </span><span class="lineNoCov">          0 :               ++i;</span>
+<span class="lineNum">    1240 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">    1241 </span>            :             }
+<span class="lineNum">    1242 </span>            :         }
+<span class="lineNum">    1243 </span>            : 
+<span class="lineNum">    1244 </span><span class="lineNoCov">          0 :       if (nul_fun != NULL)</span>
+<span class="lineNum">    1245 </span>            :         {
+<span class="lineNum">    1246 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].val = bfd_get_32 (abfd, nul_fun + VALOFF);</span>
+<span class="lineNum">    1247 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].stab = nul_fun;</span>
+<span class="lineNum">    1248 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].str = nul_str;</span>
+<span class="lineNum">    1249 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].directory_name = directory_name;</span>
+<span class="lineNum">    1250 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].file_name = file_name;</span>
+<span class="lineNum">    1251 </span><span class="lineNoCov">          0 :           info-&gt;indextable[i].function_name = NULL;</span>
+<span class="lineNum">    1252 </span><span class="lineNoCov">          0 :           ++i;</span>
+<span class="lineNum">    1253 </span>            :         }
+<span class="lineNum">    1254 </span>            : 
+<span class="lineNum">    1255 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].val = (bfd_vma) -1;</span>
+<span class="lineNum">    1256 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].stab = info-&gt;stabs + stabsize;</span>
+<span class="lineNum">    1257 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].str = str;</span>
+<span class="lineNum">    1258 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].directory_name = NULL;</span>
+<span class="lineNum">    1259 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].file_name = NULL;</span>
+<span class="lineNum">    1260 </span><span class="lineNoCov">          0 :       info-&gt;indextable[i].function_name = NULL;</span>
+<span class="lineNum">    1261 </span><span class="lineNoCov">          0 :       ++i;</span>
+<span class="lineNum">    1262 </span>            : 
+<span class="lineNum">    1263 </span><span class="lineNoCov">          0 :       info-&gt;indextablesize = i;</span>
+<span class="lineNum">    1264 </span><span class="lineNoCov">          0 :       qsort (info-&gt;indextable, (size_t) i, sizeof (struct indexentry),</span>
+<span class="lineNum">    1265 </span>            :              cmpindexentry);
+<span class="lineNum">    1266 </span>            : 
+<span class="lineNum">    1267 </span><span class="lineNoCov">          0 :       *pinfo = info;</span>
+<span class="lineNum">    1268 </span>            :     }
+<span class="lineNum">    1269 </span>            : 
+<span class="lineNum">    1270 </span>            :   /* We are passed a section relative offset.  The offsets in the
+<span class="lineNum">    1271 </span>            :      stabs information are absolute.  */
+<span class="lineNum">    1272 </span><span class="lineNoCov">          0 :   offset += bfd_get_section_vma (abfd, section);</span>
+<span class="lineNum">    1273 </span>            : 
+<span class="lineNum">    1274 </span>            : #ifdef ENABLE_CACHING
+<span class="lineNum">    1275 </span><span class="lineNoCov">          0 :   if (info-&gt;cached_indexentry != NULL</span>
+<span class="lineNum">    1276 </span><span class="lineNoCov">          0 :       &amp;&amp; offset &gt;= info-&gt;cached_offset</span>
+<span class="lineNum">    1277 </span><span class="lineNoCov">          0 :       &amp;&amp; offset &lt; (info-&gt;cached_indexentry + 1)-&gt;val)</span>
+<span class="lineNum">    1278 </span>            :     {
+<span class="lineNum">    1279 </span><span class="lineNoCov">          0 :       stab = info-&gt;cached_stab;</span>
+<span class="lineNum">    1280 </span><span class="lineNoCov">          0 :       indexentry = info-&gt;cached_indexentry;</span>
+<span class="lineNum">    1281 </span><span class="lineNoCov">          0 :       file_name = info-&gt;cached_file_name;</span>
+<span class="lineNum">    1282 </span>            :     }
+<span class="lineNum">    1283 </span>            :   else
+<span class="lineNum">    1284 </span>            : #endif
+<span class="lineNum">    1285 </span>            :     {
+<span class="lineNum">    1286 </span>            :       long low, high;
+<span class="lineNum">    1287 </span><span class="lineNoCov">          0 :       long mid = -1;</span>
+<span class="lineNum">    1288 </span>            : 
+<span class="lineNum">    1289 </span>            :       /* Cache non-existent or invalid.  Do binary search on
+<span class="lineNum">    1290 </span>            :          indextable.  */
+<span class="lineNum">    1291 </span><span class="lineNoCov">          0 :       indexentry = NULL;</span>
+<span class="lineNum">    1292 </span>            : 
+<span class="lineNum">    1293 </span><span class="lineNoCov">          0 :       low = 0;</span>
+<span class="lineNum">    1294 </span><span class="lineNoCov">          0 :       high = info-&gt;indextablesize - 1;</span>
+<span class="lineNum">    1295 </span><span class="lineNoCov">          0 :       while (low != high)</span>
+<span class="lineNum">    1296 </span>            :         {
+<span class="lineNum">    1297 </span><span class="lineNoCov">          0 :           mid = (high + low) / 2;</span>
+<span class="lineNum">    1298 </span><span class="lineNoCov">          0 :           if (offset &gt;= info-&gt;indextable[mid].val</span>
+<span class="lineNum">    1299 </span><span class="lineNoCov">          0 :               &amp;&amp; offset &lt; info-&gt;indextable[mid + 1].val)</span>
+<span class="lineNum">    1300 </span>            :             {
+<span class="lineNum">    1301 </span><span class="lineNoCov">          0 :               indexentry = &amp;info-&gt;indextable[mid];</span>
+<span class="lineNum">    1302 </span><span class="lineNoCov">          0 :               break;</span>
+<span class="lineNum">    1303 </span>            :             }
+<span class="lineNum">    1304 </span>            : 
+<span class="lineNum">    1305 </span><span class="lineNoCov">          0 :           if (info-&gt;indextable[mid].val &gt; offset)</span>
+<span class="lineNum">    1306 </span><span class="lineNoCov">          0 :             high = mid;</span>
+<span class="lineNum">    1307 </span>            :           else
+<span class="lineNum">    1308 </span><span class="lineNoCov">          0 :             low = mid + 1;</span>
+<span class="lineNum">    1309 </span>            :         }
+<span class="lineNum">    1310 </span>            : 
+<span class="lineNum">    1311 </span><span class="lineNoCov">          0 :       if (indexentry == NULL)</span>
+<span class="lineNum">    1312 </span><span class="lineNoCov">          0 :         return TRUE;</span>
+<span class="lineNum">    1313 </span>            : 
+<span class="lineNum">    1314 </span><span class="lineNoCov">          0 :       stab = indexentry-&gt;stab + STABSIZE;</span>
+<span class="lineNum">    1315 </span><span class="lineNoCov">          0 :       file_name = indexentry-&gt;file_name;</span>
+<span class="lineNum">    1316 </span>            :     }
+<span class="lineNum">    1317 </span>            : 
+<span class="lineNum">    1318 </span><span class="lineNoCov">          0 :   directory_name = indexentry-&gt;directory_name;</span>
+<span class="lineNum">    1319 </span><span class="lineNoCov">          0 :   str = indexentry-&gt;str;</span>
+<span class="lineNum">    1320 </span>            : 
+<span class="lineNum">    1321 </span><span class="lineNoCov">          0 :   saw_line = FALSE;</span>
+<span class="lineNum">    1322 </span><span class="lineNoCov">          0 :   saw_func = FALSE;</span>
+<span class="lineNum">    1323 </span><span class="lineNoCov">          0 :   for (; stab &lt; (indexentry+1)-&gt;stab; stab += STABSIZE)</span>
+<span class="lineNum">    1324 </span>            :     {
+<span class="lineNum">    1325 </span>            :       bfd_boolean done;
+<span class="lineNum">    1326 </span>            :       bfd_vma val;
+<span class="lineNum">    1327 </span>            : 
+<span class="lineNum">    1328 </span><span class="lineNoCov">          0 :       done = FALSE;</span>
+<span class="lineNum">    1329 </span>            : 
+<span class="lineNum">    1330 </span><span class="lineNoCov">          0 :       switch (stab[TYPEOFF])</span>
+<span class="lineNum">    1331 </span>            :         {
+<span class="lineNum">    1332 </span><span class="lineNoCov">          0 :         case N_SOL:</span>
+<span class="lineNum">    1333 </span>            :           /* The name of an include file.  */
+<span class="lineNum">    1334 </span><span class="lineNoCov">          0 :           val = bfd_get_32 (abfd, stab + VALOFF);</span>
+<span class="lineNum">    1335 </span><span class="lineNoCov">          0 :           if (val &lt;= offset)</span>
+<span class="lineNum">    1336 </span>            :             {
+<span class="lineNum">    1337 </span><span class="lineNoCov">          0 :               file_name = (char *) str + bfd_get_32 (abfd, stab + STRDXOFF);</span>
+<span class="lineNum">    1338 </span><span class="lineNoCov">          0 :               if (file_name &gt;= (char *) info-&gt;strs + strsize || file_name &lt; (char *) str)</span>
+<span class="lineNum">    1339 </span><span class="lineNoCov">          0 :                 file_name = NULL;</span>
+<span class="lineNum">    1340 </span><span class="lineNoCov">          0 :               *pline = 0;</span>
+<span class="lineNum">    1341 </span>            :             }
+<span class="lineNum">    1342 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">    1343 </span>            : 
+<span class="lineNum">    1344 </span><span class="lineNoCov">          0 :         case N_SLINE:</span>
+<span class="lineNum">    1345 </span>            :         case N_DSLINE:
+<span class="lineNum">    1346 </span>            :         case N_BSLINE:
+<span class="lineNum">    1347 </span>            :           /* A line number.  If the function was specified, then the value
+<span class="lineNum">    1348 </span>            :              is relative to the start of the function.  Otherwise, the
+<span class="lineNum">    1349 </span>            :              value is an absolute address.  */
+<span class="lineNum">    1350 </span><span class="lineNoCov">          0 :           val = ((indexentry-&gt;function_name ? indexentry-&gt;val : 0)</span>
+<span class="lineNum">    1351 </span><span class="lineNoCov">          0 :                  + bfd_get_32 (abfd, stab + VALOFF));</span>
+<span class="lineNum">    1352 </span>            :           /* If this line starts before our desired offset, or if it's
+<span class="lineNum">    1353 </span>            :              the first line we've been able to find, use it.  The
+<span class="lineNum">    1354 </span>            :              !saw_line check works around a bug in GCC 2.95.3, which emits
+<span class="lineNum">    1355 </span>            :              the first N_SLINE late.  */
+<span class="lineNum">    1356 </span><span class="lineNoCov">          0 :           if (!saw_line || val &lt;= offset)</span>
+<span class="lineNum">    1357 </span>            :             {
+<span class="lineNum">    1358 </span><span class="lineNoCov">          0 :               *pline = bfd_get_16 (abfd, stab + DESCOFF);</span>
+<span class="lineNum">    1359 </span>            : 
+<span class="lineNum">    1360 </span>            : #ifdef ENABLE_CACHING
+<span class="lineNum">    1361 </span><span class="lineNoCov">          0 :               info-&gt;cached_stab = stab;</span>
+<span class="lineNum">    1362 </span><span class="lineNoCov">          0 :               info-&gt;cached_offset = val;</span>
+<span class="lineNum">    1363 </span><span class="lineNoCov">          0 :               info-&gt;cached_file_name = file_name;</span>
+<span class="lineNum">    1364 </span><span class="lineNoCov">          0 :               info-&gt;cached_indexentry = indexentry;</span>
+<span class="lineNum">    1365 </span>            : #endif
+<span class="lineNum">    1366 </span>            :             }
+<span class="lineNum">    1367 </span><span class="lineNoCov">          0 :           if (val &gt; offset)</span>
+<span class="lineNum">    1368 </span><span class="lineNoCov">          0 :             done = TRUE;</span>
+<span class="lineNum">    1369 </span><span class="lineNoCov">          0 :           saw_line = TRUE;</span>
+<span class="lineNum">    1370 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">    1371 </span>            : 
+<span class="lineNum">    1372 </span><span class="lineNoCov">          0 :         case N_FUN:</span>
+<span class="lineNum">    1373 </span>            :         case N_SO:
+<span class="lineNum">    1374 </span><span class="lineNoCov">          0 :           if (saw_func || saw_line)</span>
+<span class="lineNum">    1375 </span><span class="lineNoCov">          0 :             done = TRUE;</span>
+<span class="lineNum">    1376 </span><span class="lineNoCov">          0 :           saw_func = TRUE;</span>
+<span class="lineNum">    1377 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">    1378 </span>            :         }
+<span class="lineNum">    1379 </span>            : 
+<span class="lineNum">    1380 </span><span class="lineNoCov">          0 :       if (done)</span>
+<span class="lineNum">    1381 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">    1382 </span>            :     }
+<span class="lineNum">    1383 </span>            : 
+<span class="lineNum">    1384 </span><span class="lineNoCov">          0 :   *pfound = TRUE;</span>
+<span class="lineNum">    1385 </span>            : 
+<span class="lineNum">    1386 </span><span class="lineNoCov">          0 :   if (file_name == NULL || IS_ABSOLUTE_PATH (file_name)</span>
+<span class="lineNum">    1387 </span><span class="lineNoCov">          0 :       || directory_name == NULL)</span>
+<span class="lineNum">    1388 </span><span class="lineNoCov">          0 :     *pfilename = file_name;</span>
+<span class="lineNum">    1389 </span>            :   else
+<span class="lineNum">    1390 </span>            :     {
+<span class="lineNum">    1391 </span>            :       size_t dirlen;
+<span class="lineNum">    1392 </span>            : 
+<span class="lineNum">    1393 </span><span class="lineNoCov">          0 :       dirlen = strlen (directory_name);</span>
+<span class="lineNum">    1394 </span><span class="lineNoCov">          0 :       if (info-&gt;filename == NULL</span>
+<span class="lineNum">    1395 </span><span class="lineNoCov">          0 :           || filename_ncmp (info-&gt;filename, directory_name, dirlen) != 0</span>
+<span class="lineNum">    1396 </span><span class="lineNoCov">          0 :           || filename_cmp (info-&gt;filename + dirlen, file_name) != 0)</span>
+<span class="lineNum">    1397 </span>            :         {
+<span class="lineNum">    1398 </span>            :           size_t len;
+<span class="lineNum">    1399 </span>            : 
+<span class="lineNum">    1400 </span>            :           /* Don't free info-&gt;filename here.  objdump and other
+<span class="lineNum">    1401 </span>            :              apps keep a copy of a previously returned file name
+<span class="lineNum">    1402 </span>            :              pointer.  */
+<span class="lineNum">    1403 </span><span class="lineNoCov">          0 :           len = strlen (file_name) + 1;</span>
+<span class="lineNum">    1404 </span><span class="lineNoCov">          0 :           info-&gt;filename = (char *) bfd_alloc (abfd, dirlen + len);</span>
+<span class="lineNum">    1405 </span><span class="lineNoCov">          0 :           if (info-&gt;filename == NULL)</span>
+<span class="lineNum">    1406 </span><span class="lineNoCov">          0 :             return FALSE;</span>
+<span class="lineNum">    1407 </span><span class="lineNoCov">          0 :           memcpy (info-&gt;filename, directory_name, dirlen);</span>
+<span class="lineNum">    1408 </span><span class="lineNoCov">          0 :           memcpy (info-&gt;filename + dirlen, file_name, len);</span>
+<span class="lineNum">    1409 </span>            :         }
+<span class="lineNum">    1410 </span>            : 
+<span class="lineNum">    1411 </span><span class="lineNoCov">          0 :       *pfilename = info-&gt;filename;</span>
+<span class="lineNum">    1412 </span>            :     }
+<span class="lineNum">    1413 </span>            : 
+<span class="lineNum">    1414 </span><span class="lineNoCov">          0 :   if (indexentry-&gt;function_name != NULL)</span>
+<span class="lineNum">    1415 </span>            :     {
+<span class="lineNum">    1416 </span>            :       char *s;
+<span class="lineNum">    1417 </span>            : 
+<span class="lineNum">    1418 </span>            :       /* This will typically be something like main:F(0,1), so we want
+<span class="lineNum">    1419 </span>            :          to clobber the colon.  It's OK to change the name, since the
+<span class="lineNum">    1420 </span>            :          string is in our own local storage anyhow.  */
+<span class="lineNum">    1421 </span><span class="lineNoCov">          0 :       s = strchr (indexentry-&gt;function_name, ':');</span>
+<span class="lineNum">    1422 </span><span class="lineNoCov">          0 :       if (s != NULL)</span>
+<span class="lineNum">    1423 </span><span class="lineNoCov">          0 :         *s = '\0';</span>
+<span class="lineNum">    1424 </span>            : 
+<span class="lineNum">    1425 </span><span class="lineNoCov">          0 :       *pfnname = indexentry-&gt;function_name;</span>
+<span class="lineNum">    1426 </span>            :     }
+<span class="lineNum">    1427 </span>            : 
+<span class="lineNum">    1428 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">    1429 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

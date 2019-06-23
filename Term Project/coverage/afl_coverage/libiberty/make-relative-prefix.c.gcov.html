@@ -1,0 +1,508 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - libiberty/make-relative-prefix.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libiberty</a> - make-relative-prefix.c<span style="font-size: 80%;"> (source / <a href="make-relative-prefix.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">139</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Relative (relocatable) prefix support.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1987, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+<span class="lineNum">       3 </span>            :    1999, 2000, 2001, 2002, 2006, 2012 Free Software Foundation, Inc.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : This file is part of libiberty.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : GCC is free software; you can redistribute it and/or modify it under
+<span class="lineNum">       8 </span>            : the terms of the GNU General Public License as published by the Free
+<span class="lineNum">       9 </span>            : Software Foundation; either version 2, or (at your option) any later
+<span class="lineNum">      10 </span>            : version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+<span class="lineNum">      13 </span>            : WARRANTY; without even the implied warranty of MERCHANTABILITY or
+<span class="lineNum">      14 </span>            : FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+<span class="lineNum">      15 </span>            : for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            : You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            : along with GCC; see the file COPYING.  If not, write to the Free
+<span class="lineNum">      19 </span>            : Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
+<span class="lineNum">      20 </span>            : 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /*
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : @deftypefn Extension {const char*} make_relative_prefix (const char *@var{progname}, @
+<span class="lineNum">      25 </span>            :   const char *@var{bin_prefix}, const char *@var{prefix})
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : Given three paths @var{progname}, @var{bin_prefix}, @var{prefix},
+<span class="lineNum">      28 </span>            : return the path that is in the same position relative to
+<span class="lineNum">      29 </span>            : @var{progname}'s directory as @var{prefix} is relative to
+<span class="lineNum">      30 </span>            : @var{bin_prefix}.  That is, a string starting with the directory
+<span class="lineNum">      31 </span>            : portion of @var{progname}, followed by a relative pathname of the
+<span class="lineNum">      32 </span>            : difference between @var{bin_prefix} and @var{prefix}.
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : If @var{progname} does not contain any directory separators,
+<span class="lineNum">      35 </span>            : @code{make_relative_prefix} will search @env{PATH} to find a program
+<span class="lineNum">      36 </span>            : named @var{progname}.  Also, if @var{progname} is a symbolic link,
+<span class="lineNum">      37 </span>            : the symbolic link will be resolved.
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : For example, if @var{bin_prefix} is @code{/alpha/beta/gamma/gcc/delta},
+<span class="lineNum">      40 </span>            : @var{prefix} is @code{/alpha/beta/gamma/omega/}, and @var{progname} is
+<span class="lineNum">      41 </span>            : @code{/red/green/blue/gcc}, then this function will return
+<span class="lineNum">      42 </span>            : @code{/red/green/blue/../../omega/}.
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            : The return value is normally allocated via @code{malloc}.  If no
+<span class="lineNum">      45 </span>            : relative prefix can be found, return @code{NULL}.
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : @end deftypefn
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : */
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : #ifdef HAVE_CONFIG_H
+<span class="lineNum">      52 </span>            : #include &quot;config.h&quot;
+<span class="lineNum">      53 </span>            : #endif
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            : #ifdef HAVE_STDLIB_H
+<span class="lineNum">      56 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      57 </span>            : #endif
+<span class="lineNum">      58 </span>            : #ifdef HAVE_UNISTD_H
+<span class="lineNum">      59 </span>            : #include &lt;unistd.h&gt;
+<span class="lineNum">      60 </span>            : #endif
+<span class="lineNum">      61 </span>            : #ifdef HAVE_SYS_STAT_H
+<span class="lineNum">      62 </span>            : #include &lt;sys/stat.h&gt;
+<span class="lineNum">      63 </span>            : #endif
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : #include &quot;ansidecl.h&quot;
+<span class="lineNum">      68 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : #ifndef R_OK
+<span class="lineNum">      71 </span>            : #define R_OK 4
+<span class="lineNum">      72 </span>            : #define W_OK 2
+<span class="lineNum">      73 </span>            : #define X_OK 1
+<span class="lineNum">      74 </span>            : #endif
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span>            : #ifndef DIR_SEPARATOR
+<span class="lineNum">      77 </span>            : #  define DIR_SEPARATOR '/'
+<span class="lineNum">      78 </span>            : #endif
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : #if defined (_WIN32) || defined (__MSDOS__) \
+<span class="lineNum">      81 </span>            :     || defined (__DJGPP__) || defined (__OS2__)
+<span class="lineNum">      82 </span>            : #  define HAVE_DOS_BASED_FILE_SYSTEM
+<span class="lineNum">      83 </span>            : #  define HAVE_HOST_EXECUTABLE_SUFFIX
+<span class="lineNum">      84 </span>            : #  define HOST_EXECUTABLE_SUFFIX &quot;.exe&quot;
+<span class="lineNum">      85 </span>            : #  ifndef DIR_SEPARATOR_2 
+<span class="lineNum">      86 </span>            : #    define DIR_SEPARATOR_2 '\\'
+<span class="lineNum">      87 </span>            : #  endif
+<span class="lineNum">      88 </span>            : #  define PATH_SEPARATOR ';'
+<span class="lineNum">      89 </span>            : #else
+<span class="lineNum">      90 </span>            : #  define PATH_SEPARATOR ':'
+<span class="lineNum">      91 </span>            : #endif
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            : #ifndef DIR_SEPARATOR_2
+<span class="lineNum">      94 </span>            : #  define IS_DIR_SEPARATOR(ch) ((ch) == DIR_SEPARATOR)
+<span class="lineNum">      95 </span>            : #else
+<span class="lineNum">      96 </span>            : #  define IS_DIR_SEPARATOR(ch) \
+<span class="lineNum">      97 </span>            :         (((ch) == DIR_SEPARATOR) || ((ch) == DIR_SEPARATOR_2))
+<span class="lineNum">      98 </span>            : #endif
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : #define DIR_UP &quot;..&quot;
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : static char *save_string (const char *, int);
+<span class="lineNum">     103 </span>            : static char **split_directories (const char *, int *);
+<span class="lineNum">     104 </span>            : static void free_split_directories (char **);
+<a name="105"><span class="lineNum">     105 </span>            : </a>
+<span class="lineNum">     106 </span>            : static char *
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 : save_string (const char *s, int len)</span>
+<span class="lineNum">     108 </span>            : {
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :   char *result = (char *) malloc (len + 1);</span>
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :   memcpy (result, s, len);</span>
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 :   result[len] = 0;</span>
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     114 </span>            : }
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            : /* Split a filename into component directories.  */
+<a name="117"><span class="lineNum">     117 </span>            : </a>
+<span class="lineNum">     118 </span>            : static char **
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 : split_directories (const char *name, int *ptr_num_dirs)</span>
+<span class="lineNum">     120 </span>            : {
+<span class="lineNum">     121 </span><span class="lineNoCov">          0 :   int num_dirs = 0;</span>
+<span class="lineNum">     122 </span>            :   char **dirs;
+<span class="lineNum">     123 </span>            :   const char *p, *q;
+<span class="lineNum">     124 </span>            :   int ch;
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span>            :   /* Count the number of directories.  Special case MSDOS disk names as part
+<span class="lineNum">     127 </span>            :      of the initial directory.  */
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :   p = name;</span>
+<span class="lineNum">     129 </span>            : #ifdef HAVE_DOS_BASED_FILE_SYSTEM
+<span class="lineNum">     130 </span>            :   if (name[1] == ':' &amp;&amp; IS_DIR_SEPARATOR (name[2]))
+<span class="lineNum">     131 </span>            :     {
+<span class="lineNum">     132 </span>            :       p += 3;
+<span class="lineNum">     133 </span>            :       num_dirs++;
+<span class="lineNum">     134 </span>            :     }
+<span class="lineNum">     135 </span>            : #endif /* HAVE_DOS_BASED_FILE_SYSTEM */
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :   while ((ch = *p++) != '\0')</span>
+<span class="lineNum">     138 </span>            :     {
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :       if (IS_DIR_SEPARATOR (ch))</span>
+<span class="lineNum">     140 </span>            :         {
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :           num_dirs++;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :           while (IS_DIR_SEPARATOR (*p))</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :             p++;</span>
+<span class="lineNum">     144 </span>            :         }
+<span class="lineNum">     145 </span>            :     }
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :   dirs = (char **) malloc (sizeof (char *) * (num_dirs + 2));</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :   if (dirs == NULL)</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            :   /* Now copy the directory parts.  */
+<span class="lineNum">     152 </span><span class="lineNoCov">          0 :   num_dirs = 0;</span>
+<span class="lineNum">     153 </span><span class="lineNoCov">          0 :   p = name;</span>
+<span class="lineNum">     154 </span>            : #ifdef HAVE_DOS_BASED_FILE_SYSTEM
+<span class="lineNum">     155 </span>            :   if (name[1] == ':' &amp;&amp; IS_DIR_SEPARATOR (name[2]))
+<span class="lineNum">     156 </span>            :     {
+<span class="lineNum">     157 </span>            :       dirs[num_dirs++] = save_string (p, 3);
+<span class="lineNum">     158 </span>            :       if (dirs[num_dirs - 1] == NULL)
+<span class="lineNum">     159 </span>            :         {
+<span class="lineNum">     160 </span>            :           free (dirs);
+<span class="lineNum">     161 </span>            :           return NULL;
+<span class="lineNum">     162 </span>            :         }
+<span class="lineNum">     163 </span>            :       p += 3;
+<span class="lineNum">     164 </span>            :     }
+<span class="lineNum">     165 </span>            : #endif /* HAVE_DOS_BASED_FILE_SYSTEM */
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :   q = p;</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :   while ((ch = *p++) != '\0')</span>
+<span class="lineNum">     169 </span>            :     {
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :       if (IS_DIR_SEPARATOR (ch))</span>
+<span class="lineNum">     171 </span>            :         {
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :           while (IS_DIR_SEPARATOR (*p))</span>
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :             p++;</span>
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :           dirs[num_dirs++] = save_string (q, p - q);</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :           if (dirs[num_dirs - 1] == NULL)</span>
+<span class="lineNum">     177 </span>            :             {
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :               dirs[num_dirs] = NULL;</span>
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :               free_split_directories (dirs);</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :               return NULL;</span>
+<span class="lineNum">     181 </span>            :             }
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :           q = p;</span>
+<span class="lineNum">     183 </span>            :         }
+<span class="lineNum">     184 </span>            :     }
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :   if (p - 1 - q &gt; 0)</span>
+<span class="lineNum">     187 </span><span class="lineNoCov">          0 :     dirs[num_dirs++] = save_string (q, p - 1 - q);</span>
+<span class="lineNum">     188 </span><span class="lineNoCov">          0 :   dirs[num_dirs] = NULL;</span>
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineNoCov">          0 :   if (dirs[num_dirs - 1] == NULL)</span>
+<span class="lineNum">     191 </span>            :     {
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :       free_split_directories (dirs);</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     194 </span>            :     }
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :   if (ptr_num_dirs)</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :     *ptr_num_dirs = num_dirs;</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :   return dirs;</span>
+<span class="lineNum">     199 </span>            : }
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            : /* Release storage held by split directories.  */
+<a name="202"><span class="lineNum">     202 </span>            : </a>
+<span class="lineNum">     203 </span>            : static void
+<span class="lineNum">     204 </span><span class="lineNoCov">          0 : free_split_directories (char **dirs)</span>
+<span class="lineNum">     205 </span>            : {
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :   int i = 0;</span>
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 :   if (dirs != NULL)</span>
+<span class="lineNum">     209 </span>            :     {
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 :       while (dirs[i] != NULL)</span>
+<span class="lineNum">     211 </span><span class="lineNoCov">          0 :         free (dirs[i++]);</span>
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :       free ((char *) dirs);</span>
+<span class="lineNum">     214 </span>            :     }
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            : /* Given three strings PROGNAME, BIN_PREFIX, PREFIX, return a string that gets
+<span class="lineNum">     218 </span>            :    to PREFIX starting with the directory portion of PROGNAME and a relative
+<span class="lineNum">     219 </span>            :    pathname of the difference between BIN_PREFIX and PREFIX.
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            :    For example, if BIN_PREFIX is /alpha/beta/gamma/gcc/delta, PREFIX is
+<span class="lineNum">     222 </span>            :    /alpha/beta/gamma/omega/, and PROGNAME is /red/green/blue/gcc, then this
+<span class="lineNum">     223 </span>            :    function will return /red/green/blue/../../omega/.
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :    If no relative prefix can be found, return NULL.  */
+<a name="226"><span class="lineNum">     226 </span>            : </a>
+<span class="lineNum">     227 </span>            : static char *
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 : make_relative_prefix_1 (const char *progname, const char *bin_prefix,</span>
+<span class="lineNum">     229 </span>            :                         const char *prefix, const int resolve_links)
+<span class="lineNum">     230 </span>            : {
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :   char **prog_dirs = NULL, **bin_dirs = NULL, **prefix_dirs = NULL;</span>
+<span class="lineNum">     232 </span>            :   int prog_num, bin_num, prefix_num;
+<span class="lineNum">     233 </span>            :   int i, n, common;
+<span class="lineNum">     234 </span>            :   int needed_len;
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :   char *ret = NULL, *ptr, *full_progname;</span>
+<span class="lineNum">     236 </span><span class="lineNoCov">          0 :   char *alloc_ptr = NULL;</span>
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :   if (progname == NULL || bin_prefix == NULL || prefix == NULL)</span>
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :     return NULL;</span>
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            :   /* If there is no full pathname, try to find the program by checking in each
+<span class="lineNum">     242 </span>            :      of the directories specified in the PATH environment variable.  */
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :   if (lbasename (progname) == progname)</span>
+<span class="lineNum">     244 </span>            :     {
+<span class="lineNum">     245 </span>            :       char *temp;
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :       temp = getenv (&quot;PATH&quot;);</span>
+<span class="lineNum">     248 </span><span class="lineNoCov">          0 :       if (temp)</span>
+<span class="lineNum">     249 </span>            :         {
+<span class="lineNum">     250 </span>            :           char *startp, *endp, *nstore;
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :           size_t prefixlen = strlen (temp) + 1;</span>
+<span class="lineNum">     252 </span>            :           size_t len;
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :           if (prefixlen &lt; 2)</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :             prefixlen = 2;</span>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :           len = prefixlen + strlen (progname) + 1;</span>
+<span class="lineNum">     257 </span>            : #ifdef HAVE_HOST_EXECUTABLE_SUFFIX
+<span class="lineNum">     258 </span>            :           len += strlen (HOST_EXECUTABLE_SUFFIX);
+<span class="lineNum">     259 </span>            : #endif
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :           if (len &lt; MAX_ALLOCA_SIZE)</span>
+<span class="lineNum">     261 </span><span class="lineNoCov">          0 :             nstore = (char *) alloca (len);</span>
+<span class="lineNum">     262 </span>            :           else
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 :             alloc_ptr = nstore = (char *) malloc (len);</span>
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :           startp = endp = temp;</span>
+<span class="lineNum">     266 </span>            :           while (1)
+<span class="lineNum">     267 </span>            :             {
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :               if (*endp == PATH_SEPARATOR || *endp == 0)</span>
+<span class="lineNum">     269 </span>            :                 {
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :                   if (endp == startp)</span>
+<span class="lineNum">     271 </span>            :                     {
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :                       nstore[0] = '.';</span>
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :                       nstore[1] = DIR_SEPARATOR;</span>
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :                       nstore[2] = '\0';</span>
+<span class="lineNum">     275 </span>            :                     }
+<span class="lineNum">     276 </span>            :                   else
+<span class="lineNum">     277 </span>            :                     {
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 :                       memcpy (nstore, startp, endp - startp);</span>
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :                       if (! IS_DIR_SEPARATOR (endp[-1]))</span>
+<span class="lineNum">     280 </span>            :                         {
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :                           nstore[endp - startp] = DIR_SEPARATOR;</span>
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :                           nstore[endp - startp + 1] = 0;</span>
+<span class="lineNum">     283 </span>            :                         }
+<span class="lineNum">     284 </span>            :                       else
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :                         nstore[endp - startp] = 0;</span>
+<span class="lineNum">     286 </span>            :                     }
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :                   strcat (nstore, progname);</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :                   if (! access (nstore, X_OK)</span>
+<span class="lineNum">     289 </span>            : #ifdef HAVE_HOST_EXECUTABLE_SUFFIX
+<span class="lineNum">     290 </span>            :                       || ! access (strcat (nstore, HOST_EXECUTABLE_SUFFIX), X_OK)
+<span class="lineNum">     291 </span>            : #endif
+<span class="lineNum">     292 </span>            :                       )
+<span class="lineNum">     293 </span>            :                     {
+<span class="lineNum">     294 </span>            : #if defined (HAVE_SYS_STAT_H) &amp;&amp; defined (S_ISREG)
+<span class="lineNum">     295 </span>            :                       struct stat st;
+<span class="lineNum">     296 </span><span class="lineNoCov">          0 :                       if (stat (nstore, &amp;st) &gt;= 0 &amp;&amp; S_ISREG (st.st_mode))</span>
+<span class="lineNum">     297 </span>            : #endif
+<span class="lineNum">     298 </span>            :                         {
+<span class="lineNum">     299 </span><span class="lineNoCov">          0 :                           progname = nstore;</span>
+<span class="lineNum">     300 </span><span class="lineNoCov">          0 :                           break;</span>
+<span class="lineNum">     301 </span>            :                         }
+<span class="lineNum">     302 </span>            :                     }
+<span class="lineNum">     303 </span>            : 
+<span class="lineNum">     304 </span><span class="lineNoCov">          0 :                   if (*endp == 0)</span>
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :                     break;</span>
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :                   endp = startp = endp + 1;</span>
+<span class="lineNum">     307 </span>            :                 }
+<span class="lineNum">     308 </span>            :               else
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :                 endp++;</span>
+<span class="lineNum">     310 </span>            :             }
+<span class="lineNum">     311 </span>            :         }
+<span class="lineNum">     312 </span>            :     }
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :   if (resolve_links)</span>
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :     full_progname = lrealpath (progname);</span>
+<span class="lineNum">     316 </span>            :   else
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :     full_progname = strdup (progname);</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :   if (full_progname == NULL)</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :   prog_dirs = split_directories (full_progname, &amp;prog_num);</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :   free (full_progname);</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :   if (prog_dirs == NULL)</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span><span class="lineNoCov">          0 :   bin_dirs = split_directories (bin_prefix, &amp;bin_num);</span>
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :   if (bin_dirs == NULL)</span>
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     329 </span>            : 
+<span class="lineNum">     330 </span>            :   /* Remove the program name from comparison of directory names.  */
+<span class="lineNum">     331 </span><span class="lineNoCov">          0 :   prog_num--;</span>
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :   /* If we are still installed in the standard location, we don't need to
+<span class="lineNum">     334 </span>            :      specify relative directories.  Also, if argv[0] still doesn't contain
+<span class="lineNum">     335 </span>            :      any directory specifiers after the search above, then there is not much
+<span class="lineNum">     336 </span>            :      we can do.  */
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :   if (prog_num == bin_num)</span>
+<span class="lineNum">     338 </span>            :     {
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :       for (i = 0; i &lt; bin_num; i++)</span>
+<span class="lineNum">     340 </span>            :         {
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :           if (strcmp (prog_dirs[i], bin_dirs[i]) != 0)</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     343 </span>            :         }
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :       if (prog_num &lt;= 0 || i == bin_num)</span>
+<span class="lineNum">     346 </span>            :         goto bailout;
+<span class="lineNum">     347 </span>            :     }
+<span class="lineNum">     348 </span>            : 
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :   prefix_dirs = split_directories (prefix, &amp;prefix_num);</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :   if (prefix_dirs == NULL)</span>
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     352 </span>            : 
+<span class="lineNum">     353 </span>            :   /* Find how many directories are in common between bin_prefix &amp; prefix.  */
+<span class="lineNum">     354 </span><span class="lineNoCov">          0 :   n = (prefix_num &lt; bin_num) ? prefix_num : bin_num;</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :   for (common = 0; common &lt; n; common++)</span>
+<span class="lineNum">     356 </span>            :     {
+<span class="lineNum">     357 </span><span class="lineNoCov">          0 :       if (strcmp (bin_dirs[common], prefix_dirs[common]) != 0)</span>
+<span class="lineNum">     358 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">     359 </span>            :     }
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            :   /* If there are no common directories, there can be no relative prefix.  */
+<span class="lineNum">     362 </span><span class="lineNoCov">          0 :   if (common == 0)</span>
+<span class="lineNum">     363 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     364 </span>            : 
+<span class="lineNum">     365 </span>            :   /* Two passes: first figure out the size of the result string, and
+<span class="lineNum">     366 </span>            :      then construct it.  */
+<span class="lineNum">     367 </span><span class="lineNoCov">          0 :   needed_len = 0;</span>
+<span class="lineNum">     368 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; prog_num; i++)</span>
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :     needed_len += strlen (prog_dirs[i]);</span>
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :   needed_len += sizeof (DIR_UP) * (bin_num - common);</span>
+<span class="lineNum">     371 </span><span class="lineNoCov">          0 :   for (i = common; i &lt; prefix_num; i++)</span>
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 :     needed_len += strlen (prefix_dirs[i]);</span>
+<span class="lineNum">     373 </span><span class="lineNoCov">          0 :   needed_len += 1; /* Trailing NUL.  */</span>
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :   ret = (char *) malloc (needed_len);</span>
+<span class="lineNum">     376 </span><span class="lineNoCov">          0 :   if (ret == NULL)</span>
+<span class="lineNum">     377 </span><span class="lineNoCov">          0 :     goto bailout;</span>
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span>            :   /* Build up the pathnames in argv[0].  */
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :   *ret = '\0';</span>
+<span class="lineNum">     381 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; prog_num; i++)</span>
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :     strcat (ret, prog_dirs[i]);</span>
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span>            :   /* Now build up the ..'s.  */
+<span class="lineNum">     385 </span><span class="lineNoCov">          0 :   ptr = ret + strlen(ret);</span>
+<span class="lineNum">     386 </span><span class="lineNoCov">          0 :   for (i = common; i &lt; bin_num; i++)</span>
+<span class="lineNum">     387 </span>            :     {
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :       strcpy (ptr, DIR_UP);</span>
+<span class="lineNum">     389 </span><span class="lineNoCov">          0 :       ptr += sizeof (DIR_UP) - 1;</span>
+<span class="lineNum">     390 </span><span class="lineNoCov">          0 :       *(ptr++) = DIR_SEPARATOR;</span>
+<span class="lineNum">     391 </span>            :     }
+<span class="lineNum">     392 </span><span class="lineNoCov">          0 :   *ptr = '\0';</span>
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span>            :   /* Put in directories to move over to prefix.  */
+<span class="lineNum">     395 </span><span class="lineNoCov">          0 :   for (i = common; i &lt; prefix_num; i++)</span>
+<span class="lineNum">     396 </span><span class="lineNoCov">          0 :     strcat (ret, prefix_dirs[i]);</span>
+<span class="lineNum">     397 </span>            : 
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 :  bailout:</span>
+<span class="lineNum">     399 </span><span class="lineNoCov">          0 :   free_split_directories (prog_dirs);</span>
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :   free_split_directories (bin_dirs);</span>
+<span class="lineNum">     401 </span><span class="lineNoCov">          0 :   free_split_directories (prefix_dirs);</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :   free (alloc_ptr);</span>
+<span class="lineNum">     403 </span>            : 
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     405 </span>            : }
+<span class="lineNum">     406 </span>            : 
+<span class="lineNum">     407 </span>            : 
+<span class="lineNum">     408 </span>            : /* Do the full job, including symlink resolution.
+<span class="lineNum">     409 </span>            :    This path will find files installed in the same place as the
+<span class="lineNum">     410 </span>            :    program even when a soft link has been made to the program
+<span class="lineNum">     411 </span>            :    from somwhere else. */
+<a name="412"><span class="lineNum">     412 </span>            : </a>
+<span class="lineNum">     413 </span>            : char *
+<span class="lineNum">     414 </span><span class="lineNoCov">          0 : make_relative_prefix (const char *progname, const char *bin_prefix,</span>
+<span class="lineNum">     415 </span>            :                       const char *prefix)
+<span class="lineNum">     416 </span>            : {
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :   return make_relative_prefix_1 (progname, bin_prefix, prefix, 1);</span>
+<span class="lineNum">     418 </span>            : }
+<span class="lineNum">     419 </span>            : 
+<span class="lineNum">     420 </span>            : /* Make the relative pathname without attempting to resolve any links.
+<span class="lineNum">     421 </span>            :    '..' etc may also be left in the pathname.
+<span class="lineNum">     422 </span>            :    This will find the files the user meant the program to find if the
+<span class="lineNum">     423 </span>            :    installation is patched together with soft links. */
+<a name="424"><span class="lineNum">     424 </span>            : </a>
+<span class="lineNum">     425 </span>            : char *
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 : make_relative_prefix_ignore_links (const char *progname,</span>
+<span class="lineNum">     427 </span>            :                                    const char *bin_prefix,
+<span class="lineNum">     428 </span>            :                                    const char *prefix)
+<span class="lineNum">     429 </span>            : {
+<span class="lineNum">     430 </span><span class="lineNoCov">          0 :   return make_relative_prefix_1 (progname, bin_prefix, prefix, 0);</span>
+<span class="lineNum">     431 </span>            : }
+<span class="lineNum">     432 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

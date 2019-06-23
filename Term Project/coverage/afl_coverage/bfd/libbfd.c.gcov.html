@@ -1,0 +1,1135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - bfd/libbfd.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - libbfd.c<span style="font-size: 80%;"> (source / <a href="libbfd.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">62</td>
+            <td class="headerCovTableEntry">339</td>
+            <td class="headerCovTableEntryLo">18.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntry">53</td>
+            <td class="headerCovTableEntryLo">18.9 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Assorted BFD support routines, only used internally.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            :    Written by Cygnus Support.
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       8 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       9 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">      10 </span>            :    (at your option) any later version.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      13 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      14 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      15 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      18 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      19 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      20 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : #ifndef HAVE_GETPAGESIZE
+<span class="lineNum">      27 </span>            : #define getpagesize() 2048
+<span class="lineNum">      28 </span>            : #endif
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /*
+<span class="lineNum">      31 </span>            : SECTION
+<span class="lineNum">      32 </span>            :         Implementation details
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : SUBSECTION
+<span class="lineNum">      35 </span>            :         Internal functions
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : DESCRIPTION
+<span class="lineNum">      38 </span>            :         These routines are used within BFD.
+<span class="lineNum">      39 </span>            :         They are not intended for export, but are documented here for
+<span class="lineNum">      40 </span>            :         completeness.
+<span class="lineNum">      41 </span>            : */
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : /* A routine which is used in target vectors for unsupported
+<span class="lineNum">      44 </span>            :    operations.  */
+<a name="45"><span class="lineNum">      45 </span>            : </a>
+<span class="lineNum">      46 </span>            : bfd_boolean
+<span class="lineNum">      47 </span><span class="lineCov">       1063 : bfd_false (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      48 </span>            : {
+<span class="lineNum">      49 </span><span class="lineCov">       1063 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">      50 </span><span class="lineCov">       1063 :   return FALSE;</span>
+<span class="lineNum">      51 </span>            : }
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : /* A routine which is used in target vectors for supported operations
+<span class="lineNum">      54 </span>            :    which do not actually do anything.  */
+<a name="55"><span class="lineNum">      55 </span>            : </a>
+<span class="lineNum">      56 </span>            : bfd_boolean
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 : bfd_true (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      58 </span>            : {
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">      60 </span>            : }
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : /* A routine which is used in target vectors for unsupported
+<span class="lineNum">      63 </span>            :    operations which return a pointer value.  */
+<a name="64"><span class="lineNum">      64 </span>            : </a>
+<span class="lineNum">      65 </span>            : void *
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 : bfd_nullvoidptr (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      67 </span>            : {
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">      70 </span>            : }
+<a name="71"><span class="lineNum">      71 </span>            : </a>
+<span class="lineNum">      72 </span>            : int
+<span class="lineNum">      73 </span><span class="lineNoCov">          0 : bfd_0 (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      74 </span>            : {
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">      76 </span>            : }
+<a name="77"><span class="lineNum">      77 </span>            : </a>
+<span class="lineNum">      78 </span>            : unsigned int
+<span class="lineNum">      79 </span><span class="lineNoCov">          0 : bfd_0u (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      80 </span>            : {
+<span class="lineNum">      81 </span><span class="lineNoCov">          0 :    return 0;</span>
+<span class="lineNum">      82 </span>            : }
+<a name="83"><span class="lineNum">      83 </span>            : </a>
+<span class="lineNum">      84 </span>            : long
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 : bfd_0l (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      86 </span>            : {
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">      88 </span>            : }
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            : /* A routine which is used in target vectors for unsupported
+<span class="lineNum">      91 </span>            :    operations which return -1 on error.  */
+<a name="92"><span class="lineNum">      92 </span>            : </a>
+<span class="lineNum">      93 </span>            : long
+<span class="lineNum">      94 </span><span class="lineNoCov">          0 : _bfd_n1 (bfd *ignore_abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">      95 </span>            : {
+<span class="lineNum">      96 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :   return -1;</span>
+<span class="lineNum">      98 </span>            : }
+<a name="99"><span class="lineNum">      99 </span>            : </a>
+<span class="lineNum">     100 </span>            : void
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 : bfd_void (bfd *ignore ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     102 </span>            : {
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 : }</span>
+<a name="104"><span class="lineNum">     104 </span>            : </a>
+<span class="lineNum">     105 </span>            : long
+<span class="lineNum">     106 </span><span class="lineNoCov">          0 : _bfd_norelocs_get_reloc_upper_bound (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     107 </span>            :                                      asection *sec ATTRIBUTE_UNUSED)
+<span class="lineNum">     108 </span>            : {
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :   return sizeof (arelent *);</span>
+<span class="lineNum">     110 </span>            : }
+<a name="111"><span class="lineNum">     111 </span>            : </a>
+<span class="lineNum">     112 </span>            : long
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 : _bfd_norelocs_canonicalize_reloc (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     114 </span>            :                                   asection *sec ATTRIBUTE_UNUSED,
+<span class="lineNum">     115 </span>            :                                   arelent **relptr,
+<span class="lineNum">     116 </span>            :                                   asymbol **symbols ATTRIBUTE_UNUSED)
+<span class="lineNum">     117 </span>            : {
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :   *relptr = NULL;</span>
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     120 </span>            : }
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<span class="lineNum">     122 </span>            : bfd_boolean
+<span class="lineNum">     123 </span><span class="lineNoCov">          0 : _bfd_nocore_core_file_matches_executable_p</span>
+<span class="lineNum">     124 </span>            :   (bfd *ignore_core_bfd ATTRIBUTE_UNUSED,
+<span class="lineNum">     125 </span>            :    bfd *ignore_exec_bfd ATTRIBUTE_UNUSED)
+<span class="lineNum">     126 </span>            : {
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :   return FALSE;</span>
+<span class="lineNum">     129 </span>            : }
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span>            : /* Routine to handle core_file_failing_command entry point for targets
+<span class="lineNum">     132 </span>            :    without core file support.  */
+<a name="133"><span class="lineNum">     133 </span>            : </a>
+<span class="lineNum">     134 </span>            : char *
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 : _bfd_nocore_core_file_failing_command (bfd *ignore_abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     136 </span>            : {
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :   return NULL;</span>
+<span class="lineNum">     139 </span>            : }
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            : /* Routine to handle core_file_failing_signal entry point for targets
+<span class="lineNum">     142 </span>            :    without core file support.  */
+<a name="143"><span class="lineNum">     143 </span>            : </a>
+<span class="lineNum">     144 </span>            : int
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 : _bfd_nocore_core_file_failing_signal (bfd *ignore_abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     146 </span>            : {
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     149 </span>            : }
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            : /* Routine to handle the core_file_pid entry point for targets without
+<span class="lineNum">     152 </span>            :    core file support.  */
+<a name="153"><span class="lineNum">     153 </span>            : </a>
+<span class="lineNum">     154 </span>            : int
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 : _bfd_nocore_core_file_pid (bfd *ignore_abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     156 </span>            : {
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :   bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :   return 0;</span>
+<span class="lineNum">     159 </span>            : }
+<a name="160"><span class="lineNum">     160 </span>            : </a>
+<span class="lineNum">     161 </span>            : const bfd_target *
+<span class="lineNum">     162 </span><span class="lineCov">        345 : _bfd_dummy_target (bfd *ignore_abfd ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     163 </span>            : {
+<span class="lineNum">     164 </span><span class="lineCov">        345 :   bfd_set_error (bfd_error_wrong_format);</span>
+<span class="lineNum">     165 </span><span class="lineCov">        345 :   return 0;</span>
+<span class="lineNum">     166 </span>            : }
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            : /* Allocate memory using malloc.  */
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<span class="lineNum">     170 </span>            : void *
+<span class="lineNum">     171 </span><span class="lineCov">        293 : bfd_malloc (bfd_size_type size)</span>
+<span class="lineNum">     172 </span>            : {
+<span class="lineNum">     173 </span>            :   void *ptr;
+<span class="lineNum">     174 </span><span class="lineCov">        293 :   size_t sz = (size_t) size;</span>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span><span class="lineCov">        293 :   if (size != sz</span>
+<span class="lineNum">     177 </span>            :       /* This is to pacify memory checkers like valgrind.  */
+<span class="lineNum">     178 </span><span class="lineCov">        293 :       || ((signed long) sz) &lt; 0)</span>
+<span class="lineNum">     179 </span>            :     {
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     182 </span>            :     }
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span><span class="lineCov">        293 :   ptr = malloc (sz);</span>
+<span class="lineNum">     185 </span><span class="lineCov">        293 :   if (ptr == NULL &amp;&amp; sz != 0)</span>
+<span class="lineNum">     186 </span><span class="lineCov">          1 :     bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span><span class="lineCov">        293 :   return ptr;</span>
+<span class="lineNum">     189 </span>            : }
+<span class="lineNum">     190 </span>            : 
+<span class="lineNum">     191 </span>            : /* Allocate memory using malloc, nmemb * size with overflow checking.  */
+<a name="192"><span class="lineNum">     192 </span>            : </a>
+<span class="lineNum">     193 </span>            : void *
+<span class="lineNum">     194 </span><span class="lineCov">         99 : bfd_malloc2 (bfd_size_type nmemb, bfd_size_type size)</span>
+<span class="lineNum">     195 </span>            : {
+<span class="lineNum">     196 </span><span class="lineCov">         99 :   if ((nmemb | size) &gt;= HALF_BFD_SIZE_TYPE</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :       &amp;&amp; size != 0</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :       &amp;&amp; nmemb &gt; ~(bfd_size_type) 0 / size)</span>
+<span class="lineNum">     199 </span>            :     {
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     201 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     202 </span>            :     }
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span><span class="lineCov">         99 :   return bfd_malloc (size * nmemb);</span>
+<span class="lineNum">     205 </span>            : }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            : /* Reallocate memory using realloc.  */
+<a name="208"><span class="lineNum">     208 </span>            : </a>
+<span class="lineNum">     209 </span>            : void *
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 : bfd_realloc (void *ptr, bfd_size_type size)</span>
+<span class="lineNum">     211 </span>            : {
+<span class="lineNum">     212 </span>            :   void *ret;
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :   size_t sz = (size_t) size;</span>
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 :   if (ptr == NULL)</span>
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :     return bfd_malloc (size);</span>
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :   if (size != sz</span>
+<span class="lineNum">     219 </span>            :       /* This is to pacify memory checkers like valgrind.  */
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :       || ((signed long) sz) &lt; 0)</span>
+<span class="lineNum">     221 </span>            :     {
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     224 </span>            :     }
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :   ret = realloc (ptr, sz);</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span><span class="lineNoCov">          0 :   if (ret == NULL &amp;&amp; sz != 0)</span>
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :     bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     232 </span>            : }
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            : /* Reallocate memory using realloc, nmemb * size with overflow checking.  */
+<a name="235"><span class="lineNum">     235 </span>            : </a>
+<span class="lineNum">     236 </span>            : void *
+<span class="lineNum">     237 </span><span class="lineNoCov">          0 : bfd_realloc2 (void *ptr, bfd_size_type nmemb, bfd_size_type size)</span>
+<span class="lineNum">     238 </span>            : {
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :   if ((nmemb | size) &gt;= HALF_BFD_SIZE_TYPE</span>
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :       &amp;&amp; size != 0</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :       &amp;&amp; nmemb &gt; ~(bfd_size_type) 0 / size)</span>
+<span class="lineNum">     242 </span>            :     {
+<span class="lineNum">     243 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_no_memory);</span>
+<span class="lineNum">     244 </span><span class="lineNoCov">          0 :       return NULL;</span>
+<span class="lineNum">     245 </span>            :     }
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :   return bfd_realloc (ptr, size * nmemb);</span>
+<span class="lineNum">     248 </span>            : }
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            : /* Reallocate memory using realloc.
+<span class="lineNum">     251 </span>            :    If this fails the pointer is freed before returning.  */
+<a name="252"><span class="lineNum">     252 </span>            : </a>
+<span class="lineNum">     253 </span>            : void *
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 : bfd_realloc_or_free (void *ptr, bfd_size_type size)</span>
+<span class="lineNum">     255 </span>            : {
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :   void *ret = bfd_realloc (ptr, size);</span>
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :   if (ret == NULL &amp;&amp; ptr != NULL)</span>
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :     free (ptr);</span>
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span><span class="lineNoCov">          0 :   return ret;</span>
+<span class="lineNum">     262 </span>            : }
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span>            : /* Allocate memory using malloc and clear it.  */
+<a name="265"><span class="lineNum">     265 </span>            : </a>
+<span class="lineNum">     266 </span>            : void *
+<span class="lineNum">     267 </span><span class="lineCov">         66 : bfd_zmalloc (bfd_size_type size)</span>
+<span class="lineNum">     268 </span>            : {
+<span class="lineNum">     269 </span><span class="lineCov">         66 :   void *ptr = bfd_malloc (size);</span>
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span><span class="lineCov">         66 :   if (ptr != NULL &amp;&amp; size &gt; 0)</span>
+<span class="lineNum">     272 </span><span class="lineCov">         66 :     memset (ptr, 0, (size_t) size);</span>
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span><span class="lineCov">         66 :   return ptr;</span>
+<span class="lineNum">     275 </span>            : }
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            : /* Allocate memory using malloc (nmemb * size) with overflow checking
+<span class="lineNum">     278 </span>            :    and clear it.  */
+<a name="279"><span class="lineNum">     279 </span>            : </a>
+<span class="lineNum">     280 </span>            : void *
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 : bfd_zmalloc2 (bfd_size_type nmemb, bfd_size_type size)</span>
+<span class="lineNum">     282 </span>            : {
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :   void *ptr = bfd_malloc2 (nmemb, size);</span>
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :   if (ptr != NULL)</span>
+<span class="lineNum">     286 </span>            :     {
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :       size_t sz = nmemb * size;</span>
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span><span class="lineNoCov">          0 :       if (sz &gt; 0)</span>
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :         memset (ptr, 0, sz);</span>
+<span class="lineNum">     291 </span>            :     }
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :   return ptr;</span>
+<span class="lineNum">     294 </span>            : }
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span>            : /*
+<span class="lineNum">     297 </span>            : INTERNAL_FUNCTION
+<span class="lineNum">     298 </span>            :         bfd_write_bigendian_4byte_int
+<span class="lineNum">     299 </span>            : 
+<span class="lineNum">     300 </span>            : SYNOPSIS
+<span class="lineNum">     301 </span>            :         bfd_boolean bfd_write_bigendian_4byte_int (bfd *, unsigned int);
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span>            : DESCRIPTION
+<span class="lineNum">     304 </span>            :         Write a 4 byte integer @var{i} to the output BFD @var{abfd}, in big
+<span class="lineNum">     305 </span>            :         endian order regardless of what else is going on.  This is useful in
+<span class="lineNum">     306 </span>            :         archives.
+<span class="lineNum">     307 </span>            : 
+<a name="308"><span class="lineNum">     308 </span>            : */</a>
+<span class="lineNum">     309 </span>            : bfd_boolean
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 : bfd_write_bigendian_4byte_int (bfd *abfd, unsigned int i)</span>
+<span class="lineNum">     311 </span>            : {
+<span class="lineNum">     312 </span>            :   bfd_byte buffer[4];
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :   bfd_putb32 ((bfd_vma) i, buffer);</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :   return bfd_bwrite (buffer, (bfd_size_type) 4, abfd) == 4;</span>
+<span class="lineNum">     315 </span>            : }
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span>            : 
+<span class="lineNum">     318 </span>            : /** The do-it-yourself (byte) sex-change kit */
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span>            : /* The middle letter e.g. get&lt;b&gt;short indicates Big or Little endian
+<span class="lineNum">     321 </span>            :    target machine.  It doesn't matter what the byte order of the host
+<span class="lineNum">     322 </span>            :    machine is; these routines work for either.  */
+<span class="lineNum">     323 </span>            : 
+<span class="lineNum">     324 </span>            : /* FIXME: Should these take a count argument?
+<span class="lineNum">     325 </span>            :    Answer (gnu@cygnus.com):  No, but perhaps they should be inline
+<span class="lineNum">     326 </span>            :                              functions in swap.h #ifdef __GNUC__.
+<span class="lineNum">     327 </span>            :                              Gprof them later and find out.  */
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            : /*
+<span class="lineNum">     330 </span>            : FUNCTION
+<span class="lineNum">     331 </span>            :         bfd_put_size
+<span class="lineNum">     332 </span>            : FUNCTION
+<span class="lineNum">     333 </span>            :         bfd_get_size
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span>            : DESCRIPTION
+<span class="lineNum">     336 </span>            :         These macros as used for reading and writing raw data in
+<span class="lineNum">     337 </span>            :         sections; each access (except for bytes) is vectored through
+<span class="lineNum">     338 </span>            :         the target format of the BFD and mangled accordingly. The
+<span class="lineNum">     339 </span>            :         mangling performs any necessary endian translations and
+<span class="lineNum">     340 </span>            :         removes alignment restrictions.  Note that types accepted and
+<span class="lineNum">     341 </span>            :         returned by these macros are identical so they can be swapped
+<span class="lineNum">     342 </span>            :         around in macros---for example, @file{libaout.h} defines &lt;&lt;GET_WORD&gt;&gt;
+<span class="lineNum">     343 </span>            :         to either &lt;&lt;bfd_get_32&gt;&gt; or &lt;&lt;bfd_get_64&gt;&gt;.
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span>            :         In the put routines, @var{val} must be a &lt;&lt;bfd_vma&gt;&gt;.  If we are on a
+<span class="lineNum">     346 </span>            :         system without prototypes, the caller is responsible for making
+<span class="lineNum">     347 </span>            :         sure that is true, with a cast if necessary.  We don't cast
+<span class="lineNum">     348 </span>            :         them in the macro definitions because that would prevent &lt;&lt;lint&gt;&gt;
+<span class="lineNum">     349 </span>            :         or &lt;&lt;gcc -Wall&gt;&gt; from detecting sins such as passing a pointer.
+<span class="lineNum">     350 </span>            :         To detect calling these with less than a &lt;&lt;bfd_vma&gt;&gt;, use
+<span class="lineNum">     351 </span>            :         &lt;&lt;gcc -Wconversion&gt;&gt; on a host with 64 bit &lt;&lt;bfd_vma&gt;&gt;'s.
+<span class="lineNum">     352 </span>            : 
+<span class="lineNum">     353 </span>            : .
+<span class="lineNum">     354 </span>            : .{* Byte swapping macros for user section data.  *}
+<span class="lineNum">     355 </span>            : .
+<span class="lineNum">     356 </span>            : .#define bfd_put_8(abfd, val, ptr) \
+<span class="lineNum">     357 </span>            : .  ((void) (*((unsigned char *) (ptr)) = (val) &amp; 0xff))
+<span class="lineNum">     358 </span>            : .#define bfd_put_signed_8 \
+<span class="lineNum">     359 </span>            : .  bfd_put_8
+<span class="lineNum">     360 </span>            : .#define bfd_get_8(abfd, ptr) \
+<span class="lineNum">     361 </span>            : .  (*(const unsigned char *) (ptr) &amp; 0xff)
+<span class="lineNum">     362 </span>            : .#define bfd_get_signed_8(abfd, ptr) \
+<span class="lineNum">     363 </span>            : .  (((*(const unsigned char *) (ptr) &amp; 0xff) ^ 0x80) - 0x80)
+<span class="lineNum">     364 </span>            : .
+<span class="lineNum">     365 </span>            : .#define bfd_put_16(abfd, val, ptr) \
+<span class="lineNum">     366 </span>            : .  BFD_SEND (abfd, bfd_putx16, ((val),(ptr)))
+<span class="lineNum">     367 </span>            : .#define bfd_put_signed_16 \
+<span class="lineNum">     368 </span>            : .  bfd_put_16
+<span class="lineNum">     369 </span>            : .#define bfd_get_16(abfd, ptr) \
+<span class="lineNum">     370 </span>            : .  BFD_SEND (abfd, bfd_getx16, (ptr))
+<span class="lineNum">     371 </span>            : .#define bfd_get_signed_16(abfd, ptr) \
+<span class="lineNum">     372 </span>            : .  BFD_SEND (abfd, bfd_getx_signed_16, (ptr))
+<span class="lineNum">     373 </span>            : .
+<span class="lineNum">     374 </span>            : .#define bfd_put_32(abfd, val, ptr) \
+<span class="lineNum">     375 </span>            : .  BFD_SEND (abfd, bfd_putx32, ((val),(ptr)))
+<span class="lineNum">     376 </span>            : .#define bfd_put_signed_32 \
+<span class="lineNum">     377 </span>            : .  bfd_put_32
+<span class="lineNum">     378 </span>            : .#define bfd_get_32(abfd, ptr) \
+<span class="lineNum">     379 </span>            : .  BFD_SEND (abfd, bfd_getx32, (ptr))
+<span class="lineNum">     380 </span>            : .#define bfd_get_signed_32(abfd, ptr) \
+<span class="lineNum">     381 </span>            : .  BFD_SEND (abfd, bfd_getx_signed_32, (ptr))
+<span class="lineNum">     382 </span>            : .
+<span class="lineNum">     383 </span>            : .#define bfd_put_64(abfd, val, ptr) \
+<span class="lineNum">     384 </span>            : .  BFD_SEND (abfd, bfd_putx64, ((val), (ptr)))
+<span class="lineNum">     385 </span>            : .#define bfd_put_signed_64 \
+<span class="lineNum">     386 </span>            : .  bfd_put_64
+<span class="lineNum">     387 </span>            : .#define bfd_get_64(abfd, ptr) \
+<span class="lineNum">     388 </span>            : .  BFD_SEND (abfd, bfd_getx64, (ptr))
+<span class="lineNum">     389 </span>            : .#define bfd_get_signed_64(abfd, ptr) \
+<span class="lineNum">     390 </span>            : .  BFD_SEND (abfd, bfd_getx_signed_64, (ptr))
+<span class="lineNum">     391 </span>            : .
+<span class="lineNum">     392 </span>            : .#define bfd_get(bits, abfd, ptr)                       \
+<span class="lineNum">     393 </span>            : .  ((bits) == 8 ? (bfd_vma) bfd_get_8 (abfd, ptr)       \
+<span class="lineNum">     394 </span>            : .   : (bits) == 16 ? bfd_get_16 (abfd, ptr)             \
+<span class="lineNum">     395 </span>            : .   : (bits) == 32 ? bfd_get_32 (abfd, ptr)             \
+<span class="lineNum">     396 </span>            : .   : (bits) == 64 ? bfd_get_64 (abfd, ptr)             \
+<span class="lineNum">     397 </span>            : .   : (abort (), (bfd_vma) - 1))
+<span class="lineNum">     398 </span>            : .
+<span class="lineNum">     399 </span>            : .#define bfd_put(bits, abfd, val, ptr)                  \
+<span class="lineNum">     400 </span>            : .  ((bits) == 8 ? bfd_put_8  (abfd, val, ptr)           \
+<span class="lineNum">     401 </span>            : .   : (bits) == 16 ? bfd_put_16 (abfd, val, ptr)                \
+<span class="lineNum">     402 </span>            : .   : (bits) == 32 ? bfd_put_32 (abfd, val, ptr)                \
+<span class="lineNum">     403 </span>            : .   : (bits) == 64 ? bfd_put_64 (abfd, val, ptr)                \
+<span class="lineNum">     404 </span>            : .   : (abort (), (void) 0))
+<span class="lineNum">     405 </span>            : .
+<span class="lineNum">     406 </span>            : */
+<span class="lineNum">     407 </span>            : 
+<span class="lineNum">     408 </span>            : /*
+<span class="lineNum">     409 </span>            : FUNCTION
+<span class="lineNum">     410 </span>            :         bfd_h_put_size
+<span class="lineNum">     411 </span>            :         bfd_h_get_size
+<span class="lineNum">     412 </span>            : 
+<span class="lineNum">     413 </span>            : DESCRIPTION
+<span class="lineNum">     414 </span>            :         These macros have the same function as their &lt;&lt;bfd_get_x&gt;&gt;
+<span class="lineNum">     415 </span>            :         brethren, except that they are used for removing information
+<span class="lineNum">     416 </span>            :         for the header records of object files. Believe it or not,
+<span class="lineNum">     417 </span>            :         some object files keep their header records in big endian
+<span class="lineNum">     418 </span>            :         order and their data in little endian order.
+<span class="lineNum">     419 </span>            : .
+<span class="lineNum">     420 </span>            : .{* Byte swapping macros for file header data.  *}
+<span class="lineNum">     421 </span>            : .
+<span class="lineNum">     422 </span>            : .#define bfd_h_put_8(abfd, val, ptr) \
+<span class="lineNum">     423 </span>            : .  bfd_put_8 (abfd, val, ptr)
+<span class="lineNum">     424 </span>            : .#define bfd_h_put_signed_8(abfd, val, ptr) \
+<span class="lineNum">     425 </span>            : .  bfd_put_8 (abfd, val, ptr)
+<span class="lineNum">     426 </span>            : .#define bfd_h_get_8(abfd, ptr) \
+<span class="lineNum">     427 </span>            : .  bfd_get_8 (abfd, ptr)
+<span class="lineNum">     428 </span>            : .#define bfd_h_get_signed_8(abfd, ptr) \
+<span class="lineNum">     429 </span>            : .  bfd_get_signed_8 (abfd, ptr)
+<span class="lineNum">     430 </span>            : .
+<span class="lineNum">     431 </span>            : .#define bfd_h_put_16(abfd, val, ptr) \
+<span class="lineNum">     432 </span>            : .  BFD_SEND (abfd, bfd_h_putx16, (val, ptr))
+<span class="lineNum">     433 </span>            : .#define bfd_h_put_signed_16 \
+<span class="lineNum">     434 </span>            : .  bfd_h_put_16
+<span class="lineNum">     435 </span>            : .#define bfd_h_get_16(abfd, ptr) \
+<span class="lineNum">     436 </span>            : .  BFD_SEND (abfd, bfd_h_getx16, (ptr))
+<span class="lineNum">     437 </span>            : .#define bfd_h_get_signed_16(abfd, ptr) \
+<span class="lineNum">     438 </span>            : .  BFD_SEND (abfd, bfd_h_getx_signed_16, (ptr))
+<span class="lineNum">     439 </span>            : .
+<span class="lineNum">     440 </span>            : .#define bfd_h_put_32(abfd, val, ptr) \
+<span class="lineNum">     441 </span>            : .  BFD_SEND (abfd, bfd_h_putx32, (val, ptr))
+<span class="lineNum">     442 </span>            : .#define bfd_h_put_signed_32 \
+<span class="lineNum">     443 </span>            : .  bfd_h_put_32
+<span class="lineNum">     444 </span>            : .#define bfd_h_get_32(abfd, ptr) \
+<span class="lineNum">     445 </span>            : .  BFD_SEND (abfd, bfd_h_getx32, (ptr))
+<span class="lineNum">     446 </span>            : .#define bfd_h_get_signed_32(abfd, ptr) \
+<span class="lineNum">     447 </span>            : .  BFD_SEND (abfd, bfd_h_getx_signed_32, (ptr))
+<span class="lineNum">     448 </span>            : .
+<span class="lineNum">     449 </span>            : .#define bfd_h_put_64(abfd, val, ptr) \
+<span class="lineNum">     450 </span>            : .  BFD_SEND (abfd, bfd_h_putx64, (val, ptr))
+<span class="lineNum">     451 </span>            : .#define bfd_h_put_signed_64 \
+<span class="lineNum">     452 </span>            : .  bfd_h_put_64
+<span class="lineNum">     453 </span>            : .#define bfd_h_get_64(abfd, ptr) \
+<span class="lineNum">     454 </span>            : .  BFD_SEND (abfd, bfd_h_getx64, (ptr))
+<span class="lineNum">     455 </span>            : .#define bfd_h_get_signed_64(abfd, ptr) \
+<span class="lineNum">     456 </span>            : .  BFD_SEND (abfd, bfd_h_getx_signed_64, (ptr))
+<span class="lineNum">     457 </span>            : .
+<span class="lineNum">     458 </span>            : .{* Aliases for the above, which should eventually go away.  *}
+<span class="lineNum">     459 </span>            : .
+<span class="lineNum">     460 </span>            : .#define H_PUT_64  bfd_h_put_64
+<span class="lineNum">     461 </span>            : .#define H_PUT_32  bfd_h_put_32
+<span class="lineNum">     462 </span>            : .#define H_PUT_16  bfd_h_put_16
+<span class="lineNum">     463 </span>            : .#define H_PUT_8   bfd_h_put_8
+<span class="lineNum">     464 </span>            : .#define H_PUT_S64 bfd_h_put_signed_64
+<span class="lineNum">     465 </span>            : .#define H_PUT_S32 bfd_h_put_signed_32
+<span class="lineNum">     466 </span>            : .#define H_PUT_S16 bfd_h_put_signed_16
+<span class="lineNum">     467 </span>            : .#define H_PUT_S8  bfd_h_put_signed_8
+<span class="lineNum">     468 </span>            : .#define H_GET_64  bfd_h_get_64
+<span class="lineNum">     469 </span>            : .#define H_GET_32  bfd_h_get_32
+<span class="lineNum">     470 </span>            : .#define H_GET_16  bfd_h_get_16
+<span class="lineNum">     471 </span>            : .#define H_GET_8   bfd_h_get_8
+<span class="lineNum">     472 </span>            : .#define H_GET_S64 bfd_h_get_signed_64
+<span class="lineNum">     473 </span>            : .#define H_GET_S32 bfd_h_get_signed_32
+<span class="lineNum">     474 </span>            : .#define H_GET_S16 bfd_h_get_signed_16
+<span class="lineNum">     475 </span>            : .#define H_GET_S8  bfd_h_get_signed_8
+<span class="lineNum">     476 </span>            : .
+<span class="lineNum">     477 </span>            : .*/
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span>            : /* Sign extension to bfd_signed_vma.  */
+<span class="lineNum">     480 </span>            : #define COERCE16(x) (((bfd_vma) (x) ^ 0x8000) - 0x8000)
+<span class="lineNum">     481 </span>            : #define COERCE32(x) (((bfd_vma) (x) ^ 0x80000000) - 0x80000000)
+<span class="lineNum">     482 </span>            : #define COERCE64(x) \
+<span class="lineNum">     483 </span>            :   (((bfd_uint64_t) (x) ^ ((bfd_uint64_t) 1 &lt;&lt; 63)) - ((bfd_uint64_t) 1 &lt;&lt; 63))
+<a name="484"><span class="lineNum">     484 </span>            : </a>
+<span class="lineNum">     485 </span>            : bfd_vma
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 : bfd_getb16 (const void *p)</span>
+<span class="lineNum">     487 </span>            : {
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     489 </span><span class="lineNoCov">          0 :   return (addr[0] &lt;&lt; 8) | addr[1];</span>
+<span class="lineNum">     490 </span>            : }
+<a name="491"><span class="lineNum">     491 </span>            : </a>
+<span class="lineNum">     492 </span>            : bfd_vma
+<span class="lineNum">     493 </span><span class="lineCov">       2056 : bfd_getl16 (const void *p)</span>
+<span class="lineNum">     494 </span>            : {
+<span class="lineNum">     495 </span><span class="lineCov">       2056 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     496 </span><span class="lineCov">       2056 :   return (addr[1] &lt;&lt; 8) | addr[0];</span>
+<span class="lineNum">     497 </span>            : }
+<a name="498"><span class="lineNum">     498 </span>            : </a>
+<span class="lineNum">     499 </span>            : bfd_signed_vma
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 : bfd_getb_signed_16 (const void *p)</span>
+<span class="lineNum">     501 </span>            : {
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :   return COERCE16 ((addr[0] &lt;&lt; 8) | addr[1]);</span>
+<span class="lineNum">     504 </span>            : }
+<a name="505"><span class="lineNum">     505 </span>            : </a>
+<span class="lineNum">     506 </span>            : bfd_signed_vma
+<span class="lineNum">     507 </span><span class="lineNoCov">          0 : bfd_getl_signed_16 (const void *p)</span>
+<span class="lineNum">     508 </span>            : {
+<span class="lineNum">     509 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :   return COERCE16 ((addr[1] &lt;&lt; 8) | addr[0]);</span>
+<span class="lineNum">     511 </span>            : }
+<a name="512"><span class="lineNum">     512 </span>            : </a>
+<span class="lineNum">     513 </span>            : void
+<span class="lineNum">     514 </span><span class="lineNoCov">          0 : bfd_putb16 (bfd_vma data, void *p)</span>
+<span class="lineNum">     515 </span>            : {
+<span class="lineNum">     516 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     517 </span><span class="lineNoCov">          0 :   addr[0] = (data &gt;&gt; 8) &amp; 0xff;</span>
+<span class="lineNum">     518 </span><span class="lineNoCov">          0 :   addr[1] = data &amp; 0xff;</span>
+<span class="lineNum">     519 </span><span class="lineNoCov">          0 : }</span>
+<a name="520"><span class="lineNum">     520 </span>            : </a>
+<span class="lineNum">     521 </span>            : void
+<span class="lineNum">     522 </span><span class="lineNoCov">          0 : bfd_putl16 (bfd_vma data, void *p)</span>
+<span class="lineNum">     523 </span>            : {
+<span class="lineNum">     524 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     525 </span><span class="lineNoCov">          0 :   addr[0] = data &amp; 0xff;</span>
+<span class="lineNum">     526 </span><span class="lineNoCov">          0 :   addr[1] = (data &gt;&gt; 8) &amp; 0xff;</span>
+<span class="lineNum">     527 </span><span class="lineNoCov">          0 : }</span>
+<a name="528"><span class="lineNum">     528 </span>            : </a>
+<span class="lineNum">     529 </span>            : bfd_vma
+<span class="lineNum">     530 </span><span class="lineNoCov">          0 : bfd_getb32 (const void *p)</span>
+<span class="lineNum">     531 </span>            : {
+<span class="lineNum">     532 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     533 </span>            :   unsigned long v;
+<span class="lineNum">     534 </span>            : 
+<span class="lineNum">     535 </span><span class="lineNoCov">          0 :   v = (unsigned long) addr[0] &lt;&lt; 24;</span>
+<span class="lineNum">     536 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[1] &lt;&lt; 16;</span>
+<span class="lineNum">     537 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[2] &lt;&lt; 8;</span>
+<span class="lineNum">     538 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[3];</span>
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 :   return v;</span>
+<span class="lineNum">     540 </span>            : }
+<a name="541"><span class="lineNum">     541 </span>            : </a>
+<span class="lineNum">     542 </span>            : bfd_vma
+<span class="lineNum">     543 </span><span class="lineCov">       6190 : bfd_getl32 (const void *p)</span>
+<span class="lineNum">     544 </span>            : {
+<span class="lineNum">     545 </span><span class="lineCov">       6190 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     546 </span>            :   unsigned long v;
+<span class="lineNum">     547 </span>            : 
+<span class="lineNum">     548 </span><span class="lineCov">       6190 :   v = (unsigned long) addr[0];</span>
+<span class="lineNum">     549 </span><span class="lineCov">       6190 :   v |= (unsigned long) addr[1] &lt;&lt; 8;</span>
+<span class="lineNum">     550 </span><span class="lineCov">       6190 :   v |= (unsigned long) addr[2] &lt;&lt; 16;</span>
+<span class="lineNum">     551 </span><span class="lineCov">       6190 :   v |= (unsigned long) addr[3] &lt;&lt; 24;</span>
+<span class="lineNum">     552 </span><span class="lineCov">       6190 :   return v;</span>
+<span class="lineNum">     553 </span>            : }
+<a name="554"><span class="lineNum">     554 </span>            : </a>
+<span class="lineNum">     555 </span>            : bfd_signed_vma
+<span class="lineNum">     556 </span><span class="lineNoCov">          0 : bfd_getb_signed_32 (const void *p)</span>
+<span class="lineNum">     557 </span>            : {
+<span class="lineNum">     558 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     559 </span>            :   unsigned long v;
+<span class="lineNum">     560 </span>            : 
+<span class="lineNum">     561 </span><span class="lineNoCov">          0 :   v = (unsigned long) addr[0] &lt;&lt; 24;</span>
+<span class="lineNum">     562 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[1] &lt;&lt; 16;</span>
+<span class="lineNum">     563 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[2] &lt;&lt; 8;</span>
+<span class="lineNum">     564 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[3];</span>
+<span class="lineNum">     565 </span><span class="lineNoCov">          0 :   return COERCE32 (v);</span>
+<span class="lineNum">     566 </span>            : }
+<a name="567"><span class="lineNum">     567 </span>            : </a>
+<span class="lineNum">     568 </span>            : bfd_signed_vma
+<span class="lineNum">     569 </span><span class="lineNoCov">          0 : bfd_getl_signed_32 (const void *p)</span>
+<span class="lineNum">     570 </span>            : {
+<span class="lineNum">     571 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     572 </span>            :   unsigned long v;
+<span class="lineNum">     573 </span>            : 
+<span class="lineNum">     574 </span><span class="lineNoCov">          0 :   v = (unsigned long) addr[0];</span>
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[1] &lt;&lt; 8;</span>
+<span class="lineNum">     576 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[2] &lt;&lt; 16;</span>
+<span class="lineNum">     577 </span><span class="lineNoCov">          0 :   v |= (unsigned long) addr[3] &lt;&lt; 24;</span>
+<span class="lineNum">     578 </span><span class="lineNoCov">          0 :   return COERCE32 (v);</span>
+<span class="lineNum">     579 </span>            : }
+<a name="580"><span class="lineNum">     580 </span>            : </a>
+<span class="lineNum">     581 </span>            : bfd_uint64_t
+<span class="lineNum">     582 </span><span class="lineNoCov">          0 : bfd_getb64 (const void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     583 </span>            : {
+<span class="lineNum">     584 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     585 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     586 </span>            :   bfd_uint64_t v;
+<span class="lineNum">     587 </span>            : 
+<span class="lineNum">     588 </span><span class="lineNoCov">          0 :   v  = addr[0]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     589 </span><span class="lineNoCov">          0 :   v |= addr[1]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     590 </span><span class="lineNoCov">          0 :   v |= addr[2]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     591 </span><span class="lineNoCov">          0 :   v |= addr[3]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     592 </span><span class="lineNoCov">          0 :   v |= addr[4]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     593 </span><span class="lineNoCov">          0 :   v |= addr[5]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     594 </span><span class="lineNoCov">          0 :   v |= addr[6]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     595 </span><span class="lineNoCov">          0 :   v |= addr[7];</span>
+<span class="lineNum">     596 </span>            : 
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :   return v;</span>
+<span class="lineNum">     598 </span>            : #else
+<span class="lineNum">     599 </span>            :   BFD_FAIL();
+<span class="lineNum">     600 </span>            :   return 0;
+<span class="lineNum">     601 </span>            : #endif
+<span class="lineNum">     602 </span>            : }
+<a name="603"><span class="lineNum">     603 </span>            : </a>
+<span class="lineNum">     604 </span>            : bfd_uint64_t
+<span class="lineNum">     605 </span><span class="lineCov">      10588 : bfd_getl64 (const void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     606 </span>            : {
+<span class="lineNum">     607 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     608 </span><span class="lineCov">      10588 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     609 </span>            :   bfd_uint64_t v;
+<span class="lineNum">     610 </span>            : 
+<span class="lineNum">     611 </span><span class="lineCov">      10588 :   v  = addr[7]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     612 </span><span class="lineCov">      10588 :   v |= addr[6]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     613 </span><span class="lineCov">      10588 :   v |= addr[5]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     614 </span><span class="lineCov">      10588 :   v |= addr[4]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     615 </span><span class="lineCov">      10588 :   v |= addr[3]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     616 </span><span class="lineCov">      10588 :   v |= addr[2]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     617 </span><span class="lineCov">      10588 :   v |= addr[1]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     618 </span><span class="lineCov">      10588 :   v |= addr[0];</span>
+<span class="lineNum">     619 </span>            : 
+<span class="lineNum">     620 </span><span class="lineCov">      10588 :   return v;</span>
+<span class="lineNum">     621 </span>            : #else
+<span class="lineNum">     622 </span>            :   BFD_FAIL();
+<span class="lineNum">     623 </span>            :   return 0;
+<span class="lineNum">     624 </span>            : #endif
+<span class="lineNum">     625 </span>            : 
+<span class="lineNum">     626 </span>            : }
+<a name="627"><span class="lineNum">     627 </span>            : </a>
+<span class="lineNum">     628 </span>            : bfd_int64_t
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 : bfd_getb_signed_64 (const void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     630 </span>            : {
+<span class="lineNum">     631 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     633 </span>            :   bfd_uint64_t v;
+<span class="lineNum">     634 </span>            : 
+<span class="lineNum">     635 </span><span class="lineNoCov">          0 :   v  = addr[0]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     636 </span><span class="lineNoCov">          0 :   v |= addr[1]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :   v |= addr[2]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     638 </span><span class="lineNoCov">          0 :   v |= addr[3]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     639 </span><span class="lineNoCov">          0 :   v |= addr[4]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     640 </span><span class="lineNoCov">          0 :   v |= addr[5]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     641 </span><span class="lineNoCov">          0 :   v |= addr[6]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     642 </span><span class="lineNoCov">          0 :   v |= addr[7];</span>
+<span class="lineNum">     643 </span>            : 
+<span class="lineNum">     644 </span><span class="lineNoCov">          0 :   return COERCE64 (v);</span>
+<span class="lineNum">     645 </span>            : #else
+<span class="lineNum">     646 </span>            :   BFD_FAIL();
+<span class="lineNum">     647 </span>            :   return 0;
+<span class="lineNum">     648 </span>            : #endif
+<span class="lineNum">     649 </span>            : }
+<a name="650"><span class="lineNum">     650 </span>            : </a>
+<span class="lineNum">     651 </span>            : bfd_int64_t
+<span class="lineNum">     652 </span><span class="lineCov">        408 : bfd_getl_signed_64 (const void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     653 </span>            : {
+<span class="lineNum">     654 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     655 </span><span class="lineCov">        408 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     656 </span>            :   bfd_uint64_t v;
+<span class="lineNum">     657 </span>            : 
+<span class="lineNum">     658 </span><span class="lineCov">        408 :   v  = addr[7]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     659 </span><span class="lineCov">        408 :   v |= addr[6]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     660 </span><span class="lineCov">        408 :   v |= addr[5]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     661 </span><span class="lineCov">        408 :   v |= addr[4]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     662 </span><span class="lineCov">        408 :   v |= addr[3]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     663 </span><span class="lineCov">        408 :   v |= addr[2]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     664 </span><span class="lineCov">        408 :   v |= addr[1]; v &lt;&lt;= 8;</span>
+<span class="lineNum">     665 </span><span class="lineCov">        408 :   v |= addr[0];</span>
+<span class="lineNum">     666 </span>            : 
+<span class="lineNum">     667 </span><span class="lineCov">        408 :   return COERCE64 (v);</span>
+<span class="lineNum">     668 </span>            : #else
+<span class="lineNum">     669 </span>            :   BFD_FAIL();
+<span class="lineNum">     670 </span>            :   return 0;
+<span class="lineNum">     671 </span>            : #endif
+<span class="lineNum">     672 </span>            : }
+<a name="673"><span class="lineNum">     673 </span>            : </a>
+<span class="lineNum">     674 </span>            : void
+<span class="lineNum">     675 </span><span class="lineNoCov">          0 : bfd_putb32 (bfd_vma data, void *p)</span>
+<span class="lineNum">     676 </span>            : {
+<span class="lineNum">     677 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     678 </span><span class="lineNoCov">          0 :   addr[0] = (data &gt;&gt; 24) &amp; 0xff;</span>
+<span class="lineNum">     679 </span><span class="lineNoCov">          0 :   addr[1] = (data &gt;&gt; 16) &amp; 0xff;</span>
+<span class="lineNum">     680 </span><span class="lineNoCov">          0 :   addr[2] = (data &gt;&gt;  8) &amp; 0xff;</span>
+<span class="lineNum">     681 </span><span class="lineNoCov">          0 :   addr[3] = data &amp; 0xff;</span>
+<span class="lineNum">     682 </span><span class="lineNoCov">          0 : }</span>
+<a name="683"><span class="lineNum">     683 </span>            : </a>
+<span class="lineNum">     684 </span>            : void
+<span class="lineNum">     685 </span><span class="lineNoCov">          0 : bfd_putl32 (bfd_vma data, void *p)</span>
+<span class="lineNum">     686 </span>            : {
+<span class="lineNum">     687 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     688 </span><span class="lineNoCov">          0 :   addr[0] = data &amp; 0xff;</span>
+<span class="lineNum">     689 </span><span class="lineNoCov">          0 :   addr[1] = (data &gt;&gt;  8) &amp; 0xff;</span>
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :   addr[2] = (data &gt;&gt; 16) &amp; 0xff;</span>
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :   addr[3] = (data &gt;&gt; 24) &amp; 0xff;</span>
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 : }</span>
+<a name="693"><span class="lineNum">     693 </span>            : </a>
+<span class="lineNum">     694 </span>            : void
+<span class="lineNum">     695 </span><span class="lineNoCov">          0 : bfd_putb64 (bfd_uint64_t data ATTRIBUTE_UNUSED, void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     696 </span>            : {
+<span class="lineNum">     697 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     698 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     699 </span><span class="lineNoCov">          0 :   addr[0] = (data &gt;&gt; (7*8)) &amp; 0xff;</span>
+<span class="lineNum">     700 </span><span class="lineNoCov">          0 :   addr[1] = (data &gt;&gt; (6*8)) &amp; 0xff;</span>
+<span class="lineNum">     701 </span><span class="lineNoCov">          0 :   addr[2] = (data &gt;&gt; (5*8)) &amp; 0xff;</span>
+<span class="lineNum">     702 </span><span class="lineNoCov">          0 :   addr[3] = (data &gt;&gt; (4*8)) &amp; 0xff;</span>
+<span class="lineNum">     703 </span><span class="lineNoCov">          0 :   addr[4] = (data &gt;&gt; (3*8)) &amp; 0xff;</span>
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :   addr[5] = (data &gt;&gt; (2*8)) &amp; 0xff;</span>
+<span class="lineNum">     705 </span><span class="lineNoCov">          0 :   addr[6] = (data &gt;&gt; (1*8)) &amp; 0xff;</span>
+<span class="lineNum">     706 </span><span class="lineNoCov">          0 :   addr[7] = (data &gt;&gt; (0*8)) &amp; 0xff;</span>
+<span class="lineNum">     707 </span>            : #else
+<span class="lineNum">     708 </span>            :   BFD_FAIL();
+<span class="lineNum">     709 </span>            : #endif
+<span class="lineNum">     710 </span><span class="lineNoCov">          0 : }</span>
+<a name="711"><span class="lineNum">     711 </span>            : </a>
+<span class="lineNum">     712 </span>            : void
+<span class="lineNum">     713 </span><span class="lineNoCov">          0 : bfd_putl64 (bfd_uint64_t data ATTRIBUTE_UNUSED, void *p ATTRIBUTE_UNUSED)</span>
+<span class="lineNum">     714 </span>            : {
+<span class="lineNum">     715 </span>            : #ifdef BFD_HOST_64_BIT
+<span class="lineNum">     716 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     717 </span><span class="lineNoCov">          0 :   addr[7] = (data &gt;&gt; (7*8)) &amp; 0xff;</span>
+<span class="lineNum">     718 </span><span class="lineNoCov">          0 :   addr[6] = (data &gt;&gt; (6*8)) &amp; 0xff;</span>
+<span class="lineNum">     719 </span><span class="lineNoCov">          0 :   addr[5] = (data &gt;&gt; (5*8)) &amp; 0xff;</span>
+<span class="lineNum">     720 </span><span class="lineNoCov">          0 :   addr[4] = (data &gt;&gt; (4*8)) &amp; 0xff;</span>
+<span class="lineNum">     721 </span><span class="lineNoCov">          0 :   addr[3] = (data &gt;&gt; (3*8)) &amp; 0xff;</span>
+<span class="lineNum">     722 </span><span class="lineNoCov">          0 :   addr[2] = (data &gt;&gt; (2*8)) &amp; 0xff;</span>
+<span class="lineNum">     723 </span><span class="lineNoCov">          0 :   addr[1] = (data &gt;&gt; (1*8)) &amp; 0xff;</span>
+<span class="lineNum">     724 </span><span class="lineNoCov">          0 :   addr[0] = (data &gt;&gt; (0*8)) &amp; 0xff;</span>
+<span class="lineNum">     725 </span>            : #else
+<span class="lineNum">     726 </span>            :   BFD_FAIL();
+<span class="lineNum">     727 </span>            : #endif
+<span class="lineNum">     728 </span><span class="lineNoCov">          0 : }</span>
+<a name="729"><span class="lineNum">     729 </span>            : </a>
+<span class="lineNum">     730 </span>            : void
+<span class="lineNum">     731 </span><span class="lineNoCov">          0 : bfd_put_bits (bfd_uint64_t data, void *p, int bits, bfd_boolean big_p)</span>
+<span class="lineNum">     732 </span>            : {
+<span class="lineNum">     733 </span><span class="lineNoCov">          0 :   bfd_byte *addr = (bfd_byte *) p;</span>
+<span class="lineNum">     734 </span>            :   int i;
+<span class="lineNum">     735 </span>            :   int bytes;
+<span class="lineNum">     736 </span>            : 
+<span class="lineNum">     737 </span><span class="lineNoCov">          0 :   if (bits % 8 != 0)</span>
+<span class="lineNum">     738 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     739 </span>            : 
+<span class="lineNum">     740 </span><span class="lineNoCov">          0 :   bytes = bits / 8;</span>
+<span class="lineNum">     741 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; bytes; i++)</span>
+<span class="lineNum">     742 </span>            :     {
+<span class="lineNum">     743 </span><span class="lineNoCov">          0 :       int addr_index = big_p ? bytes - i - 1 : i;</span>
+<span class="lineNum">     744 </span>            : 
+<span class="lineNum">     745 </span><span class="lineNoCov">          0 :       addr[addr_index] = data &amp; 0xff;</span>
+<span class="lineNum">     746 </span><span class="lineNoCov">          0 :       data &gt;&gt;= 8;</span>
+<span class="lineNum">     747 </span>            :     }
+<span class="lineNum">     748 </span><span class="lineNoCov">          0 : }</span>
+<a name="749"><span class="lineNum">     749 </span>            : </a>
+<span class="lineNum">     750 </span>            : bfd_uint64_t
+<span class="lineNum">     751 </span><span class="lineNoCov">          0 : bfd_get_bits (const void *p, int bits, bfd_boolean big_p)</span>
+<span class="lineNum">     752 </span>            : {
+<span class="lineNum">     753 </span><span class="lineNoCov">          0 :   const bfd_byte *addr = (const bfd_byte *) p;</span>
+<span class="lineNum">     754 </span>            :   bfd_uint64_t data;
+<span class="lineNum">     755 </span>            :   int i;
+<span class="lineNum">     756 </span>            :   int bytes;
+<span class="lineNum">     757 </span>            : 
+<span class="lineNum">     758 </span><span class="lineNoCov">          0 :   if (bits % 8 != 0)</span>
+<span class="lineNum">     759 </span><span class="lineNoCov">          0 :     abort ();</span>
+<span class="lineNum">     760 </span>            : 
+<span class="lineNum">     761 </span><span class="lineNoCov">          0 :   data = 0;</span>
+<span class="lineNum">     762 </span><span class="lineNoCov">          0 :   bytes = bits / 8;</span>
+<span class="lineNum">     763 </span><span class="lineNoCov">          0 :   for (i = 0; i &lt; bytes; i++)</span>
+<span class="lineNum">     764 </span>            :     {
+<span class="lineNum">     765 </span><span class="lineNoCov">          0 :       int addr_index = big_p ? i : bytes - i - 1;</span>
+<span class="lineNum">     766 </span>            : 
+<span class="lineNum">     767 </span><span class="lineNoCov">          0 :       data = (data &lt;&lt; 8) | addr[addr_index];</span>
+<span class="lineNum">     768 </span>            :     }
+<span class="lineNum">     769 </span>            : 
+<span class="lineNum">     770 </span><span class="lineNoCov">          0 :   return data;</span>
+<span class="lineNum">     771 </span>            : }
+<span class="lineNum">     772 </span>            : 
+<span class="lineNum">     773 </span>            : /* Default implementation */
+<a name="774"><span class="lineNum">     774 </span>            : </a>
+<span class="lineNum">     775 </span>            : bfd_boolean
+<span class="lineNum">     776 </span><span class="lineNoCov">          0 : _bfd_generic_get_section_contents (bfd *abfd,</span>
+<span class="lineNum">     777 </span>            :                                    sec_ptr section,
+<span class="lineNum">     778 </span>            :                                    void *location,
+<span class="lineNum">     779 </span>            :                                    file_ptr offset,
+<span class="lineNum">     780 </span>            :                                    bfd_size_type count)
+<span class="lineNum">     781 </span>            : {
+<span class="lineNum">     782 </span>            :   bfd_size_type sz;
+<span class="lineNum">     783 </span><span class="lineNoCov">          0 :   if (count == 0)</span>
+<span class="lineNum">     784 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     785 </span>            : 
+<span class="lineNum">     786 </span><span class="lineNoCov">          0 :   if (section-&gt;compress_status != COMPRESS_SECTION_NONE)</span>
+<span class="lineNum">     787 </span>            :     {
+<span class="lineNum">     788 </span><span class="lineNoCov">          0 :       _bfd_error_handler</span>
+<span class="lineNum">     789 </span>            :         /* xgettext:c-format */
+<span class="lineNum">     790 </span><span class="lineNoCov">          0 :         (_(&quot;%B: unable to get decompressed section %A&quot;),</span>
+<span class="lineNum">     791 </span>            :          abfd, section);
+<span class="lineNum">     792 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     793 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     794 </span>            :     }
+<span class="lineNum">     795 </span>            : 
+<span class="lineNum">     796 </span>            :   /* We do allow reading of a section after bfd_final_link has
+<span class="lineNum">     797 </span>            :      written the contents out to disk.  In that situation, rawsize is
+<span class="lineNum">     798 </span>            :      just a stale version of size, so ignore it.  Otherwise we must be
+<span class="lineNum">     799 </span>            :      reading an input section, where rawsize, if different to size,
+<span class="lineNum">     800 </span>            :      is the on-disk size.  */
+<span class="lineNum">     801 </span><span class="lineNoCov">          0 :   if (abfd-&gt;direction != write_direction &amp;&amp; section-&gt;rawsize != 0)</span>
+<span class="lineNum">     802 </span><span class="lineNoCov">          0 :     sz = section-&gt;rawsize;</span>
+<span class="lineNum">     803 </span>            :   else
+<span class="lineNum">     804 </span><span class="lineNoCov">          0 :     sz = section-&gt;size;</span>
+<span class="lineNum">     805 </span><span class="lineNoCov">          0 :   if (offset + count &lt; count</span>
+<span class="lineNum">     806 </span><span class="lineNoCov">          0 :       || offset + count &gt; sz)</span>
+<span class="lineNum">     807 </span>            :     {
+<span class="lineNum">     808 </span><span class="lineNoCov">          0 :       bfd_set_error (bfd_error_invalid_operation);</span>
+<span class="lineNum">     809 </span><span class="lineNoCov">          0 :       return FALSE;</span>
+<span class="lineNum">     810 </span>            :     }
+<span class="lineNum">     811 </span>            : 
+<span class="lineNum">     812 </span><span class="lineNoCov">          0 :   if (bfd_seek (abfd, section-&gt;filepos + offset, SEEK_SET) != 0</span>
+<span class="lineNum">     813 </span><span class="lineNoCov">          0 :       || bfd_bread (location, count, abfd) != count)</span>
+<span class="lineNum">     814 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     815 </span>            : 
+<span class="lineNum">     816 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     817 </span>            : }
+<a name="818"><span class="lineNum">     818 </span>            : </a>
+<span class="lineNum">     819 </span>            : bfd_boolean
+<span class="lineNum">     820 </span><span class="lineNoCov">          0 : _bfd_generic_get_section_contents_in_window</span>
+<span class="lineNum">     821 </span>            :   (bfd *abfd ATTRIBUTE_UNUSED,
+<span class="lineNum">     822 </span>            :    sec_ptr section ATTRIBUTE_UNUSED,
+<span class="lineNum">     823 </span>            :    bfd_window *w ATTRIBUTE_UNUSED,
+<span class="lineNum">     824 </span>            :    file_ptr offset ATTRIBUTE_UNUSED,
+<span class="lineNum">     825 </span>            :    bfd_size_type count ATTRIBUTE_UNUSED)
+<span class="lineNum">     826 </span>            : {
+<span class="lineNum">     827 </span>            : #ifdef USE_MMAP
+<span class="lineNum">     828 </span>            :   bfd_size_type sz;
+<span class="lineNum">     829 </span>            : 
+<span class="lineNum">     830 </span>            :   if (count == 0)
+<span class="lineNum">     831 </span>            :     return TRUE;
+<span class="lineNum">     832 </span>            :   if (abfd-&gt;xvec-&gt;_bfd_get_section_contents
+<span class="lineNum">     833 </span>            :       != _bfd_generic_get_section_contents)
+<span class="lineNum">     834 </span>            :     {
+<span class="lineNum">     835 </span>            :       /* We don't know what changes the bfd's get_section_contents
+<span class="lineNum">     836 </span>            :          method may have to make.  So punt trying to map the file
+<span class="lineNum">     837 </span>            :          window, and let get_section_contents do its thing.  */
+<span class="lineNum">     838 </span>            :       /* @@ FIXME : If the internal window has a refcount of 1 and was
+<span class="lineNum">     839 </span>            :          allocated with malloc instead of mmap, just reuse it.  */
+<span class="lineNum">     840 </span>            :       bfd_free_window (w);
+<span class="lineNum">     841 </span>            :       w-&gt;i = bfd_zmalloc (sizeof (bfd_window_internal));
+<span class="lineNum">     842 </span>            :       if (w-&gt;i == NULL)
+<span class="lineNum">     843 </span>            :         return FALSE;
+<span class="lineNum">     844 </span>            :       w-&gt;i-&gt;data = bfd_malloc (count);
+<span class="lineNum">     845 </span>            :       if (w-&gt;i-&gt;data == NULL)
+<span class="lineNum">     846 </span>            :         {
+<span class="lineNum">     847 </span>            :           free (w-&gt;i);
+<span class="lineNum">     848 </span>            :           w-&gt;i = NULL;
+<span class="lineNum">     849 </span>            :           return FALSE;
+<span class="lineNum">     850 </span>            :         }
+<span class="lineNum">     851 </span>            :       w-&gt;i-&gt;mapped = 0;
+<span class="lineNum">     852 </span>            :       w-&gt;i-&gt;refcount = 1;
+<span class="lineNum">     853 </span>            :       w-&gt;size = w-&gt;i-&gt;size = count;
+<span class="lineNum">     854 </span>            :       w-&gt;data = w-&gt;i-&gt;data;
+<span class="lineNum">     855 </span>            :       return bfd_get_section_contents (abfd, section, w-&gt;data, offset, count);
+<span class="lineNum">     856 </span>            :     }
+<span class="lineNum">     857 </span>            :   if (abfd-&gt;direction != write_direction &amp;&amp; section-&gt;rawsize != 0)
+<span class="lineNum">     858 </span>            :     sz = section-&gt;rawsize;
+<span class="lineNum">     859 </span>            :   else
+<span class="lineNum">     860 </span>            :     sz = section-&gt;size;
+<span class="lineNum">     861 </span>            :   if (offset + count &gt; sz
+<span class="lineNum">     862 </span>            :       || ! bfd_get_file_window (abfd, section-&gt;filepos + offset, count, w,
+<span class="lineNum">     863 </span>            :                                 TRUE))
+<span class="lineNum">     864 </span>            :     return FALSE;
+<span class="lineNum">     865 </span>            :   return TRUE;
+<span class="lineNum">     866 </span>            : #else
+<span class="lineNum">     867 </span><span class="lineNoCov">          0 :   abort ();</span>
+<span class="lineNum">     868 </span>            : #endif
+<span class="lineNum">     869 </span>            : }
+<span class="lineNum">     870 </span>            : 
+<span class="lineNum">     871 </span>            : /* This generic function can only be used in implementations where creating
+<span class="lineNum">     872 </span>            :    NEW sections is disallowed.  It is useful in patching existing sections
+<span class="lineNum">     873 </span>            :    in read-write files, though.  See other set_section_contents functions
+<a name="874"><span class="lineNum">     874 </span>            :    to see why it doesn't work for new sections.  */</a>
+<span class="lineNum">     875 </span>            : bfd_boolean
+<span class="lineNum">     876 </span><span class="lineNoCov">          0 : _bfd_generic_set_section_contents (bfd *abfd,</span>
+<span class="lineNum">     877 </span>            :                                    sec_ptr section,
+<span class="lineNum">     878 </span>            :                                    const void *location,
+<span class="lineNum">     879 </span>            :                                    file_ptr offset,
+<span class="lineNum">     880 </span>            :                                    bfd_size_type count)
+<span class="lineNum">     881 </span>            : {
+<span class="lineNum">     882 </span><span class="lineNoCov">          0 :   if (count == 0)</span>
+<span class="lineNum">     883 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     884 </span>            : 
+<span class="lineNum">     885 </span><span class="lineNoCov">          0 :   if (bfd_seek (abfd, section-&gt;filepos + offset, SEEK_SET) != 0</span>
+<span class="lineNum">     886 </span><span class="lineNoCov">          0 :       || bfd_bwrite (location, count, abfd) != count)</span>
+<span class="lineNum">     887 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     888 </span>            : 
+<span class="lineNum">     889 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     890 </span>            : }
+<span class="lineNum">     891 </span>            : 
+<span class="lineNum">     892 </span>            : /*
+<span class="lineNum">     893 </span>            : INTERNAL_FUNCTION
+<span class="lineNum">     894 </span>            :         bfd_log2
+<span class="lineNum">     895 </span>            : 
+<span class="lineNum">     896 </span>            : SYNOPSIS
+<span class="lineNum">     897 </span>            :         unsigned int bfd_log2 (bfd_vma x);
+<span class="lineNum">     898 </span>            : 
+<span class="lineNum">     899 </span>            : DESCRIPTION
+<span class="lineNum">     900 </span>            :         Return the log base 2 of the value supplied, rounded up.  E.g., an
+<span class="lineNum">     901 </span>            :         @var{x} of 1025 returns 11.  A @var{x} of 0 returns 0.
+<span class="lineNum">     902 </span>            : */
+<a name="903"><span class="lineNum">     903 </span>            : </a>
+<span class="lineNum">     904 </span>            : unsigned int
+<span class="lineNum">     905 </span><span class="lineCov">        530 : bfd_log2 (bfd_vma x)</span>
+<span class="lineNum">     906 </span>            : {
+<span class="lineNum">     907 </span><span class="lineCov">        530 :   unsigned int result = 0;</span>
+<span class="lineNum">     908 </span>            : 
+<span class="lineNum">     909 </span><span class="lineCov">        530 :   if (x &lt;= 1)</span>
+<span class="lineNum">     910 </span><span class="lineCov">        381 :     return result;</span>
+<span class="lineNum">     911 </span><span class="lineCov">        149 :   --x;</span>
+<span class="lineNum">     912 </span>            :   do
+<span class="lineNum">     913 </span><span class="lineCov">       1809 :     ++result;</span>
+<span class="lineNum">     914 </span><span class="lineCov">       1809 :   while ((x &gt;&gt;= 1) != 0);</span>
+<span class="lineNum">     915 </span><span class="lineCov">        149 :   return result;</span>
+<span class="lineNum">     916 </span>            : }
+<a name="917"><span class="lineNum">     917 </span>            : </a>
+<span class="lineNum">     918 </span>            : bfd_boolean
+<span class="lineNum">     919 </span><span class="lineNoCov">          0 : bfd_generic_is_local_label_name (bfd *abfd, const char *name)</span>
+<span class="lineNum">     920 </span>            : {
+<span class="lineNum">     921 </span><span class="lineNoCov">          0 :   char locals_prefix = (bfd_get_symbol_leading_char (abfd) == '_') ? 'L' : '.';</span>
+<span class="lineNum">     922 </span>            : 
+<span class="lineNum">     923 </span><span class="lineNoCov">          0 :   return name[0] == locals_prefix;</span>
+<span class="lineNum">     924 </span>            : }
+<span class="lineNum">     925 </span>            : 
+<span class="lineNum">     926 </span>            : /* Give a warning at runtime if someone compiles code which calls
+<span class="lineNum">     927 </span>            :    old routines.  */
+<a name="928"><span class="lineNum">     928 </span>            : </a>
+<span class="lineNum">     929 </span>            : void
+<span class="lineNum">     930 </span><span class="lineNoCov">          0 : warn_deprecated (const char *what,</span>
+<span class="lineNum">     931 </span>            :                  const char *file,
+<span class="lineNum">     932 </span>            :                  int line,
+<span class="lineNum">     933 </span>            :                  const char *func)
+<span class="lineNum">     934 </span>            : {
+<span class="lineNum">     935 </span>            :   /* Poor man's tracking of functions we've already warned about.  */
+<span class="lineNum">     936 </span>            :   static size_t mask = 0;
+<span class="lineNum">     937 </span>            : 
+<span class="lineNum">     938 </span><span class="lineNoCov">          0 :   if (~(size_t) func &amp; ~mask)</span>
+<span class="lineNum">     939 </span>            :     {
+<span class="lineNum">     940 </span><span class="lineNoCov">          0 :       fflush (stdout);</span>
+<span class="lineNum">     941 </span>            :       /* Note: separate sentences in order to allow
+<span class="lineNum">     942 </span>            :          for translation into other languages.  */
+<span class="lineNum">     943 </span><span class="lineNoCov">          0 :       if (func)</span>
+<span class="lineNum">     944 </span>            :         /* xgettext:c-format */
+<span class="lineNum">     945 </span><span class="lineNoCov">          0 :         fprintf (stderr, _(&quot;Deprecated %s called at %s line %d in %s\n&quot;),</span>
+<span class="lineNum">     946 </span>            :                  what, file, line, func);
+<span class="lineNum">     947 </span>            :       else
+<span class="lineNum">     948 </span><span class="lineNoCov">          0 :         fprintf (stderr, _(&quot;Deprecated %s called\n&quot;), what);</span>
+<span class="lineNum">     949 </span><span class="lineNoCov">          0 :       fflush (stderr);</span>
+<span class="lineNum">     950 </span><span class="lineNoCov">          0 :       mask |= ~(size_t) func;</span>
+<span class="lineNum">     951 </span>            :     }
+<span class="lineNum">     952 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     953 </span>            : 
+<span class="lineNum">     954 </span>            : /* Helper function for reading uleb128 encoded data.  */
+<a name="955"><span class="lineNum">     955 </span>            : </a>
+<span class="lineNum">     956 </span>            : bfd_vma
+<span class="lineNum">     957 </span><span class="lineNoCov">          0 : read_unsigned_leb128 (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     958 </span>            :                       bfd_byte *buf,
+<span class="lineNum">     959 </span>            :                       unsigned int *bytes_read_ptr)
+<span class="lineNum">     960 </span>            : {
+<span class="lineNum">     961 </span>            :   bfd_vma result;
+<span class="lineNum">     962 </span>            :   unsigned int num_read;
+<span class="lineNum">     963 </span>            :   unsigned int shift;
+<span class="lineNum">     964 </span>            :   unsigned char byte;
+<span class="lineNum">     965 </span>            : 
+<span class="lineNum">     966 </span><span class="lineNoCov">          0 :   result = 0;</span>
+<span class="lineNum">     967 </span><span class="lineNoCov">          0 :   shift = 0;</span>
+<span class="lineNum">     968 </span><span class="lineNoCov">          0 :   num_read = 0;</span>
+<span class="lineNum">     969 </span>            :   do
+<span class="lineNum">     970 </span>            :     {
+<span class="lineNum">     971 </span><span class="lineNoCov">          0 :       byte = bfd_get_8 (abfd, buf);</span>
+<span class="lineNum">     972 </span><span class="lineNoCov">          0 :       buf++;</span>
+<span class="lineNum">     973 </span><span class="lineNoCov">          0 :       num_read++;</span>
+<span class="lineNum">     974 </span><span class="lineNoCov">          0 :       result |= (((bfd_vma) byte &amp; 0x7f) &lt;&lt; shift);</span>
+<span class="lineNum">     975 </span><span class="lineNoCov">          0 :       shift += 7;</span>
+<span class="lineNum">     976 </span>            :     }
+<span class="lineNum">     977 </span><span class="lineNoCov">          0 :   while (byte &amp; 0x80);</span>
+<span class="lineNum">     978 </span><span class="lineNoCov">          0 :   *bytes_read_ptr = num_read;</span>
+<span class="lineNum">     979 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">     980 </span>            : }
+<span class="lineNum">     981 </span>            : 
+<span class="lineNum">     982 </span>            : /* Read in a LEB128 encoded value from ABFD starting at DATA.
+<span class="lineNum">     983 </span>            :    If SIGN is true, return a signed LEB128 value.
+<span class="lineNum">     984 </span>            :    If LENGTH_RETURN is not NULL, return in it the number of bytes read.
+<span class="lineNum">     985 </span>            :    No bytes will be read at address END or beyond.  */
+<a name="986"><span class="lineNum">     986 </span>            : </a>
+<span class="lineNum">     987 </span>            : bfd_vma
+<span class="lineNum">     988 </span><span class="lineNoCov">          0 : safe_read_leb128 (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">     989 </span>            :                   bfd_byte *data,
+<span class="lineNum">     990 </span>            :                   unsigned int *length_return,
+<span class="lineNum">     991 </span>            :                   bfd_boolean sign,
+<span class="lineNum">     992 </span>            :                   const bfd_byte * const end)
+<span class="lineNum">     993 </span>            : {
+<span class="lineNum">     994 </span><span class="lineNoCov">          0 :   bfd_vma result = 0;</span>
+<span class="lineNum">     995 </span><span class="lineNoCov">          0 :   unsigned int num_read = 0;</span>
+<span class="lineNum">     996 </span><span class="lineNoCov">          0 :   unsigned int shift = 0;</span>
+<span class="lineNum">     997 </span><span class="lineNoCov">          0 :   unsigned char byte = 0;</span>
+<span class="lineNum">     998 </span>            : 
+<span class="lineNum">     999 </span><span class="lineNoCov">          0 :   while (data &lt; end)</span>
+<span class="lineNum">    1000 </span>            :     {
+<span class="lineNum">    1001 </span><span class="lineNoCov">          0 :       byte = bfd_get_8 (abfd, data);</span>
+<span class="lineNum">    1002 </span><span class="lineNoCov">          0 :       data++;</span>
+<span class="lineNum">    1003 </span><span class="lineNoCov">          0 :       num_read++;</span>
+<span class="lineNum">    1004 </span>            : 
+<span class="lineNum">    1005 </span><span class="lineNoCov">          0 :       result |= ((bfd_vma) (byte &amp; 0x7f)) &lt;&lt; shift;</span>
+<span class="lineNum">    1006 </span>            : 
+<span class="lineNum">    1007 </span><span class="lineNoCov">          0 :       shift += 7;</span>
+<span class="lineNum">    1008 </span><span class="lineNoCov">          0 :       if ((byte &amp; 0x80) == 0)</span>
+<span class="lineNum">    1009 </span><span class="lineNoCov">          0 :         break;</span>
+<span class="lineNum">    1010 </span>            :     }
+<span class="lineNum">    1011 </span>            : 
+<span class="lineNum">    1012 </span><span class="lineNoCov">          0 :   if (length_return != NULL)</span>
+<span class="lineNum">    1013 </span><span class="lineNoCov">          0 :     *length_return = num_read;</span>
+<span class="lineNum">    1014 </span>            : 
+<span class="lineNum">    1015 </span><span class="lineNoCov">          0 :   if (sign &amp;&amp; (shift &lt; 8 * sizeof (result)) &amp;&amp; (byte &amp; 0x40))</span>
+<span class="lineNum">    1016 </span><span class="lineNoCov">          0 :     result |= -((bfd_vma) 1 &lt;&lt; shift);</span>
+<span class="lineNum">    1017 </span>            : 
+<span class="lineNum">    1018 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">    1019 </span>            : }
+<span class="lineNum">    1020 </span>            : 
+<span class="lineNum">    1021 </span>            : /* Helper function for reading sleb128 encoded data.  */
+<a name="1022"><span class="lineNum">    1022 </span>            : </a>
+<span class="lineNum">    1023 </span>            : bfd_signed_vma
+<span class="lineNum">    1024 </span><span class="lineNoCov">          0 : read_signed_leb128 (bfd *abfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">    1025 </span>            :                     bfd_byte *buf,
+<span class="lineNum">    1026 </span>            :                     unsigned int *bytes_read_ptr)
+<span class="lineNum">    1027 </span>            : {
+<span class="lineNum">    1028 </span>            :   bfd_vma result;
+<span class="lineNum">    1029 </span>            :   unsigned int shift;
+<span class="lineNum">    1030 </span>            :   unsigned int num_read;
+<span class="lineNum">    1031 </span>            :   unsigned char byte;
+<span class="lineNum">    1032 </span>            : 
+<span class="lineNum">    1033 </span><span class="lineNoCov">          0 :   result = 0;</span>
+<span class="lineNum">    1034 </span><span class="lineNoCov">          0 :   shift = 0;</span>
+<span class="lineNum">    1035 </span><span class="lineNoCov">          0 :   num_read = 0;</span>
+<span class="lineNum">    1036 </span>            :   do
+<span class="lineNum">    1037 </span>            :     {
+<span class="lineNum">    1038 </span><span class="lineNoCov">          0 :       byte = bfd_get_8 (abfd, buf);</span>
+<span class="lineNum">    1039 </span><span class="lineNoCov">          0 :       buf ++;</span>
+<span class="lineNum">    1040 </span><span class="lineNoCov">          0 :       num_read ++;</span>
+<span class="lineNum">    1041 </span><span class="lineNoCov">          0 :       result |= (((bfd_vma) byte &amp; 0x7f) &lt;&lt; shift);</span>
+<span class="lineNum">    1042 </span><span class="lineNoCov">          0 :       shift += 7;</span>
+<span class="lineNum">    1043 </span>            :     }
+<span class="lineNum">    1044 </span><span class="lineNoCov">          0 :   while (byte &amp; 0x80);</span>
+<span class="lineNum">    1045 </span><span class="lineNoCov">          0 :   if (shift &lt; 8 * sizeof (result) &amp;&amp; (byte &amp; 0x40))</span>
+<span class="lineNum">    1046 </span><span class="lineNoCov">          0 :     result |= (((bfd_vma) -1) &lt;&lt; shift);</span>
+<span class="lineNum">    1047 </span><span class="lineNoCov">          0 :   *bytes_read_ptr = num_read;</span>
+<span class="lineNum">    1048 </span><span class="lineNoCov">          0 :   return result;</span>
+<span class="lineNum">    1049 </span>            : }
+<a name="1050"><span class="lineNum">    1050 </span>            : </a>
+<span class="lineNum">    1051 </span>            : bfd_boolean
+<span class="lineNum">    1052 </span><span class="lineNoCov">          0 : _bfd_generic_init_private_section_data (bfd *ibfd ATTRIBUTE_UNUSED,</span>
+<span class="lineNum">    1053 </span>            :                                         asection *isec ATTRIBUTE_UNUSED,
+<span class="lineNum">    1054 </span>            :                                         bfd *obfd ATTRIBUTE_UNUSED,
+<span class="lineNum">    1055 </span>            :                                         asection *osec ATTRIBUTE_UNUSED,
+<span class="lineNum">    1056 </span>            :                                         struct bfd_link_info *link_info ATTRIBUTE_UNUSED)
+<span class="lineNum">    1057 </span>            : {
+<span class="lineNum">    1058 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">    1059 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,809 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - fuzzer_coverage.info - bfd/i386linux.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">bfd</a> - i386linux.c<span style="font-size: 80%;"> (source / <a href="i386linux.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">fuzzer_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">231</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-21 09:00:23</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* BFD back-end for linux flavored i386 a.out binaries.</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 1992-2017 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    This file is part of BFD, the Binary File Descriptor library.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       7 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">       8 </span>            :    the Free Software Foundation; either version 3 of the License, or
+<span class="lineNum">       9 </span>            :    (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      14 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      17 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      18 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+<span class="lineNum">      19 </span>            :    MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #define TARGET_PAGE_SIZE        4096
+<span class="lineNum">      22 </span>            : #define ZMAGIC_DISK_BLOCK_SIZE 1024
+<span class="lineNum">      23 </span>            : #define SEGMENT_SIZE TARGET_PAGE_SIZE
+<span class="lineNum">      24 </span>            : #define TEXT_START_ADDR 0x0
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : #define MACHTYPE_OK(mtype) ((mtype) == M_386 || (mtype) == M_UNKNOWN)
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : #include &quot;sysdep.h&quot;
+<span class="lineNum">      29 </span>            : #include &quot;bfd.h&quot;
+<span class="lineNum">      30 </span>            : #include &quot;libbfd.h&quot;
+<span class="lineNum">      31 </span>            : #include &quot;aout/aout64.h&quot;
+<span class="lineNum">      32 </span>            : #include &quot;aout/stab_gnu.h&quot;
+<span class="lineNum">      33 </span>            : #include &quot;aout/ar.h&quot;
+<span class="lineNum">      34 </span>            : #include &quot;libaout.h&quot;           /* BFD a.out internal data structures */
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : #define DEFAULT_ARCH bfd_arch_i386
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : /* Do not &quot;beautify&quot; the CONCAT* macro args.  Traditional C will not
+<span class="lineNum">      39 </span>            :    remove whitespace added here, and thus will fail to concatenate
+<span class="lineNum">      40 </span>            :    the tokens.  */
+<span class="lineNum">      41 </span>            : #define MY(OP) CONCAT2 (i386_aout_linux_,OP)
+<span class="lineNum">      42 </span>            : #define TARGETNAME &quot;a.out-i386-linux&quot;
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            : extern const bfd_target MY(vec);
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            : /* We always generate QMAGIC files in preference to ZMAGIC files.  It
+<span class="lineNum">      47 </span>            :    would be possible to make this a linker option, if that ever
+<span class="lineNum">      48 </span>            :    becomes important.  */
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : static void MY_final_link_callback
+<span class="lineNum">      51 </span>            :   (bfd *, file_ptr *, file_ptr *, file_ptr *);
+<span class="lineNum">      52 </span>            : static bfd_boolean i386linux_bfd_final_link
+<span class="lineNum">      53 </span>            :   (bfd *, struct bfd_link_info *);
+<span class="lineNum">      54 </span>            : static bfd_boolean i386linux_write_object_contents (bfd *);
+<a name="55"><span class="lineNum">      55 </span>            : </a>
+<span class="lineNum">      56 </span>            : static bfd_boolean
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 : i386linux_bfd_final_link (bfd *abfd, struct bfd_link_info *info)</span>
+<span class="lineNum">      58 </span>            : {
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :   obj_aout_subformat (abfd) = q_magic_format;</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :   return NAME(aout,final_link) (abfd, info, MY_final_link_callback);</span>
+<span class="lineNum">      61 </span>            : }
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            : #define MY_bfd_final_link i386linux_bfd_final_link
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : /* Set the machine type correctly.  */
+<a name="66"><span class="lineNum">      66 </span>            : </a>
+<span class="lineNum">      67 </span>            : static bfd_boolean
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 : i386linux_write_object_contents (bfd *abfd)</span>
+<span class="lineNum">      69 </span>            : {
+<span class="lineNum">      70 </span>            :   struct external_exec exec_bytes;
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :   struct internal_exec *execp = exec_hdr (abfd);</span>
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span><span class="lineNoCov">          0 :   N_SET_MACHTYPE (execp, M_386);</span>
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :   obj_reloc_entry_size (abfd) = RELOC_STD_SIZE;</span>
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :   WRITE_HEADERS (abfd, execp);</span>
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">      80 </span>            : }
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            : #define MY_write_object_contents i386linux_write_object_contents
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : /* Code to link against Linux a.out shared libraries.  */
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            : /* See if a symbol name is a reference to the global offset table.  */
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            : #ifndef GOT_REF_PREFIX
+<span class="lineNum">      89 </span>            : #define GOT_REF_PREFIX  &quot;__GOT_&quot;
+<span class="lineNum">      90 </span>            : #endif
+<span class="lineNum">      91 </span>            : 
+<span class="lineNum">      92 </span>            : #define IS_GOT_SYM(name)   (CONST_STRNEQ (name, GOT_REF_PREFIX))
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : /* See if a symbol name is a reference to the procedure linkage table.  */
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : #ifndef PLT_REF_PREFIX
+<span class="lineNum">      97 </span>            : #define PLT_REF_PREFIX  &quot;__PLT_&quot;
+<span class="lineNum">      98 </span>            : #endif
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : #define IS_PLT_SYM(name)  (CONST_STRNEQ (name, PLT_REF_PREFIX))
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : /* This string is used to generate specialized error messages.  */
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : #ifndef NEEDS_SHRLIB
+<span class="lineNum">     105 </span>            : #define NEEDS_SHRLIB &quot;__NEEDS_SHRLIB_&quot;
+<span class="lineNum">     106 </span>            : #endif
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : /* This special symbol is a set vector that contains a list of
+<span class="lineNum">     109 </span>            :    pointers to fixup tables.  It will be present in any dynamically
+<span class="lineNum">     110 </span>            :    linked file.  The linker generated fixup table should also be added
+<span class="lineNum">     111 </span>            :    to the list, and it should always appear in the second slot (the
+<span class="lineNum">     112 </span>            :    first one is a dummy with a magic number that is defined in
+<span class="lineNum">     113 </span>            :    crt0.o).  */
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            : #ifndef SHARABLE_CONFLICTS
+<span class="lineNum">     116 </span>            : #define SHARABLE_CONFLICTS &quot;__SHARABLE_CONFLICTS__&quot;
+<span class="lineNum">     117 </span>            : #endif
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            : /* We keep a list of fixups.  The terminology is a bit strange, but
+<span class="lineNum">     120 </span>            :    each fixup contains two 32 bit numbers.  A regular fixup contains
+<span class="lineNum">     121 </span>            :    an address and a pointer, and at runtime we should store the
+<span class="lineNum">     122 </span>            :    address at the location pointed to by the pointer.  A builtin fixup
+<span class="lineNum">     123 </span>            :    contains two pointers, and we should read the address using one
+<span class="lineNum">     124 </span>            :    pointer and store it at the location pointed to by the other
+<span class="lineNum">     125 </span>            :    pointer.  Builtin fixups come into play when we have duplicate
+<span class="lineNum">     126 </span>            :    __GOT__ symbols for the same variable.  The builtin fixup will copy
+<span class="lineNum">     127 </span>            :    the GOT pointer from one over into the other.  */
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span>            : struct fixup
+<span class="lineNum">     130 </span>            : {
+<span class="lineNum">     131 </span>            :   struct fixup *next;
+<span class="lineNum">     132 </span>            :   struct linux_link_hash_entry *h;
+<span class="lineNum">     133 </span>            :   bfd_vma value;
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            :   /* Nonzero if this is a jump instruction that needs to be fixed,
+<span class="lineNum">     136 </span>            :      zero if this is just a pointer */
+<span class="lineNum">     137 </span>            :   char jump;
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span>            :   char builtin;
+<span class="lineNum">     140 </span>            : };
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span>            : /* We don't need a special hash table entry structure, but we do need
+<span class="lineNum">     143 </span>            :    to keep some information between linker passes, so we use a special
+<span class="lineNum">     144 </span>            :    hash table.  */
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            : struct linux_link_hash_entry
+<span class="lineNum">     147 </span>            : {
+<span class="lineNum">     148 </span>            :   struct aout_link_hash_entry root;
+<span class="lineNum">     149 </span>            : };
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            : struct linux_link_hash_table
+<span class="lineNum">     152 </span>            : {
+<span class="lineNum">     153 </span>            :   struct aout_link_hash_table root;
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :   /* First dynamic object found in link.  */
+<span class="lineNum">     156 </span>            :   bfd *dynobj;
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :   /* Number of fixups.  */
+<span class="lineNum">     159 </span>            :   size_t fixup_count;
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            :   /* Number of builtin fixups.  */
+<span class="lineNum">     162 </span>            :   size_t local_builtins;
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span>            :   /* List of fixups.  */
+<span class="lineNum">     165 </span>            :   struct fixup *fixup_list;
+<span class="lineNum">     166 </span>            : };
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            : /* Routine to create an entry in an Linux link hash table.  */
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<span class="lineNum">     170 </span>            : static struct bfd_hash_entry *
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 : linux_link_hash_newfunc (struct bfd_hash_entry *entry,</span>
+<span class="lineNum">     172 </span>            :                          struct bfd_hash_table *table,
+<span class="lineNum">     173 </span>            :                          const char *string)
+<span class="lineNum">     174 </span>            : {
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :   struct linux_link_hash_entry *ret = (struct linux_link_hash_entry *) entry;</span>
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :   /* Allocate the structure if it has not already been allocated by a
+<span class="lineNum">     178 </span>            :      subclass.  */
+<span class="lineNum">     179 </span><span class="lineNoCov">          0 :   if (ret == (struct linux_link_hash_entry *) NULL)</span>
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :     ret = ((struct linux_link_hash_entry *)</span>
+<span class="lineNum">     181 </span>            :            bfd_hash_allocate (table, sizeof (struct linux_link_hash_entry)));
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :   if (ret == NULL)</span>
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :     return (struct bfd_hash_entry *) ret;</span>
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            :   /* Call the allocation method of the superclass.  */
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :   ret = ((struct linux_link_hash_entry *)</span>
+<span class="lineNum">     187 </span>            :          NAME(aout,link_hash_newfunc) ((struct bfd_hash_entry *) ret,
+<span class="lineNum">     188 </span>            :                                        table, string));
+<span class="lineNum">     189 </span>            :   if (ret != NULL)
+<span class="lineNum">     190 </span>            :     {
+<span class="lineNum">     191 </span>            :       /* Set local fields; there aren't any.  */
+<span class="lineNum">     192 </span>            :     }
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :   return (struct bfd_hash_entry *) ret;</span>
+<span class="lineNum">     195 </span>            : }
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            : /* Create a Linux link hash table.  */
+<a name="198"><span class="lineNum">     198 </span>            : </a>
+<span class="lineNum">     199 </span>            : static struct bfd_link_hash_table *
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 : linux_link_hash_table_create (bfd *abfd)</span>
+<span class="lineNum">     201 </span>            : {
+<span class="lineNum">     202 </span>            :   struct linux_link_hash_table *ret;
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :   bfd_size_type amt = sizeof (struct linux_link_hash_table);</span>
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span><span class="lineNoCov">          0 :   ret = (struct linux_link_hash_table *) bfd_zmalloc (amt);</span>
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :   if (ret == (struct linux_link_hash_table *) NULL)</span>
+<span class="lineNum">     207 </span><span class="lineNoCov">          0 :     return (struct bfd_link_hash_table *) NULL;</span>
+<span class="lineNum">     208 </span><span class="lineNoCov">          0 :   if (!NAME(aout,link_hash_table_init) (&amp;ret-&gt;root, abfd,</span>
+<span class="lineNum">     209 </span>            :                                         linux_link_hash_newfunc,
+<span class="lineNum">     210 </span>            :                                         sizeof (struct linux_link_hash_entry)))
+<span class="lineNum">     211 </span>            :     {
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :       free (ret);</span>
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :       return (struct bfd_link_hash_table *) NULL;</span>
+<span class="lineNum">     214 </span>            :     }
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :   return &amp;ret-&gt;root.root;</span>
+<span class="lineNum">     217 </span>            : }
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span>            : /* Look up an entry in a Linux link hash table.  */
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            : #define linux_link_hash_lookup(table, string, create, copy, follow) \
+<span class="lineNum">     222 </span>            :   ((struct linux_link_hash_entry *) \
+<span class="lineNum">     223 </span>            :    aout_link_hash_lookup (&amp;(table)-&gt;root, (string), (create), (copy),\
+<span class="lineNum">     224 </span>            :                           (follow)))
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span>            : /* Traverse a Linux link hash table.  */
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            : #define linux_link_hash_traverse(table, func, info)                     \
+<span class="lineNum">     229 </span>            :   (aout_link_hash_traverse                                              \
+<span class="lineNum">     230 </span>            :    (&amp;(table)-&gt;root,                                                      \
+<span class="lineNum">     231 </span>            :     (bfd_boolean (*) (struct aout_link_hash_entry *, void *)) (func),   \
+<span class="lineNum">     232 </span>            :     (info)))
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            : /* Get the Linux link hash table from the info structure.  This is
+<span class="lineNum">     235 </span>            :    just a cast.  */
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            : #define linux_hash_table(p) ((struct linux_link_hash_table *) ((p)-&gt;hash))
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            : /* Store the information for a new fixup.  */
+<a name="240"><span class="lineNum">     240 </span>            : </a>
+<span class="lineNum">     241 </span>            : static struct fixup *
+<span class="lineNum">     242 </span><span class="lineNoCov">          0 : new_fixup (struct bfd_link_info *info,</span>
+<span class="lineNum">     243 </span>            :            struct linux_link_hash_entry *h,
+<span class="lineNum">     244 </span>            :            bfd_vma value,
+<span class="lineNum">     245 </span>            :            int builtin)
+<span class="lineNum">     246 </span>            : {
+<span class="lineNum">     247 </span>            :   struct fixup *f;
+<span class="lineNum">     248 </span>            : 
+<span class="lineNum">     249 </span><span class="lineNoCov">          0 :   f = (struct fixup *) bfd_hash_allocate (&amp;info-&gt;hash-&gt;table,</span>
+<span class="lineNum">     250 </span>            :                                           sizeof (struct fixup));
+<span class="lineNum">     251 </span><span class="lineNoCov">          0 :   if (f == NULL)</span>
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :     return f;</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :   f-&gt;next = linux_hash_table (info)-&gt;fixup_list;</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :   linux_hash_table (info)-&gt;fixup_list = f;</span>
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :   f-&gt;h = h;</span>
+<span class="lineNum">     256 </span><span class="lineNoCov">          0 :   f-&gt;value = value;</span>
+<span class="lineNum">     257 </span><span class="lineNoCov">          0 :   f-&gt;builtin = builtin;</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :   f-&gt;jump = 0;</span>
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :   ++linux_hash_table (info)-&gt;fixup_count;</span>
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :   return f;</span>
+<span class="lineNum">     261 </span>            : }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            : /* We come here once we realize that we are going to link to a shared
+<span class="lineNum">     264 </span>            :    library.  We need to create a special section that contains the
+<span class="lineNum">     265 </span>            :    fixup table, and we ultimately need to add a pointer to this into
+<span class="lineNum">     266 </span>            :    the set vector for SHARABLE_CONFLICTS.  At this point we do not
+<span class="lineNum">     267 </span>            :    know the size of the section, but that's OK - we just need to
+<span class="lineNum">     268 </span>            :    create it for now.  */
+<a name="269"><span class="lineNum">     269 </span>            : </a>
+<span class="lineNum">     270 </span>            : static bfd_boolean
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 : linux_link_create_dynamic_sections (bfd *abfd,</span>
+<span class="lineNum">     272 </span>            :                                     struct bfd_link_info *info ATTRIBUTE_UNUSED)
+<span class="lineNum">     273 </span>            : {
+<span class="lineNum">     274 </span>            :   flagword flags;
+<span class="lineNum">     275 </span>            :   asection *s;
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            :   /* Note that we set the SEC_IN_MEMORY flag.  */
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 :   flags = SEC_ALLOC | SEC_LOAD | SEC_HAS_CONTENTS | SEC_IN_MEMORY;</span>
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            :   /* We choose to use the name &quot;.linux-dynamic&quot; for the fixup table.
+<span class="lineNum">     281 </span>            :      Why not? */
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :   s = bfd_make_section_with_flags (abfd, &quot;.linux-dynamic&quot;, flags);</span>
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :   if (s == NULL</span>
+<span class="lineNum">     284 </span><span class="lineNoCov">          0 :       || ! bfd_set_section_alignment (abfd, s, 2))</span>
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :   s-&gt;size = 0;</span>
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :   s-&gt;contents = 0;</span>
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     290 </span>            : }
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            : /* Function to add a single symbol to the linker hash table.  This is
+<span class="lineNum">     293 </span>            :    a wrapper around _bfd_generic_link_add_one_symbol which handles the
+<span class="lineNum">     294 </span>            :    tweaking needed for dynamic linking support.  */
+<a name="295"><span class="lineNum">     295 </span>            : </a>
+<span class="lineNum">     296 </span>            : static bfd_boolean
+<span class="lineNum">     297 </span><span class="lineNoCov">          0 : linux_add_one_symbol (struct bfd_link_info *info,</span>
+<span class="lineNum">     298 </span>            :                       bfd *abfd,
+<span class="lineNum">     299 </span>            :                       const char *name,
+<span class="lineNum">     300 </span>            :                       flagword flags,
+<span class="lineNum">     301 </span>            :                       asection *section,
+<span class="lineNum">     302 </span>            :                       bfd_vma value,
+<span class="lineNum">     303 </span>            :                       const char *string,
+<span class="lineNum">     304 </span>            :                       bfd_boolean copy,
+<span class="lineNum">     305 </span>            :                       bfd_boolean collect,
+<span class="lineNum">     306 </span>            :                       struct bfd_link_hash_entry **hashp)
+<span class="lineNum">     307 </span>            : {
+<span class="lineNum">     308 </span>            :   struct linux_link_hash_entry *h;
+<span class="lineNum">     309 </span>            :   bfd_boolean insert;
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span>            :   /* Look up and see if we already have this symbol in the hash table.
+<span class="lineNum">     312 </span>            :      If we do, and the defining entry is from a shared library, we
+<span class="lineNum">     313 </span>            :      need to create the dynamic sections.
+<span class="lineNum">     314 </span>            : 
+<span class="lineNum">     315 </span>            :      FIXME: What if abfd-&gt;xvec != info-&gt;output_bfd-&gt;xvec?  We may
+<span class="lineNum">     316 </span>            :      want to be able to link Linux a.out and ELF objects together,
+<span class="lineNum">     317 </span>            :      but serious confusion is possible.  */
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :   insert = FALSE;</span>
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :   if (! bfd_link_relocatable (info)</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :       &amp;&amp; linux_hash_table (info)-&gt;dynobj == NULL</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :       &amp;&amp; strcmp (name, SHARABLE_CONFLICTS) == 0</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :       &amp;&amp; (flags &amp; BSF_CONSTRUCTOR) != 0</span>
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :       &amp;&amp; abfd-&gt;xvec == info-&gt;output_bfd-&gt;xvec)</span>
+<span class="lineNum">     326 </span>            :     {
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :       if (! linux_link_create_dynamic_sections (abfd, info))</span>
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :       linux_hash_table (info)-&gt;dynobj = abfd;</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :       insert = TRUE;</span>
+<span class="lineNum">     331 </span>            :     }
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :   if (bfd_is_abs_section (section)</span>
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :       &amp;&amp; abfd-&gt;xvec == info-&gt;output_bfd-&gt;xvec)</span>
+<span class="lineNum">     335 </span>            :     {
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :       h = linux_link_hash_lookup (linux_hash_table (info), name, FALSE,</span>
+<span class="lineNum">     337 </span>            :                                   FALSE, FALSE);
+<span class="lineNum">     338 </span><span class="lineNoCov">          0 :       if (h != NULL</span>
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :           &amp;&amp; (h-&gt;root.root.type == bfd_link_hash_defined</span>
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :               || h-&gt;root.root.type == bfd_link_hash_defweak))</span>
+<span class="lineNum">     341 </span>            :         {
+<span class="lineNum">     342 </span>            :           struct fixup *f;
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span><span class="lineNoCov">          0 :           if (hashp != NULL)</span>
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :             *hashp = (struct bfd_link_hash_entry *) h;</span>
+<span class="lineNum">     346 </span>            : 
+<span class="lineNum">     347 </span><span class="lineNoCov">          0 :           f = new_fixup (info, h, value, ! IS_PLT_SYM (name));</span>
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :           if (f == NULL)</span>
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :             return FALSE;</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :           f-&gt;jump = IS_PLT_SYM (name);</span>
+<span class="lineNum">     351 </span>            : 
+<span class="lineNum">     352 </span><span class="lineNoCov">          0 :           return TRUE;</span>
+<span class="lineNum">     353 </span>            :         }
+<span class="lineNum">     354 </span>            :     }
+<span class="lineNum">     355 </span>            : 
+<span class="lineNum">     356 </span>            :   /* Do the usual procedure for adding a symbol.  */
+<span class="lineNum">     357 </span><span class="lineNoCov">          0 :   if (! _bfd_generic_link_add_one_symbol (info, abfd, name, flags, section,</span>
+<span class="lineNum">     358 </span>            :                                           value, string, copy, collect,
+<span class="lineNum">     359 </span>            :                                           hashp))
+<span class="lineNum">     360 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            :   /* Insert a pointer to our table in the set vector.  The dynamic
+<span class="lineNum">     363 </span>            :      linker requires this information */
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :   if (insert)</span>
+<span class="lineNum">     365 </span>            :     {
+<span class="lineNum">     366 </span>            :       asection *s;
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span>            :       /* Here we do our special thing to add the pointer to the
+<span class="lineNum">     369 </span>            :          dynamic section in the SHARABLE_CONFLICTS set vector.  */
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :       s = bfd_get_section_by_name (linux_hash_table (info)-&gt;dynobj,</span>
+<span class="lineNum">     371 </span>            :                                    &quot;.linux-dynamic&quot;);
+<span class="lineNum">     372 </span><span class="lineNoCov">          0 :       BFD_ASSERT (s != NULL);</span>
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 :       if (! (_bfd_generic_link_add_one_symbol</span>
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :              (info, linux_hash_table (info)-&gt;dynobj, SHARABLE_CONFLICTS,</span>
+<span class="lineNum">     376 </span>            :               BSF_GLOBAL | BSF_CONSTRUCTOR, s, (bfd_vma) 0, NULL,
+<span class="lineNum">     377 </span>            :               FALSE, FALSE, NULL)))
+<span class="lineNum">     378 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     379 </span>            :     }
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     382 </span>            : }
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span>            : /* We will crawl the hash table and come here for every global symbol.
+<span class="lineNum">     385 </span>            :    We will examine each entry and see if there are indications that we
+<span class="lineNum">     386 </span>            :    need to add a fixup.  There are two possible cases - one is where
+<span class="lineNum">     387 </span>            :    you have duplicate definitions of PLT or GOT symbols - these will
+<span class="lineNum">     388 </span>            :    have already been caught and added as &quot;builtin&quot; fixups.  If we find
+<span class="lineNum">     389 </span>            :    that the corresponding non PLT/GOT symbol is also present, we
+<span class="lineNum">     390 </span>            :    convert it to a regular fixup instead.
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span>            :    This function is called via linux_link_hash_traverse.  */
+<a name="393"><span class="lineNum">     393 </span>            : </a>
+<span class="lineNum">     394 </span>            : static bfd_boolean
+<span class="lineNum">     395 </span><span class="lineNoCov">          0 : linux_tally_symbols (struct linux_link_hash_entry *h, void * data)</span>
+<span class="lineNum">     396 </span>            : {
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :   struct bfd_link_info *info = (struct bfd_link_info *) data;</span>
+<span class="lineNum">     398 </span>            :   struct fixup *f, *f1;
+<span class="lineNum">     399 </span>            :   int is_plt;
+<span class="lineNum">     400 </span>            :   struct linux_link_hash_entry *h1, *h2;
+<span class="lineNum">     401 </span>            :   bfd_boolean exists;
+<span class="lineNum">     402 </span>            : 
+<span class="lineNum">     403 </span><span class="lineNoCov">          0 :   if (h-&gt;root.root.type == bfd_link_hash_undefined</span>
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :       &amp;&amp; CONST_STRNEQ (h-&gt;root.root.root.string, NEEDS_SHRLIB))</span>
+<span class="lineNum">     405 </span>            :     {
+<span class="lineNum">     406 </span>            :       const char *name;
+<span class="lineNum">     407 </span>            :       char *p;
+<span class="lineNum">     408 </span><span class="lineNoCov">          0 :       char *alloc = NULL;</span>
+<span class="lineNum">     409 </span>            : 
+<span class="lineNum">     410 </span><span class="lineNoCov">          0 :       name = h-&gt;root.root.root.string + sizeof NEEDS_SHRLIB - 1;</span>
+<span class="lineNum">     411 </span><span class="lineNoCov">          0 :       p = strrchr (name, '_');</span>
+<span class="lineNum">     412 </span><span class="lineNoCov">          0 :       if (p != NULL)</span>
+<span class="lineNum">     413 </span><span class="lineNoCov">          0 :         alloc = (char *) bfd_malloc ((bfd_size_type) strlen (name) + 1);</span>
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span><span class="lineNoCov">          0 :       if (p == NULL || alloc == NULL)</span>
+<span class="lineNum">     416 </span><span class="lineNoCov">          0 :         _bfd_error_handler (_(&quot;Output file requires shared library `%s'\n&quot;),</span>
+<span class="lineNum">     417 </span>            :                             name);
+<span class="lineNum">     418 </span>            :       else
+<span class="lineNum">     419 </span>            :         {
+<span class="lineNum">     420 </span><span class="lineNoCov">          0 :           strcpy (alloc, name);</span>
+<span class="lineNum">     421 </span><span class="lineNoCov">          0 :           p = strrchr (alloc, '_');</span>
+<span class="lineNum">     422 </span><span class="lineNoCov">          0 :           *p++ = '\0';</span>
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 :           _bfd_error_handler</span>
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :             (_(&quot;Output file requires shared library `%s.so.%s'\n&quot;),</span>
+<span class="lineNum">     425 </span>            :              alloc, p);
+<span class="lineNum">     426 </span><span class="lineNoCov">          0 :           free (alloc);</span>
+<span class="lineNum">     427 </span>            :         }
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span><span class="lineNoCov">          0 :       abort ();</span>
+<span class="lineNum">     430 </span>            :     }
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span>            :   /* If this symbol is not a PLT/GOT, we do not even need to look at it */
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :   is_plt = IS_PLT_SYM (h-&gt;root.root.root.string);</span>
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span><span class="lineNoCov">          0 :   if (is_plt || IS_GOT_SYM (h-&gt;root.root.root.string))</span>
+<span class="lineNum">     436 </span>            :     {
+<span class="lineNum">     437 </span>            :       /* Look up this symbol twice.  Once just as a regular lookup,
+<span class="lineNum">     438 </span>            :          and then again following all of the indirect links until we
+<span class="lineNum">     439 </span>            :          reach a real symbol.  */
+<span class="lineNum">     440 </span><span class="lineNoCov">          0 :       h1 = linux_link_hash_lookup (linux_hash_table (info),</span>
+<span class="lineNum">     441 </span>            :                                    (h-&gt;root.root.root.string
+<span class="lineNum">     442 </span>            :                                     + sizeof PLT_REF_PREFIX - 1),
+<span class="lineNum">     443 </span>            :                                    FALSE, FALSE, TRUE);
+<span class="lineNum">     444 </span>            :       /* h2 does not follow indirect symbols. */
+<span class="lineNum">     445 </span><span class="lineNoCov">          0 :       h2 = linux_link_hash_lookup (linux_hash_table (info),</span>
+<span class="lineNum">     446 </span>            :                                    (h-&gt;root.root.root.string
+<span class="lineNum">     447 </span>            :                                     + sizeof PLT_REF_PREFIX - 1),
+<span class="lineNum">     448 </span>            :                                    FALSE, FALSE, FALSE);
+<span class="lineNum">     449 </span>            : 
+<span class="lineNum">     450 </span>            :       /* The real symbol must exist but if it is also an ABS symbol,
+<span class="lineNum">     451 </span>            :          there is no need to have a fixup.  This is because they both
+<span class="lineNum">     452 </span>            :          came from the same library.  If on the other hand, we had to
+<span class="lineNum">     453 </span>            :          use an indirect symbol to get to the real symbol, we add the
+<span class="lineNum">     454 </span>            :          fixup anyway, since there are cases where these symbols come
+<span class="lineNum">     455 </span>            :          from different shared libraries */
+<span class="lineNum">     456 </span><span class="lineNoCov">          0 :       if (h1 != NULL</span>
+<span class="lineNum">     457 </span><span class="lineNoCov">          0 :           &amp;&amp; (((h1-&gt;root.root.type == bfd_link_hash_defined</span>
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :                 || h1-&gt;root.root.type == bfd_link_hash_defweak)</span>
+<span class="lineNum">     459 </span><span class="lineNoCov">          0 :                &amp;&amp; ! bfd_is_abs_section (h1-&gt;root.root.u.def.section))</span>
+<span class="lineNum">     460 </span><span class="lineNoCov">          0 :               || h2-&gt;root.root.type == bfd_link_hash_indirect))</span>
+<span class="lineNum">     461 </span>            :         {
+<span class="lineNum">     462 </span>            :           /* See if there is a &quot;builtin&quot; fixup already present
+<span class="lineNum">     463 </span>            :              involving this symbol.  If so, convert it to a regular
+<span class="lineNum">     464 </span>            :              fixup.  In the end, this relaxes some of the requirements
+<span class="lineNum">     465 </span>            :              about the order of performing fixups.  */
+<span class="lineNum">     466 </span><span class="lineNoCov">          0 :           exists = FALSE;</span>
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :           for (f1 = linux_hash_table (info)-&gt;fixup_list;</span>
+<span class="lineNum">     468 </span>            :                f1 != NULL;
+<span class="lineNum">     469 </span><span class="lineNoCov">          0 :                f1 = f1-&gt;next)</span>
+<span class="lineNum">     470 </span>            :             {
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :               if ((f1-&gt;h != h &amp;&amp; f1-&gt;h != h1)</span>
+<span class="lineNum">     472 </span><span class="lineNoCov">          0 :                   || (! f1-&gt;builtin &amp;&amp; ! f1-&gt;jump))</span>
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 :                 continue;</span>
+<span class="lineNum">     474 </span><span class="lineNoCov">          0 :               if (f1-&gt;h == h1)</span>
+<span class="lineNum">     475 </span><span class="lineNoCov">          0 :                 exists = TRUE;</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :               if (! exists</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :                   &amp;&amp; bfd_is_abs_section (h-&gt;root.root.u.def.section))</span>
+<span class="lineNum">     478 </span>            :                 {
+<span class="lineNum">     479 </span><span class="lineNoCov">          0 :                   f = new_fixup (info, h1, f1-&gt;h-&gt;root.root.u.def.value, 0);</span>
+<span class="lineNum">     480 </span><span class="lineNoCov">          0 :                   f-&gt;jump = is_plt;</span>
+<span class="lineNum">     481 </span>            :                 }
+<span class="lineNum">     482 </span><span class="lineNoCov">          0 :               f1-&gt;h = h1;</span>
+<span class="lineNum">     483 </span><span class="lineNoCov">          0 :               f1-&gt;jump = is_plt;</span>
+<span class="lineNum">     484 </span><span class="lineNoCov">          0 :               f1-&gt;builtin = 0;</span>
+<span class="lineNum">     485 </span><span class="lineNoCov">          0 :               exists = TRUE;</span>
+<span class="lineNum">     486 </span>            :             }
+<span class="lineNum">     487 </span><span class="lineNoCov">          0 :           if (! exists</span>
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :               &amp;&amp; bfd_is_abs_section (h-&gt;root.root.u.def.section))</span>
+<span class="lineNum">     489 </span>            :             {
+<span class="lineNum">     490 </span><span class="lineNoCov">          0 :               f = new_fixup (info, h1, h-&gt;root.root.u.def.value, 0);</span>
+<span class="lineNum">     491 </span><span class="lineNoCov">          0 :               if (f == NULL)</span>
+<span class="lineNum">     492 </span>            :                 {
+<span class="lineNum">     493 </span>            :                   /* FIXME: No way to return error.  */
+<span class="lineNum">     494 </span><span class="lineNoCov">          0 :                   abort ();</span>
+<span class="lineNum">     495 </span>            :                 }
+<span class="lineNum">     496 </span><span class="lineNoCov">          0 :               f-&gt;jump = is_plt;</span>
+<span class="lineNum">     497 </span>            :             }
+<span class="lineNum">     498 </span>            :         }
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            :       /* Quick and dirty way of stripping these symbols from the
+<span class="lineNum">     501 </span>            :          symtab. */
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :       if (bfd_is_abs_section (h-&gt;root.root.u.def.section))</span>
+<span class="lineNum">     503 </span><span class="lineNoCov">          0 :         h-&gt;root.written = TRUE;</span>
+<span class="lineNum">     504 </span>            :     }
+<span class="lineNum">     505 </span>            : 
+<span class="lineNum">     506 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     507 </span>            : }
+<span class="lineNum">     508 </span>            : 
+<span class="lineNum">     509 </span>            : /* This is called to set the size of the .linux-dynamic section is.
+<span class="lineNum">     510 </span>            :    It is called by the Linux linker emulation before_allocation
+<span class="lineNum">     511 </span>            :    routine.  We have finished reading all of the input files, and now
+<span class="lineNum">     512 </span>            :    we just scan the hash tables to find out how many additional fixups
+<span class="lineNum">     513 </span>            :    are required.  */
+<a name="514"><span class="lineNum">     514 </span>            : </a>
+<span class="lineNum">     515 </span>            : bfd_boolean
+<span class="lineNum">     516 </span><span class="lineNoCov">          0 : bfd_i386linux_size_dynamic_sections (bfd *output_bfd,</span>
+<span class="lineNum">     517 </span>            :                                      struct bfd_link_info *info)
+<span class="lineNum">     518 </span>            : {
+<span class="lineNum">     519 </span>            :   struct fixup *f;
+<span class="lineNum">     520 </span>            :   asection *s;
+<span class="lineNum">     521 </span>            : 
+<span class="lineNum">     522 </span><span class="lineNoCov">          0 :   if (output_bfd-&gt;xvec != &amp;MY(vec))</span>
+<span class="lineNum">     523 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     524 </span>            : 
+<span class="lineNum">     525 </span>            :   /* First find the fixups... */
+<span class="lineNum">     526 </span><span class="lineNoCov">          0 :   linux_link_hash_traverse (linux_hash_table (info),</span>
+<span class="lineNum">     527 </span>            :                             linux_tally_symbols,
+<span class="lineNum">     528 </span>            :                             info);
+<span class="lineNum">     529 </span>            : 
+<span class="lineNum">     530 </span>            :   /* If there are builtin fixups, leave room for a marker.  This is
+<span class="lineNum">     531 </span>            :      used by the dynamic linker so that it knows that all that follow
+<span class="lineNum">     532 </span>            :      are builtin fixups instead of regular fixups.  */
+<span class="lineNum">     533 </span><span class="lineNoCov">          0 :   for (f = linux_hash_table (info)-&gt;fixup_list; f != NULL; f = f-&gt;next)</span>
+<span class="lineNum">     534 </span>            :     {
+<span class="lineNum">     535 </span><span class="lineNoCov">          0 :       if (f-&gt;builtin)</span>
+<span class="lineNum">     536 </span>            :         {
+<span class="lineNum">     537 </span><span class="lineNoCov">          0 :           ++linux_hash_table (info)-&gt;fixup_count;</span>
+<span class="lineNum">     538 </span><span class="lineNoCov">          0 :           ++linux_hash_table (info)-&gt;local_builtins;</span>
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 :           break;</span>
+<span class="lineNum">     540 </span>            :         }
+<span class="lineNum">     541 </span>            :     }
+<span class="lineNum">     542 </span>            : 
+<span class="lineNum">     543 </span><span class="lineNoCov">          0 :   if (linux_hash_table (info)-&gt;dynobj == NULL)</span>
+<span class="lineNum">     544 </span>            :     {
+<span class="lineNum">     545 </span><span class="lineNoCov">          0 :       if (linux_hash_table (info)-&gt;fixup_count &gt; 0)</span>
+<span class="lineNum">     546 </span><span class="lineNoCov">          0 :         abort ();</span>
+<span class="lineNum">     547 </span><span class="lineNoCov">          0 :       return TRUE;</span>
+<span class="lineNum">     548 </span>            :     }
+<span class="lineNum">     549 </span>            : 
+<span class="lineNum">     550 </span>            :   /* Allocate memory for our fixup table.  We will fill it in later.  */
+<span class="lineNum">     551 </span><span class="lineNoCov">          0 :   s = bfd_get_section_by_name (linux_hash_table (info)-&gt;dynobj,</span>
+<span class="lineNum">     552 </span>            :                                &quot;.linux-dynamic&quot;);
+<span class="lineNum">     553 </span><span class="lineNoCov">          0 :   if (s != NULL)</span>
+<span class="lineNum">     554 </span>            :     {
+<span class="lineNum">     555 </span><span class="lineNoCov">          0 :       s-&gt;size = linux_hash_table (info)-&gt;fixup_count + 1;</span>
+<span class="lineNum">     556 </span><span class="lineNoCov">          0 :       s-&gt;size *= 8;</span>
+<span class="lineNum">     557 </span><span class="lineNoCov">          0 :       s-&gt;contents = (bfd_byte *) bfd_zalloc (output_bfd, s-&gt;size);</span>
+<span class="lineNum">     558 </span><span class="lineNoCov">          0 :       if (s-&gt;contents == NULL)</span>
+<span class="lineNum">     559 </span><span class="lineNoCov">          0 :         return FALSE;</span>
+<span class="lineNum">     560 </span>            :     }
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     563 </span>            : }
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            : /* We come here once we are ready to actually write the fixup table to
+<span class="lineNum">     566 </span>            :    the output file.  Scan the fixup tables and so forth and generate
+<span class="lineNum">     567 </span>            :    the stuff we need.  */
+<a name="568"><span class="lineNum">     568 </span>            : </a>
+<span class="lineNum">     569 </span>            : static bfd_boolean
+<span class="lineNum">     570 </span><span class="lineNoCov">          0 : linux_finish_dynamic_link (bfd *output_bfd,</span>
+<span class="lineNum">     571 </span>            :                            struct bfd_link_info *info)
+<span class="lineNum">     572 </span>            : {
+<span class="lineNum">     573 </span>            :   asection *s, *os, *is;
+<span class="lineNum">     574 </span>            :   bfd_byte *fixup_table;
+<span class="lineNum">     575 </span>            :   struct linux_link_hash_entry *h;
+<span class="lineNum">     576 </span>            :   struct fixup *f;
+<span class="lineNum">     577 </span>            :   unsigned int new_addr;
+<span class="lineNum">     578 </span>            :   int section_offset;
+<span class="lineNum">     579 </span>            :   unsigned int fixups_written;
+<span class="lineNum">     580 </span>            : 
+<span class="lineNum">     581 </span><span class="lineNoCov">          0 :   if (linux_hash_table (info)-&gt;dynobj == NULL)</span>
+<span class="lineNum">     582 </span><span class="lineNoCov">          0 :     return TRUE;</span>
+<span class="lineNum">     583 </span>            : 
+<span class="lineNum">     584 </span><span class="lineNoCov">          0 :   s = bfd_get_section_by_name (linux_hash_table (info)-&gt;dynobj,</span>
+<span class="lineNum">     585 </span>            :                                &quot;.linux-dynamic&quot;);
+<span class="lineNum">     586 </span><span class="lineNoCov">          0 :   BFD_ASSERT (s != NULL);</span>
+<span class="lineNum">     587 </span><span class="lineNoCov">          0 :   os = s-&gt;output_section;</span>
+<span class="lineNum">     588 </span><span class="lineNoCov">          0 :   fixups_written = 0;</span>
+<span class="lineNum">     589 </span>            : 
+<span class="lineNum">     590 </span>            : #ifdef LINUX_LINK_DEBUG
+<span class="lineNum">     591 </span>            :   printf (&quot;Fixup table file offset: %x  VMA: %x\n&quot;,
+<span class="lineNum">     592 </span>            :           os-&gt;filepos + s-&gt;output_offset,
+<span class="lineNum">     593 </span>            :           os-&gt;vma + s-&gt;output_offset);
+<span class="lineNum">     594 </span>            : #endif
+<span class="lineNum">     595 </span>            : 
+<span class="lineNum">     596 </span><span class="lineNoCov">          0 :   fixup_table = s-&gt;contents;</span>
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :   bfd_put_32 (output_bfd,</span>
+<span class="lineNum">     598 </span>            :               (bfd_vma) linux_hash_table (info)-&gt;fixup_count, fixup_table);
+<span class="lineNum">     599 </span><span class="lineNoCov">          0 :   fixup_table += 4;</span>
+<span class="lineNum">     600 </span>            : 
+<span class="lineNum">     601 </span>            :   /* Fill in fixup table.  */
+<span class="lineNum">     602 </span><span class="lineNoCov">          0 :   for (f = linux_hash_table (info)-&gt;fixup_list; f != NULL; f = f-&gt;next)</span>
+<span class="lineNum">     603 </span>            :     {
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :       if (f-&gt;builtin)</span>
+<span class="lineNum">     605 </span><span class="lineNoCov">          0 :         continue;</span>
+<span class="lineNum">     606 </span>            : 
+<span class="lineNum">     607 </span><span class="lineNoCov">          0 :       if (f-&gt;h-&gt;root.root.type != bfd_link_hash_defined</span>
+<span class="lineNum">     608 </span><span class="lineNoCov">          0 :           &amp;&amp; f-&gt;h-&gt;root.root.type != bfd_link_hash_defweak)</span>
+<span class="lineNum">     609 </span>            :         {
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :           _bfd_error_handler</span>
+<span class="lineNum">     611 </span><span class="lineNoCov">          0 :             (_(&quot;Symbol %s not defined for fixups\n&quot;),</span>
+<span class="lineNum">     612 </span><span class="lineNoCov">          0 :              f-&gt;h-&gt;root.root.root.string);</span>
+<span class="lineNum">     613 </span><span class="lineNoCov">          0 :           continue;</span>
+<span class="lineNum">     614 </span>            :         }
+<span class="lineNum">     615 </span>            : 
+<span class="lineNum">     616 </span><span class="lineNoCov">          0 :       is = f-&gt;h-&gt;root.root.u.def.section;</span>
+<span class="lineNum">     617 </span><span class="lineNoCov">          0 :       section_offset = is-&gt;output_section-&gt;vma + is-&gt;output_offset;</span>
+<span class="lineNum">     618 </span><span class="lineNoCov">          0 :       new_addr = f-&gt;h-&gt;root.root.u.def.value + section_offset;</span>
+<span class="lineNum">     619 </span>            : 
+<span class="lineNum">     620 </span>            : #ifdef LINUX_LINK_DEBUG
+<span class="lineNum">     621 </span>            :       printf (&quot;Fixup(%d) %s: %x %x\n&quot;,f-&gt;jump, f-&gt;h-&gt;root.root.string,
+<span class="lineNum">     622 </span>            :               new_addr, f-&gt;value);
+<span class="lineNum">     623 </span>            : #endif
+<span class="lineNum">     624 </span>            : 
+<span class="lineNum">     625 </span><span class="lineNoCov">          0 :       if (f-&gt;jump)</span>
+<span class="lineNum">     626 </span>            :         {
+<span class="lineNum">     627 </span>            :           /* Relative address */
+<span class="lineNum">     628 </span><span class="lineNoCov">          0 :           new_addr = new_addr - (f-&gt;value + 5);</span>
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, (bfd_vma) new_addr, fixup_table);</span>
+<span class="lineNum">     630 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     631 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, f-&gt;value + 1, fixup_table);</span>
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     633 </span>            :         }
+<span class="lineNum">     634 </span>            :       else
+<span class="lineNum">     635 </span>            :         {
+<span class="lineNum">     636 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, (bfd_vma) new_addr, fixup_table);</span>
+<span class="lineNum">     637 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     638 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, f-&gt;value, fixup_table);</span>
+<span class="lineNum">     639 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     640 </span>            :         }
+<span class="lineNum">     641 </span><span class="lineNoCov">          0 :       ++fixups_written;</span>
+<span class="lineNum">     642 </span>            :     }
+<span class="lineNum">     643 </span>            : 
+<span class="lineNum">     644 </span><span class="lineNoCov">          0 :   if (linux_hash_table (info)-&gt;local_builtins != 0)</span>
+<span class="lineNum">     645 </span>            :     {
+<span class="lineNum">     646 </span>            :       /* Special marker so we know to switch to the other type of fixup */
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :       bfd_put_32 (output_bfd, (bfd_vma) 0, fixup_table);</span>
+<span class="lineNum">     648 </span><span class="lineNoCov">          0 :       fixup_table += 4;</span>
+<span class="lineNum">     649 </span><span class="lineNoCov">          0 :       bfd_put_32 (output_bfd, (bfd_vma) 0, fixup_table);</span>
+<span class="lineNum">     650 </span><span class="lineNoCov">          0 :       fixup_table += 4;</span>
+<span class="lineNum">     651 </span><span class="lineNoCov">          0 :       ++fixups_written;</span>
+<span class="lineNum">     652 </span><span class="lineNoCov">          0 :       for (f = linux_hash_table (info)-&gt;fixup_list; f != NULL; f = f-&gt;next)</span>
+<span class="lineNum">     653 </span>            :         {
+<span class="lineNum">     654 </span><span class="lineNoCov">          0 :           if (! f-&gt;builtin)</span>
+<span class="lineNum">     655 </span><span class="lineNoCov">          0 :             continue;</span>
+<span class="lineNum">     656 </span>            : 
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :           if (f-&gt;h-&gt;root.root.type != bfd_link_hash_defined</span>
+<span class="lineNum">     658 </span><span class="lineNoCov">          0 :               &amp;&amp; f-&gt;h-&gt;root.root.type != bfd_link_hash_defweak)</span>
+<span class="lineNum">     659 </span>            :             {
+<span class="lineNum">     660 </span><span class="lineNoCov">          0 :               _bfd_error_handler</span>
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 :                 (_(&quot;Symbol %s not defined for fixups\n&quot;),</span>
+<span class="lineNum">     662 </span><span class="lineNoCov">          0 :                  f-&gt;h-&gt;root.root.root.string);</span>
+<span class="lineNum">     663 </span><span class="lineNoCov">          0 :               continue;</span>
+<span class="lineNum">     664 </span>            :             }
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span><span class="lineNoCov">          0 :           is = f-&gt;h-&gt;root.root.u.def.section;</span>
+<span class="lineNum">     667 </span><span class="lineNoCov">          0 :           section_offset = is-&gt;output_section-&gt;vma + is-&gt;output_offset;</span>
+<span class="lineNum">     668 </span><span class="lineNoCov">          0 :           new_addr = f-&gt;h-&gt;root.root.u.def.value + section_offset;</span>
+<span class="lineNum">     669 </span>            : 
+<span class="lineNum">     670 </span>            : #ifdef LINUX_LINK_DEBUG
+<span class="lineNum">     671 </span>            :           printf (&quot;Fixup(B) %s: %x %x\n&quot;, f-&gt;h-&gt;root.root.string,
+<span class="lineNum">     672 </span>            :                   new_addr, f-&gt;value);
+<span class="lineNum">     673 </span>            : #endif
+<span class="lineNum">     674 </span>            : 
+<span class="lineNum">     675 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, (bfd_vma) new_addr, fixup_table);</span>
+<span class="lineNum">     676 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     677 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, f-&gt;value, fixup_table);</span>
+<span class="lineNum">     678 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     679 </span><span class="lineNoCov">          0 :           ++fixups_written;</span>
+<span class="lineNum">     680 </span>            :         }
+<span class="lineNum">     681 </span>            :   }
+<span class="lineNum">     682 </span>            : 
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :   if (linux_hash_table (info)-&gt;fixup_count != fixups_written)</span>
+<span class="lineNum">     684 </span>            :     {
+<span class="lineNum">     685 </span><span class="lineNoCov">          0 :       _bfd_error_handler (_(&quot;Warning: fixup count mismatch\n&quot;));</span>
+<span class="lineNum">     686 </span><span class="lineNoCov">          0 :       while (linux_hash_table (info)-&gt;fixup_count &gt; fixups_written)</span>
+<span class="lineNum">     687 </span>            :         {
+<span class="lineNum">     688 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, (bfd_vma) 0, fixup_table);</span>
+<span class="lineNum">     689 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     690 </span><span class="lineNoCov">          0 :           bfd_put_32 (output_bfd, (bfd_vma) 0, fixup_table);</span>
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :           fixup_table += 4;</span>
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 :           ++fixups_written;</span>
+<span class="lineNum">     693 </span>            :         }
+<span class="lineNum">     694 </span>            :     }
+<span class="lineNum">     695 </span>            : 
+<span class="lineNum">     696 </span><span class="lineNoCov">          0 :   h = linux_link_hash_lookup (linux_hash_table (info),</span>
+<span class="lineNum">     697 </span>            :                               &quot;__BUILTIN_FIXUPS__&quot;,
+<span class="lineNum">     698 </span>            :                               FALSE, FALSE, FALSE);
+<span class="lineNum">     699 </span>            : 
+<span class="lineNum">     700 </span><span class="lineNoCov">          0 :   if (h != NULL</span>
+<span class="lineNum">     701 </span><span class="lineNoCov">          0 :       &amp;&amp; (h-&gt;root.root.type == bfd_link_hash_defined</span>
+<span class="lineNum">     702 </span><span class="lineNoCov">          0 :           || h-&gt;root.root.type == bfd_link_hash_defweak))</span>
+<span class="lineNum">     703 </span>            :     {
+<span class="lineNum">     704 </span><span class="lineNoCov">          0 :       is = h-&gt;root.root.u.def.section;</span>
+<span class="lineNum">     705 </span><span class="lineNoCov">          0 :       section_offset = is-&gt;output_section-&gt;vma + is-&gt;output_offset;</span>
+<span class="lineNum">     706 </span><span class="lineNoCov">          0 :       new_addr = h-&gt;root.root.u.def.value + section_offset;</span>
+<span class="lineNum">     707 </span>            : 
+<span class="lineNum">     708 </span>            : #ifdef LINUX_LINK_DEBUG
+<span class="lineNum">     709 </span>            :       printf (&quot;Builtin fixup table at %x\n&quot;, new_addr);
+<span class="lineNum">     710 </span>            : #endif
+<span class="lineNum">     711 </span>            : 
+<span class="lineNum">     712 </span><span class="lineNoCov">          0 :       bfd_put_32 (output_bfd, (bfd_vma) new_addr, fixup_table);</span>
+<span class="lineNum">     713 </span>            :     }
+<span class="lineNum">     714 </span>            :   else
+<span class="lineNum">     715 </span><span class="lineNoCov">          0 :     bfd_put_32 (output_bfd, (bfd_vma) 0, fixup_table);</span>
+<span class="lineNum">     716 </span>            : 
+<span class="lineNum">     717 </span><span class="lineNoCov">          0 :   if (bfd_seek (output_bfd, (file_ptr) (os-&gt;filepos + s-&gt;output_offset),</span>
+<span class="lineNum">     718 </span>            :                 SEEK_SET) != 0)
+<span class="lineNum">     719 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     720 </span>            : 
+<span class="lineNum">     721 </span><span class="lineNoCov">          0 :   if (bfd_bwrite (s-&gt;contents, s-&gt;size, output_bfd) != s-&gt;size)</span>
+<span class="lineNum">     722 </span><span class="lineNoCov">          0 :     return FALSE;</span>
+<span class="lineNum">     723 </span>            : 
+<span class="lineNum">     724 </span><span class="lineNoCov">          0 :   return TRUE;</span>
+<span class="lineNum">     725 </span>            : }
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span>            : #define MY_bfd_link_hash_table_create linux_link_hash_table_create
+<span class="lineNum">     728 </span>            : #define MY_add_one_symbol linux_add_one_symbol
+<span class="lineNum">     729 </span>            : #define MY_finish_dynamic_link linux_finish_dynamic_link
+<span class="lineNum">     730 </span>            : 
+<span class="lineNum">     731 </span>            : #define MY_zmagic_contiguous 1
+<span class="lineNum">     732 </span>            : 
+<span class="lineNum">     733 </span>            : #include &quot;aout-target.h&quot;
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

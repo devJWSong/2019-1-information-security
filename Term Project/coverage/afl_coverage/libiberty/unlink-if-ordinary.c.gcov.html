@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - libiberty/unlink-if-ordinary.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libiberty</a> - unlink-if-ordinary.c<span style="font-size: 80%;"> (source / <a href="unlink-if-ordinary.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* unlink-if-ordinary.c - remove link to a file unless it is special</a>
+<span class="lineNum">       2 </span>            :    Copyright (C) 2004, 2005 Free Software Foundation, Inc.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : This file is part of the libiberty library.  This library is free
+<span class="lineNum">       5 </span>            : software; you can redistribute it and/or modify it under the
+<span class="lineNum">       6 </span>            : terms of the GNU General Public License as published by the
+<span class="lineNum">       7 </span>            : Free Software Foundation; either version 2, or (at your option)
+<span class="lineNum">       8 </span>            : any later version.
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : This library is distributed in the hope that it will be useful,
+<span class="lineNum">      11 </span>            : but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      12 </span>            : MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      13 </span>            : GNU General Public License for more details.
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : You should have received a copy of the GNU General Public License
+<span class="lineNum">      16 </span>            : along with GNU CC; see the file COPYING.  If not, write to
+<span class="lineNum">      17 </span>            : the Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            : As a special exception, if you link this library with files
+<span class="lineNum">      20 </span>            : compiled with a GNU compiler to produce an executable, this does not cause
+<span class="lineNum">      21 </span>            : the resulting executable to be covered by the GNU General Public License.
+<span class="lineNum">      22 </span>            : This exception does not however invalidate any other reasons why
+<span class="lineNum">      23 </span>            : the executable file might be covered by the GNU General Public License. */
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : /*
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : @deftypefn Supplemental int unlink_if_ordinary (const char*)
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            : Unlinks the named file, unless it is special (e.g. a device file).
+<span class="lineNum">      30 </span>            : Returns 0 when the file was unlinked, a negative value (and errno set) when
+<span class="lineNum">      31 </span>            : there was an error deleting the file, and a positive value if no attempt
+<span class="lineNum">      32 </span>            : was made to unlink the file because it is special.
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : @end deftypefn
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : */
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : #ifdef HAVE_CONFIG_H
+<span class="lineNum">      39 </span>            : #include &quot;config.h&quot;
+<span class="lineNum">      40 </span>            : #endif
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : #include &lt;sys/types.h&gt;
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            : #ifdef HAVE_UNISTD_H
+<span class="lineNum">      45 </span>            : #include &lt;unistd.h&gt;
+<span class="lineNum">      46 </span>            : #endif
+<span class="lineNum">      47 </span>            : #if HAVE_SYS_STAT_H
+<span class="lineNum">      48 </span>            : #include &lt;sys/stat.h&gt;
+<span class="lineNum">      49 </span>            : #endif
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : #ifndef S_ISLNK
+<span class="lineNum">      54 </span>            : #ifdef S_IFLNK
+<span class="lineNum">      55 </span>            : #define S_ISLNK(m) (((m) &amp; S_IFMT) == S_IFLNK)
+<span class="lineNum">      56 </span>            : #else
+<span class="lineNum">      57 </span>            : #define S_ISLNK(m) 0
+<span class="lineNum">      58 </span>            : #define lstat stat
+<span class="lineNum">      59 </span>            : #endif
+<span class="lineNum">      60 </span>            : #endif
+<a name="61"><span class="lineNum">      61 </span>            : </a>
+<span class="lineNum">      62 </span>            : int
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 : unlink_if_ordinary (const char *name)</span>
+<span class="lineNum">      64 </span>            : {
+<span class="lineNum">      65 </span>            :   struct stat st;
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :   if (lstat (name, &amp;st) == 0</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :       &amp;&amp; (S_ISREG (st.st_mode) || S_ISLNK (st.st_mode)))</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :     return unlink (name);</span>
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :   return 1;</span>
+<span class="lineNum">      72 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - libiberty/xmalloc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libiberty</a> - xmalloc.c<span style="font-size: 80%;"> (source / <a href="xmalloc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">17</td>
+            <td class="headerCovTableEntry">35</td>
+            <td class="headerCovTableEntryLo">48.6 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryLo">60.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* memory allocation routines with error checking.</a>
+<span class="lineNum">       2 </span>            :    Copyright 1989, 1990, 1991, 1992, 1993, 1994, 2015
+<span class="lineNum">       3 </span>            :    Free Software Foundation, Inc.
+<span class="lineNum">       4 </span>            :    
+<span class="lineNum">       5 </span>            : This file is part of the libiberty library.
+<span class="lineNum">       6 </span>            : Libiberty is free software; you can redistribute it and/or
+<span class="lineNum">       7 </span>            : modify it under the terms of the GNU Library General Public
+<span class="lineNum">       8 </span>            : License as published by the Free Software Foundation; either
+<span class="lineNum">       9 </span>            : version 2 of the License, or (at your option) any later version.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : Libiberty is distributed in the hope that it will be useful,
+<span class="lineNum">      12 </span>            : but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      13 </span>            : MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+<span class="lineNum">      14 </span>            : Library General Public License for more details.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : You should have received a copy of the GNU Library General Public
+<span class="lineNum">      17 </span>            : License along with libiberty; see the file COPYING.LIB.  If
+<span class="lineNum">      18 </span>            : not, write to the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
+<span class="lineNum">      19 </span>            : Boston, MA 02110-1301, USA.  */
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : /*
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            : @deftypefn Replacement void* xmalloc (size_t)
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : Allocate memory without fail.  If @code{malloc} fails, this will print
+<span class="lineNum">      26 </span>            : a message to @code{stderr} (using the name set by
+<span class="lineNum">      27 </span>            : @code{xmalloc_set_program_name},
+<span class="lineNum">      28 </span>            : if any) and then call @code{xexit}.  Note that it is therefore safe for
+<span class="lineNum">      29 </span>            : a program to contain @code{#define malloc xmalloc} in its source.
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : @end deftypefn
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : @deftypefn Replacement void* xrealloc (void *@var{ptr}, size_t @var{size})
+<span class="lineNum">      34 </span>            : Reallocate memory without fail.  This routine functions like @code{realloc},
+<span class="lineNum">      35 </span>            : but will behave the same as @code{xmalloc} if memory cannot be found.
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : @end deftypefn
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : @deftypefn Replacement void* xcalloc (size_t @var{nelem}, size_t @var{elsize})
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : Allocate memory without fail, and set it to zero.  This routine functions
+<span class="lineNum">      42 </span>            : like @code{calloc}, but will behave the same as @code{xmalloc} if memory
+<span class="lineNum">      43 </span>            : cannot be found.
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : @end deftypefn
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : @deftypefn Replacement void xmalloc_set_program_name (const char *@var{name})
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : You can use this to set the name of the program used by
+<span class="lineNum">      50 </span>            : @code{xmalloc_failed} when printing a failure message.
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            : @end deftypefn
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : @deftypefn Replacement void xmalloc_failed (size_t)
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : This function is not meant to be called by client code, and is listed
+<span class="lineNum">      57 </span>            : here for completeness only.  If any of the allocation routines fail, this
+<span class="lineNum">      58 </span>            : function will be called to print an error message and terminate execution.
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : @end deftypefn
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : */
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : #ifdef HAVE_CONFIG_H
+<span class="lineNum">      65 </span>            : #include &quot;config.h&quot;
+<span class="lineNum">      66 </span>            : #endif
+<span class="lineNum">      67 </span>            : #include &quot;ansidecl.h&quot;
+<span class="lineNum">      68 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      69 </span>            : #include &quot;environ.h&quot;
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            : #if VMS
+<span class="lineNum">      76 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      77 </span>            : #include &lt;unixlib.h&gt;
+<span class="lineNum">      78 </span>            : #else
+<span class="lineNum">      79 </span>            : /* For systems with larger pointers than ints, these must be declared.  */
+<span class="lineNum">      80 </span>            : #  if HAVE_STDLIB_H &amp;&amp; HAVE_UNISTD_H &amp;&amp; HAVE_DECL_MALLOC \
+<span class="lineNum">      81 </span>            :       &amp;&amp; HAVE_DECL_REALLOC &amp;&amp; HAVE_DECL_CALLOC &amp;&amp; HAVE_DECL_SBRK
+<span class="lineNum">      82 </span>            : #    include &lt;stdlib.h&gt;
+<span class="lineNum">      83 </span>            : #    include &lt;unistd.h&gt;
+<span class="lineNum">      84 </span>            : #  else
+<span class="lineNum">      85 </span>            : #    ifdef __cplusplus
+<span class="lineNum">      86 </span>            : extern &quot;C&quot; {
+<span class="lineNum">      87 </span>            : #    endif /* __cplusplus */
+<span class="lineNum">      88 </span>            : void *malloc (size_t);
+<span class="lineNum">      89 </span>            : void *realloc (void *, size_t);
+<span class="lineNum">      90 </span>            : void *calloc (size_t, size_t);
+<span class="lineNum">      91 </span>            : void *sbrk (ptrdiff_t);
+<span class="lineNum">      92 </span>            : #    ifdef __cplusplus
+<span class="lineNum">      93 </span>            : }
+<span class="lineNum">      94 </span>            : #    endif /* __cplusplus */
+<span class="lineNum">      95 </span>            : #  endif /* HAVE_STDLIB_H ...  */
+<span class="lineNum">      96 </span>            : #endif /* VMS */
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            : /* The program name if set.  */
+<span class="lineNum">      99 </span>            : static const char *name = &quot;&quot;;
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            : #ifdef HAVE_SBRK
+<span class="lineNum">     102 </span>            : /* The initial sbrk, set when the program name is set. Not used for win32
+<span class="lineNum">     103 </span>            :    ports other than cygwin32.  */
+<span class="lineNum">     104 </span>            : static char *first_break = NULL;
+<span class="lineNum">     105 </span>            : #endif /* HAVE_SBRK */
+<a name="106"><span class="lineNum">     106 </span>            : </a>
+<span class="lineNum">     107 </span>            : void
+<span class="lineNum">     108 </span><span class="lineCov">         71 : xmalloc_set_program_name (const char *s)</span>
+<span class="lineNum">     109 </span>            : {
+<span class="lineNum">     110 </span><span class="lineCov">         71 :   name = s;</span>
+<span class="lineNum">     111 </span>            : #ifdef HAVE_SBRK
+<span class="lineNum">     112 </span>            :   /* Win32 ports other than cygwin32 don't have brk() */
+<span class="lineNum">     113 </span><span class="lineCov">         71 :   if (first_break == NULL)</span>
+<span class="lineNum">     114 </span><span class="lineCov">         71 :     first_break = (char *) sbrk (0);</span>
+<span class="lineNum">     115 </span>            : #endif /* HAVE_SBRK */
+<span class="lineNum">     116 </span><span class="lineCov">         71 : }</span>
+<a name="117"><span class="lineNum">     117 </span>            : </a>
+<span class="lineNum">     118 </span>            : void
+<span class="lineNum">     119 </span><span class="lineCov">         37 : xmalloc_failed (size_t size)</span>
+<span class="lineNum">     120 </span>            : {
+<span class="lineNum">     121 </span>            : #ifdef HAVE_SBRK
+<span class="lineNum">     122 </span>            :   size_t allocated;
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span><span class="lineCov">         37 :   if (first_break != NULL)</span>
+<span class="lineNum">     125 </span><span class="lineCov">         37 :     allocated = (char *) sbrk (0) - first_break;</span>
+<span class="lineNum">     126 </span>            :   else
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :     allocated = (char *) sbrk (0) - (char *) &amp;environ;</span>
+<span class="lineNum">     128 </span><span class="lineCov">         37 :   fprintf (stderr,</span>
+<span class="lineNum">     129 </span>            :            &quot;\n%s%sout of memory allocating %lu bytes after a total of %lu bytes\n&quot;,
+<span class="lineNum">     130 </span><span class="lineCov">         37 :            name, *name ? &quot;: &quot; : &quot;&quot;,</span>
+<span class="lineNum">     131 </span>            :            (unsigned long) size, (unsigned long) allocated);
+<span class="lineNum">     132 </span>            : #else /* HAVE_SBRK */
+<span class="lineNum">     133 </span>            :   fprintf (stderr,
+<span class="lineNum">     134 </span>            :            &quot;\n%s%sout of memory allocating %lu bytes\n&quot;,
+<span class="lineNum">     135 </span>            :            name, *name ? &quot;: &quot; : &quot;&quot;,
+<span class="lineNum">     136 </span>            :            (unsigned long) size);
+<span class="lineNum">     137 </span>            : #endif /* HAVE_SBRK */
+<span class="lineNum">     138 </span><span class="lineCov">         37 :   xexit (1);</span>
+<span class="lineNum">     139 </span>            : }  
+<a name="140"><span class="lineNum">     140 </span>            : </a>
+<span class="lineNum">     141 </span>            : PTR
+<span class="lineNum">     142 </span><span class="lineCov">        232 : xmalloc (size_t size)</span>
+<span class="lineNum">     143 </span>            : {
+<span class="lineNum">     144 </span>            :   PTR newmem;
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineCov">        232 :   if (size == 0)</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :     size = 1;</span>
+<span class="lineNum">     148 </span><span class="lineCov">        232 :   newmem = malloc (size);</span>
+<span class="lineNum">     149 </span><span class="lineCov">        232 :   if (!newmem)</span>
+<span class="lineNum">     150 </span><span class="lineCov">         37 :     xmalloc_failed (size);</span>
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span><span class="lineCov">        195 :   return (newmem);</span>
+<span class="lineNum">     153 </span>            : }
+<a name="154"><span class="lineNum">     154 </span>            : </a>
+<span class="lineNum">     155 </span>            : PTR
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 : xcalloc (size_t nelem, size_t elsize)</span>
+<span class="lineNum">     157 </span>            : {
+<span class="lineNum">     158 </span>            :   PTR newmem;
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :   if (nelem == 0 || elsize == 0)</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :     nelem = elsize = 1;</span>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :   newmem = calloc (nelem, elsize);</span>
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :   if (!newmem)</span>
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :     xmalloc_failed (nelem * elsize);</span>
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :   return (newmem);</span>
+<span class="lineNum">     168 </span>            : }
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<span class="lineNum">     170 </span>            : PTR
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 : xrealloc (PTR oldmem, size_t size)</span>
+<span class="lineNum">     172 </span>            : {
+<span class="lineNum">     173 </span>            :   PTR newmem;
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :   if (size == 0)</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :     size = 1;</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :   if (!oldmem)</span>
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :     newmem = malloc (size);</span>
+<span class="lineNum">     179 </span>            :   else
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :     newmem = realloc (oldmem, size);</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :   if (!newmem)</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :     xmalloc_failed (size);</span>
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span><span class="lineNoCov">          0 :   return (newmem);</span>
+<span class="lineNum">     185 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - afl_coverage.info - libiberty/lrealpath.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libiberty</a> - lrealpath.c<span style="font-size: 80%;"> (source / <a href="lrealpath.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">afl_coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-06-20 14:23:35</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Libiberty realpath.  Like realpath, but more consistent behavior.</a>
+<span class="lineNum">       2 </span>            :    Based on gdb_realpath from GDB.
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            :    Copyright 2003 Free Software Foundation, Inc.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :    This file is part of the libiberty library.
+<span class="lineNum">       7 </span>            : 
+<span class="lineNum">       8 </span>            :    This program is free software; you can redistribute it and/or modify
+<span class="lineNum">       9 </span>            :    it under the terms of the GNU General Public License as published by
+<span class="lineNum">      10 </span>            :    the Free Software Foundation; either version 2 of the License, or
+<span class="lineNum">      11 </span>            :    (at your option) any later version.
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            :    This program is distributed in the hope that it will be useful,
+<span class="lineNum">      14 </span>            :    but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      15 </span>            :    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      16 </span>            :    GNU General Public License for more details.
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            :    You should have received a copy of the GNU General Public License
+<span class="lineNum">      19 </span>            :    along with this program; if not, write to the Free Software
+<span class="lineNum">      20 </span>            :    Foundation, Inc., 51 Franklin Street - Fifth Floor,
+<span class="lineNum">      21 </span>            :    Boston, MA 02110-1301, USA.  */
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            : /*
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : @deftypefn Replacement {const char*} lrealpath (const char *@var{name})
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : Given a pointer to a string containing a pathname, returns a canonical
+<span class="lineNum">      28 </span>            : version of the filename.  Symlinks will be resolved, and ``.'' and ``..''
+<span class="lineNum">      29 </span>            : components will be simplified.  The returned value will be allocated using
+<span class="lineNum">      30 </span>            : @code{malloc}, or @code{NULL} will be returned on a memory allocation error.
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : @end deftypefn
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            : */
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : #include &quot;config.h&quot;
+<span class="lineNum">      37 </span>            : #include &quot;ansidecl.h&quot;
+<span class="lineNum">      38 </span>            : #include &quot;libiberty.h&quot;
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : #ifdef HAVE_LIMITS_H
+<span class="lineNum">      41 </span>            : #include &lt;limits.h&gt;
+<span class="lineNum">      42 </span>            : #endif
+<span class="lineNum">      43 </span>            : #ifdef HAVE_STDLIB_H
+<span class="lineNum">      44 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      45 </span>            : #endif
+<span class="lineNum">      46 </span>            : #ifdef HAVE_UNISTD_H
+<span class="lineNum">      47 </span>            : #include &lt;unistd.h&gt;
+<span class="lineNum">      48 </span>            : #endif
+<span class="lineNum">      49 </span>            : #ifdef HAVE_STRING_H
+<span class="lineNum">      50 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      51 </span>            : #endif
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : /* On GNU libc systems the declaration is only visible with _GNU_SOURCE.  */
+<span class="lineNum">      54 </span>            : #if defined(HAVE_CANONICALIZE_FILE_NAME) \
+<span class="lineNum">      55 </span>            :     &amp;&amp; defined(NEED_DECLARATION_CANONICALIZE_FILE_NAME)
+<span class="lineNum">      56 </span>            : extern char *canonicalize_file_name (const char *);
+<span class="lineNum">      57 </span>            : #endif
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : #if defined(HAVE_REALPATH)
+<span class="lineNum">      60 </span>            : # if defined (PATH_MAX)
+<span class="lineNum">      61 </span>            : #  define REALPATH_LIMIT PATH_MAX
+<span class="lineNum">      62 </span>            : # else
+<span class="lineNum">      63 </span>            : #  if defined (MAXPATHLEN)
+<span class="lineNum">      64 </span>            : #   define REALPATH_LIMIT MAXPATHLEN
+<span class="lineNum">      65 </span>            : #  endif
+<span class="lineNum">      66 </span>            : # endif
+<span class="lineNum">      67 </span>            : #else
+<span class="lineNum">      68 </span>            :   /* cygwin has realpath, so it won't get here.  */ 
+<span class="lineNum">      69 </span>            : # if defined (_WIN32)
+<span class="lineNum">      70 </span>            : #  define WIN32_LEAN_AND_MEAN
+<span class="lineNum">      71 </span>            : #  include &lt;windows.h&gt; /* for GetFullPathName */
+<span class="lineNum">      72 </span>            : # endif
+<span class="lineNum">      73 </span>            : #endif
+<a name="74"><span class="lineNum">      74 </span>            : </a>
+<span class="lineNum">      75 </span>            : char *
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 : lrealpath (const char *filename)</span>
+<span class="lineNum">      77 </span>            : {
+<span class="lineNum">      78 </span>            :   /* Method 1: The system has a compile time upper bound on a filename
+<span class="lineNum">      79 </span>            :      path.  Use that and realpath() to canonicalize the name.  This is
+<span class="lineNum">      80 </span>            :      the most common case.  Note that, if there isn't a compile time
+<span class="lineNum">      81 </span>            :      upper bound, you want to avoid realpath() at all costs.  */
+<span class="lineNum">      82 </span>            : #if defined(REALPATH_LIMIT)
+<span class="lineNum">      83 </span>            :   {
+<span class="lineNum">      84 </span>            :     char buf[REALPATH_LIMIT];
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 :     const char *rp = realpath (filename, buf);</span>
+<span class="lineNum">      86 </span><span class="lineNoCov">          0 :     if (rp == NULL)</span>
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :       rp = filename;</span>
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :     return strdup (rp);</span>
+<span class="lineNum">      89 </span>            :   }
+<span class="lineNum">      90 </span>            : #endif /* REALPATH_LIMIT */
+<span class="lineNum">      91 </span>            : 
+<span class="lineNum">      92 </span>            :   /* Method 2: The host system (i.e., GNU) has the function
+<span class="lineNum">      93 </span>            :      canonicalize_file_name() which malloc's a chunk of memory and
+<span class="lineNum">      94 </span>            :      returns that, use that.  */
+<span class="lineNum">      95 </span>            : #if defined(HAVE_CANONICALIZE_FILE_NAME)
+<span class="lineNum">      96 </span>            :   {
+<span class="lineNum">      97 </span>            :     char *rp = canonicalize_file_name (filename);
+<span class="lineNum">      98 </span>            :     if (rp == NULL)
+<span class="lineNum">      99 </span>            :       return strdup (filename);
+<span class="lineNum">     100 </span>            :     else
+<span class="lineNum">     101 </span>            :       return rp;
+<span class="lineNum">     102 </span>            :   }
+<span class="lineNum">     103 </span>            : #endif
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            :   /* Method 3: Now we're getting desperate!  The system doesn't have a
+<span class="lineNum">     106 </span>            :      compile time buffer size and no alternative function.  Query the
+<span class="lineNum">     107 </span>            :      OS, using pathconf(), for the buffer limit.  Care is needed
+<span class="lineNum">     108 </span>            :      though, some systems do not limit PATH_MAX (return -1 for
+<span class="lineNum">     109 </span>            :      pathconf()) making it impossible to pass a correctly sized buffer
+<span class="lineNum">     110 </span>            :      to realpath() (it could always overflow).  On those systems, we
+<span class="lineNum">     111 </span>            :      skip this.  */
+<span class="lineNum">     112 </span>            : #if defined (HAVE_REALPATH) &amp;&amp; defined (HAVE_UNISTD_H)
+<span class="lineNum">     113 </span>            :   {
+<span class="lineNum">     114 </span>            :     /* Find out the max path size.  */
+<span class="lineNum">     115 </span>            :     long path_max = pathconf (&quot;/&quot;, _PC_PATH_MAX);
+<span class="lineNum">     116 </span>            :     if (path_max &gt; 0)
+<span class="lineNum">     117 </span>            :       {
+<span class="lineNum">     118 </span>            :         /* PATH_MAX is bounded.  */
+<span class="lineNum">     119 </span>            :         char *buf, *rp, *ret;
+<span class="lineNum">     120 </span>            :         buf = (char *) malloc (path_max);
+<span class="lineNum">     121 </span>            :         if (buf == NULL)
+<span class="lineNum">     122 </span>            :           return NULL;
+<span class="lineNum">     123 </span>            :         rp = realpath (filename, buf);
+<span class="lineNum">     124 </span>            :         ret = strdup (rp ? rp : filename);
+<span class="lineNum">     125 </span>            :         free (buf);
+<span class="lineNum">     126 </span>            :         return ret;
+<span class="lineNum">     127 </span>            :       }
+<span class="lineNum">     128 </span>            :   }
+<span class="lineNum">     129 </span>            : #endif
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span>            :   /* The MS Windows method.  If we don't have realpath, we assume we
+<span class="lineNum">     132 </span>            :      don't have symlinks and just canonicalize to a Windows absolute
+<span class="lineNum">     133 </span>            :      path.  GetFullPath converts ../ and ./ in relative paths to
+<span class="lineNum">     134 </span>            :      absolute paths, filling in current drive if one is not given
+<span class="lineNum">     135 </span>            :      or using the current directory of a specified drive (eg, &quot;E:foo&quot;).
+<span class="lineNum">     136 </span>            :      It also converts all forward slashes to back slashes.  */
+<span class="lineNum">     137 </span>            : #if defined (_WIN32)
+<span class="lineNum">     138 </span>            :   {
+<span class="lineNum">     139 </span>            :     char buf[MAX_PATH];
+<span class="lineNum">     140 </span>            :     char* basename;
+<span class="lineNum">     141 </span>            :     DWORD len = GetFullPathName (filename, MAX_PATH, buf, &amp;basename);
+<span class="lineNum">     142 </span>            :     if (len == 0 || len &gt; MAX_PATH - 1)
+<span class="lineNum">     143 </span>            :       return strdup (filename);
+<span class="lineNum">     144 </span>            :     else
+<span class="lineNum">     145 </span>            :       {
+<span class="lineNum">     146 </span>            :         /* The file system is case-preserving but case-insensitive,
+<span class="lineNum">     147 </span>            :            Canonicalize to lowercase, using the codepage associated
+<span class="lineNum">     148 </span>            :            with the process locale.  */
+<span class="lineNum">     149 </span>            :         CharLowerBuff (buf, len);
+<span class="lineNum">     150 </span>            :         return strdup (buf);
+<span class="lineNum">     151 </span>            :       }
+<span class="lineNum">     152 </span>            :   }
+<span class="lineNum">     153 </span>            : #endif
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :   /* This system is a lost cause, just duplicate the filename.  */
+<span class="lineNum">     156 </span>            :   return strdup (filename);
+<span class="lineNum">     157 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.13</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
